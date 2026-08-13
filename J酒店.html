@@ -174,7 +174,8 @@
                     <option value="cam1">2楼 客房走廊监控</option>
                     <option value="cam2">3楼 西式餐厅</option>
                     <option value="cam3">5楼 顶层行政套房后梯</option>
-                    <option value="cam4">地下车库 停车场</option>
+                    <option value="cam4">地下车库 a停车场</option>
+                    <option value="cam5">地下车库 b停车场</option>
                 </select>
                 <button onclick="loadMonitorImage()" style="background: var(--primary-color); border: none; color: white; padding: 0.6rem 1.2rem; border-radius: 4px; font-size: 1rem; cursor: pointer;">点击调取画面</button>
             </div>
@@ -225,7 +226,8 @@
                     <option value="cam1">2楼 客房走廊监控</option>
                     <option value="cam2">3楼 西式餐厅</option>
                     <option value="cam3">5楼 顶层行政套房后梯</option>
-                    <option value="cam4">地下车库 停车场</option>
+                    <option value="cam4">地下车库 a停车场</option>
+                    <option value="cam5">地下车库 b停车场</option>
                 </select>
                 <button onclick="loadMonitorImage()" style="background: var(--primary-color); border: none; color: white; padding: 0.6rem 1.2rem; border-radius: 4px; font-size: 1rem; cursor: pointer;">点击调取画面</button>
             </div>
@@ -378,7 +380,8 @@ function loadMonitorImage() {
         cam1: "CCTV9.png",    
         cam2: "CCTV11.png",       
         cam3: "CCTV10.png",
-        cam4: "images/parking.jpg"
+        cam4: "CCTV13.png",
+        cam5: "CCTV14.png"
     };
 
     imgElement.src = monitorImages[selectValue];
