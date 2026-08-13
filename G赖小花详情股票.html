@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>巴布曼特联邦证券交易所</title>
+    <style>
+        /* 全局样式与系统主题自适应 */
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+            --up-color: #eb4d4b;
+            --down-color: #2ecc71;
+            --accent-color: #2f3542;
+            --btn-text: #ffffff;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #11141a;
+                --card-bg: #1a1f2c;
+                --text-main: #e1e7f0;
+                --text-muted: #8898aa;
+                --border-color: #2a3142;
+                --accent-color: #3742fa;
+            }
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 15px; transition: background 0.3s; padding-bottom: 60px; }
+
+        /* 顶部导航与搜索 */
+        .header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .back-btn { padding: 8px 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); cursor: pointer; font-size: 14px; font-weight: bold; }
+        .search-box { flex: 1; display: flex; gap: 5px; min-width: 200px; }
+        .search-box input { flex: 1; padding: 8px 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); font-size: 14px; }
+        .search-box button { padding: 8px 16px; background: var(--accent-color); color: var(--btn-text); border: none; border-radius: 6px; cursor: pointer; }
+
+        /* 大盘指数看板（响应式） */
+        .market-panel { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .market-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .market-name { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+        .market-digits { display: flex; gap: 20px; align-items: baseline; flex-wrap: wrap; }
+        .main-index { font-size: 36px; font-weight: 800; font-family: monospace; color: var(--up-color); }
+        .main-change { font-size: 16px; font-weight: bold; color: var(--up-color); }
+
+        /* 多端自适应响应式布局：手机单列，平板/电脑多列 */
+        .main-layout { display: grid; grid-template-columns: 1xl; gap: 20px; }
+        @media (min-width: 768px) { .main-layout { grid-template-columns: 2fr 1fr; } }
+        /* 个人投资详情持仓列表 */
+        .portfolio-panel { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .panel-title { font-size: 18px; font-weight: bold; }
+        
+        /* 交易控制组 */
+        .action-group { display: flex; gap: 10px; }
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; transition: opacity 0.2s; }
+        .btn:active { opacity: 0.8; }
+        .btn-buy { background-color: var(--up-color); color: white; }
+        .btn-sell { background-color: var(--down-color); color: white; }
+
+        /* 响应式表格/列表设计 */
+        .stock-list { display: flex; flex-direction: column; gap: 10px; }
+        .stock-item { display: grid; grid-template-columns: 2fr 1fr 1.2fr; padding: 12px; border-bottom: 1px solid var(--border-color); align-items: center; }
+        @media (max-width: 480px) {
+            .stock-item { grid-template-columns: 1.5fr 1fr 1fr; font-size: 13px; padding: 10px 5px; }
+        }
+        .stock-info { display: flex; flex-direction: column; }
+        .stock-name { font-weight: bold; font-size: 15px; }
+        .stock-code { font-size: 12px; color: var(--text-muted); font-family: monospace; }
+        .stock-data { text-align: right; font-family: monospace; }
+        .stock-shares { font-size: 14px; font-weight: 500; }
+        .stock-amount { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .stock-price { font-weight: bold; color: var(--down-color); text-align: right; font-family: monospace; }
+
+        /* 隐藏的隐藏数据弹窗 (Modal) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; padding: 20px; z-index: 1000; }
+        .modal { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; width: 100%; max-width: 400px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .modal-close { position: absolute; top: 15px; right: 15px; font-size: 20px; cursor: pointer; color: var(--text-muted); }
+        .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
+        .modal-body { display: flex; flex-direction: column; gap: 10px; font-family: monospace; }
+        .modal-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 8px 0; }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航与搜索框 -->
+    <!-- 顶部导航与搜索框（已配置真实网页跳转与标准占位符） -->
+    <div class="header">
+        <!-- 请将 'main_menu.html' 改为您游戏主页面或上级线索网页的实际文件名 -->
+        <button class="back-btn" onclick="window.location.href='G赖小花详情.html'">⬅ 返回</button>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="输入股票代码/编号 (例如: 6*****)" />
+            <button onclick="handleSearch()">搜索</button>
+        </div>
+    </div>
+
+
+    <!-- 核心大盘指数（巴布曼特联邦证券交易所） -->
+    <div class="market-panel">
+        <div class="market-title">Federal Stock Exchange</div>
+        <div class="market-name">巴布曼特联邦证券交易所总盘</div>
+        <div class="market-digits">
+            <div class="main-index" id="totalIndex">4852.16</div>
+            <div class="main-change" id="totalChange">+1.34%</div>
+        </div>
+    </div>
+
+    <!-- 主展示区：多端自适应网格 -->
+    <div class="main-layout">
+        <!-- 个人持仓面板 -->
+        <div class="portfolio-panel">
+            <div class="panel-header">
+                <div class="panel-title">个人投资详情（实时盈亏）</div>
+                <div class="action-group">
+                    <button class="btn btn-buy" onclick="clickBuy()">一键买入</button>
+                    <button class="btn btn-sell" onclick="clickSell()">一键卖出</button>
+                </div>
+            </div>
+            
+            <!-- 10只虚拟股票列表容器 -->
+            <div class="stock-list" id="stockListContainer">
+                <!-- 由JavaScript动态渲染10只下跌模型股票 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索股票自动弹跳的行情窗口 -->
+    <div class="modal-overlay" id="stockModal">
+        <div class="modal">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div class="modal-title" id="modalStockName">股票详情</div>
+            <div class="modal-body">
+                <div class="modal-row"><span>股票代码</span><span id="modalStockCode">--</span></div>
+                <div class="modal-row"><span>当前价位</span><span id="modalStockPrice" style="color:var(--down-color)">--</span></div>
+                <div class="modal-row"><span>今日跌幅</span><span id="modalStockChange" style="color:var(--down-color)">--</span></div>
+                 
+            </div>
+        </div>
+    </div>
+<script>
+    // 定义初始股票数据模型（10只虚构的巴布曼特联邦股票，均为下跌状态）
+    const ORIGINAL_STOCKS = [
+        { code: "600121", name: "联邦智能", shares: 10, price: 360.25, change: "100.4%" },
+        { code: "600342", name: "巴布能源", shares: 500, price: 8.62, change: "-3.1%" },
+        { code: "600789", name: "曼特黄金", shares: 80, price: 68.41, change: "-17.8%" },
+        { code: "600985", name: "诺凡泰克制药", shares: 100, price: 276.10, change: "-52.2%" },
+        { code: "601233", name: "北境矿业", shares: 200, price: 5.12, change: "-9.1%" },
+        { code: "601668", name: "联邦远洋", shares: 100, price: 11.88, change: "-2.5%" },
+        { code: "601999", name: "高加索微电", shares: 100, price: 68.50, change: "-6.7%" },
+        { code: "603112", name: "新城地产", shares: 200, price: 7.34, change: "-8.3%" },
+        { code: "603556", name: "深海精工", shares: 150, price: 19.15, change: "-4.9%" },
+        { code: "603889", name: "皇家谷物", shares: 1000, price: 3.22, change: "-11.2%" }
+    ];
+
+    // 全局状态变量
+    let stocks = [];
+    let isZeroed = false; // 是否已一键卖出归零锁死
+
+    // 初始化数据加载：优先读取浏览器缓存，实现玩家下次进入也是零的逻辑
+    function initData() {
+        const savedZeroStatus = localStorage.getItem("fse_is_zeroed");
+        if (savedZeroStatus === "true") {
+            isZeroed = true;
+            // 缓存锁死状态下，数量和金额全部强制为 0
+            stocks = ORIGINAL_STOCKS.map(s => ({ ...s, shares: 0, price: 0, change: "0.0%" }));
+        } else {
+            isZeroed = false;
+            stocks = JSON.parse(JSON.stringify(ORIGINAL_STOCKS));
+        }
+        renderStockList();
+    }
+
+    // 动态渲染个人持仓列表
+    function renderStockList() {
+        const container = document.getElementById("stockListContainer");
+        container.innerHTML = "";
+
+        stocks.forEach(stock => {
+            const amount = (stock.shares * stock.price).toFixed(2);
+            const itemHTML = `
+                <div class="stock-item">
+                    <div class="stock-info">
+                        <span class="stock-name">${stock.name}</span>
+                        <span class="stock-code">${stock.code}</span>
+                    </div>
+                    <div class="stock-data">
+                        <div class="stock-shares">${stock.shares.toLocaleString()} 股</div>
+                        <div class="stock-amount">市值 ¥${parseFloat(amount).toLocaleString()}</div>
+                    </div>
+                    <div class="stock-price">${stock.change}</div>
+                </div>
+            `;
+            container.insertAdjacentHTML("beforeend", itemHTML);
+        });
+    }
+</script>
+<script>
+    // 启动大盘及股票数据无闪烁实时跳动模型
+    function startDataSimulation() {
+        // 定时刷新大盘总盘数据（每0.5秒微幅跳动）
+        setInterval(() => {
+            let totalIndexEl = document.getElementById("totalIndex");
+            let totalChangeEl = document.getElementById("totalChange");
+            if (!totalIndexEl || !totalChangeEl) return;
+
+            let currentIndex = parseFloat(totalIndexEl.textContent);
+            // 产生一个 -1.5 到 +1.5 之间的随机微幅波动
+            let drift = (Math.random() - 0.48) * 3; 
+            let newIndex = (currentIndex + drift).toFixed(2);
+            
+            // 仅更改数字属性，不产生整屏刷新闪动
+            totalIndexEl.textContent = newIndex;
+            
+            let changePercent = (((newIndex - 4800) / 4800) * 100).toFixed(2);
+            totalChangeEl.textContent = (changePercent >= 0 ? "+" : "") + changePercent + "%";
+        }, 500);
+
+        // 定时刷新个股数据（仅在未锁死归零时跳动）
+        setInterval(() => {
+            if (isZeroed) return;
+            
+            stocks.forEach((stock, index) => {
+                // 模拟价格微幅上下波动
+                let priceDrift = (Math.random() - 0.5) * 0.1;
+                stock.price = Math.max(0.01, parseFloat((stock.price + priceDrift).toFixed(2)));
+                
+                // 模拟波动的跌幅百分比
+                let baseChange = parseFloat(stock.change);
+                let changeDrift = (Math.random() - 0.5) * 0.2;
+                stock.change = Math.min(-0.1, parseFloat((baseChange + changeDrift).toFixed(1))).toFixed(1) + "%";
+            });
+            // 局部增量渲染刷新数据视图
+            renderStockList();
+        }, 800);
+    }
+
+    // 初始化调用
+    window.addEventListener("DOMContentLoaded", () => {
+        initData();
+        startDataSimulation();
+    });
+</script>
+<script>
+    // 交互逻辑：一键买入提示
+    function clickBuy() {
+        alert("【系统错误】交易失败：您当前绑定的联邦信托账户可用余额不足，无法执行买入操作。");
+    }
+
+    // 交互逻辑：一键卖出及缓慢归零缓动动画
+    function clickSell() {
+        if (isZeroed) {
+            alert("【巴布曼特交易所提示】当前账户持仓已清空，无可转换头寸。");
+            return;
+        }
+
+        if (!confirm("警告：确认要以当前市价一键斩仓并清空所有个人持仓吗？此操作无法撤销。")) {
+            return;
+        }
+
+        isZeroed = true;
+        // 写入浏览器本地缓存，玩家下次进入或者刷新页面依然是零
+        localStorage.setItem("fse_is_zeroed", "true");
+
+        // 模拟数字缓慢归零的连贯过渡效果（每50毫秒递减，分10步归零）
+        let steps = 10;
+        let currentStep = 0;
+        
+        let interval = setInterval(() => {
+            currentStep++;
+            stocks.forEach(stock => {
+                stock.shares = Math.max(0, Math.floor(stock.shares * (1 - currentStep / steps)));
+                stock.price = Math.max(0, parseFloat((stock.price * (1 - currentStep / steps)).toFixed(2)));
+                if (currentStep >= steps) {
+                    stock.change = "0.0%";
+                }
+            });
+            renderStockList();
+
+            if (currentStep >= steps) {
+                clearInterval(interval);
+                // 彻底归零后弹出游戏关键剧情提示
+                setTimeout(() => {
+                    alert("【交易结算成功】\n清算中心通知：您已成功强制平仓。\n最终清算盈利：-57635元。\n当前持仓已锁定。");
+                }, 200);
+            }
+        }, 500);
+    }
+
+    // 交互逻辑：严格限制的特定股票编号搜索
+    function handleSearch() {
+        const input = document.getElementById("searchInput").value.trim();
+        
+        if (!input) {
+            alert("请输入股票编号。");
+            return;
+        }
+
+        // 特殊彩蛋指令判断：开发者还原
+        if (input === "开发者还原") {
+            localStorage.removeItem("fse_is_zeroed");
+            isZeroed = false;
+            stocks = JSON.parse(JSON.stringify(ORIGINAL_STOCKS));
+            renderStockList();
+            document.getElementById("searchInput").value = "";
+            alert("【开发者测试模式】股票初始数值已成功重置还原，本地缓存已解锁。");
+            return;
+        }
+
+        // 强行锁定：必须是这两个特定编号之一，否则直接拦截
+        if (input !== "600985" && input !== "600789" &input !== "600121") {
+            alert("【巴布曼特交易所错误】证券代码 " + input + " 未在本所挂牌上市，或已被监管暂停内网查询。");
+            return;
+        }
+
+        // 从数据模型中精确抓取对应的股票实时数据
+        let foundStock = stocks.find(s => s.code === input);
+
+        // 组装并弹出行情视窗
+        document.getElementById("modalStockName").textContent = foundStock.name;
+        document.getElementById("modalStockCode").textContent = foundStock.code;
+        document.getElementById("modalStockPrice").textContent = "¥ " + foundStock.price;
+        document.getElementById("modalStockChange").textContent = foundStock.change;
+        
+        document.getElementById("stockModal").style.display = "flex";
+    }
+
+
+// 关闭弹窗
+    function closeModal() {
+        document.getElementById("stockModal").style.display = "none";
+    }
+
+    // 新增：监听输入框的按键事件，启用回车键搜索
+    window.addEventListener("DOMContentLoaded", () => {
+        const searchInput = document.getElementById("searchInput");
+        if (searchInput) {
+            searchInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    event.preventDefault(); // 阻止表单默认提交行为
+                    handleSearch();         // 触发搜索函数
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

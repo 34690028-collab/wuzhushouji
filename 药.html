@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Novatech Pharma
+                           | 诺凡泰克制药官方网站</title>
+    <style>
+        /* ==================== 1. 全局清除与全屏容器 ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --nt-navy: #0A2540;       
+            --nt-blue: #0066cc;       
+            --nt-text-main: #2D3748;   
+            --nt-bg-light: #F7FAFC;    
+            --nt-border: #E2E8F0;      
+        }
+
+        body {
+            background-color: var(--nt-bg-light);
+            color: var(--nt-text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", Arial, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .site-container {
+            width: 100%;
+            max-width: 1200px; 
+            margin: 0 auto;
+            background-color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.03);
+        }
+                /* ==================== 2. 导航栏与企业宣传栏样式 ==================== */
+        .site-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--nt-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .btn-back-capsule {
+            background-color: var(--nt-bg-light);
+            color: var(--nt-navy);
+            border: 1px solid var(--nt-border);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-back-capsule:hover { background-color: var(--nt-border); }
+
+        .logo-block { display: flex; flex-direction: column; align-items: flex-end; cursor: pointer; }
+        .logo-img-box { height: 26px; display: flex; align-items: center; }
+        .logo-img-box img { height: 100%; object-fit: contain; }
+        .main-logo-text { color: var(--nt-navy); font-size: 22px; font-weight: 800; letter-spacing: 1.5px; }
+        .sub-logo-text { color: var(--nt-blue); font-size: 10px; letter-spacing: 0.5px; font-weight: 700; margin-top: 1px; }
+
+        .main-content { padding: 40px; display: flex; flex-direction: column; gap: 40px; }
+
+        .corporate-banner {
+            background: linear-gradient(135deg, #0f2d4a 0%, #1d4d7a 100%);
+            border-radius: 16px;
+            padding: 48px;
+            color: #ffffff;
+        }
+        .corporate-banner h1 { font-size: 32px; font-weight: 700; line-height: 1.25; margin-bottom: 12px; }
+        .corporate-banner p { font-size: 15px; color: rgba(255,255,255,0.7); max-width: 700px; line-height: 1.6; }
+
+        .info-card-section { background-color: #ffffff; border: 1px solid var(--nt-border); border-radius: 16px; padding: 28px; }
+        .section-main-title { font-size: 18px; font-weight: 700; color: var(--nt-navy); border-left: 4px solid var(--nt-blue); padding-left: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .section-main-title::after { content: 'NOVATECH CLINICAL'; font-size: 11px; color: rgba(0,0,0,0.25); font-weight: 600; }
+
+        /* ==================== 3. 🔴 全新抽屉式隐藏与展开控制 CSS ==================== */
+        /* 新闻板块折叠结构 */
+        .news-grid-list { display: flex; flex-direction: column; gap: 14px; }
+        .news-card-wrapper { border-radius: 10px; background-color: var(--nt-bg-light); overflow: hidden; border: 1px solid transparent; transition: all 0.2s ease; }
+        .news-card-wrapper.active { border-color: var(--nt-border); background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        
+        .news-card-row-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; cursor: pointer; }
+        .news-row-title-text { color: var(--nt-text-main); font-size: 15px; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 20px; }
+        .news-card-wrapper.active .news-row-title-text { color: var(--nt-blue); white-space: normal; } /* 展开时标题不省略 */
+        .news-row-date-tag { color: #718096; font-size: 13px; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+        .news-arrow { display: inline-block; font-size: 12px; transition: transform 0.2s ease; color: #a0aec0; }
+        .news-card-wrapper.active .news-arrow { transform: rotate(180deg); color: var(--nt-blue); }
+
+        /* 🔴 新闻正文抽屉细节 */
+        .news-drawer-content { max-height: 0; padding: 0 16px; overflow: hidden; transition: max-height 0.25s cubic-bezier(0, 1, 0, 1), padding 0.1s ease; font-size: 14px; color: #4a5568; line-height: 1.6; border-top: 1px solid transparent; background-color: #fafbfc; }
+        .news-card-wrapper.active .news-drawer-content { max-height: 1000px; padding: 16px; border-color: var(--nt-border); transition: max-height 0.3s ease-in-out; }
+
+        /* 研发团队折叠结构 */
+        .scientists-team-layout { display: flex; flex-direction: column; gap: 14px; }
+        .scientist-wrapper { border-radius: 12px; background-color: var(--nt-bg-light); overflow: hidden; border: 1px solid transparent; transition: all 0.2s ease; }
+        .scientist-wrapper.active { border-color: var(--nt-border); background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        
+        .academician-card-header { display: flex; align-items: center; gap: 20px; padding: 16px; cursor: pointer; position: relative; }
+        /* 🔴 研发团队头像大升级：由38px扩容至 64px 大头像 */
+        .academician-photo-placeholder { width: 64px; height: 64px; border-radius: 50%; background-color: #e2e8f0; border: 2px solid var(--nt-blue); display: flex; justify-content: center; align-items: center; font-size: 28px; overflow: hidden; flex-shrink: 0; }
+        .academician-photo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+        .academician-info-detail { flex: 1; padding-right: 30px; }
+        .academician-name-text { color: var(--nt-navy); font-size: 16px; font-weight: 700; }
+        .academician-post-text { color: var(--nt-blue); font-size: 13px; font-weight: 600; margin-top: 4px; }
+        .scientist-arrow { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 12px; transition: transform 0.2s ease; color: #a0aec0; }
+        .scientist-wrapper.active .scientist-arrow { transform: translateY(-50%) rotate(180deg); color: var(--nt-blue); }
+
+        /* 🔴 研发团队简历详情抽屉细节 */
+        .scientist-drawer-content { max-height: 0; padding: 0 20px; overflow: hidden; transition: max-height 0.25s cubic-bezier(0, 1, 0, 1); font-size: 14px; color: #4a5568; line-height: 1.6; border-top: 1px solid transparent; background-color: #fafbfc; }
+        .scientist-wrapper.active .scientist-drawer-content { max-height: 1000px; padding: 20px; border-color: var(--nt-border); transition: max-height 0.3s ease-in-out; }
+
+        /* 运营网格与其他基础样式 */
+        .operations-grid-layout { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .operation-tile-btn { background-color: var(--nt-bg-light); border: 1px solid var(--nt-border); padding: 18px 12px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.2s ease; }
+        .operation-tile-btn:hover { background-color: var(--nt-blue); border-color: var(--nt-blue); }
+        .operation-tile-btn:hover .tile-btn-name { color: #ffffff; }
+        .operation-tile-btn-icon { font-size: 22px; margin-bottom: 6px; }
+        .tile-btn-name { color: var(--nt-navy); font-size: 13px; font-weight: 600; }
+
+        .search-panel-wrapper { display: flex; gap: 12px; margin-bottom: 14px; }
+        .clinical-input-box { flex: 1; background-color: var(--nt-bg-light); border: 1px solid var(--nt-border); border-radius: 10px; padding: 12px 16px; color: var(--nt-text-main); font-size: 14px; outline: none; }
+        .clinical-input-box:focus { border-color: var(--nt-blue); background-color: #ffffff; }
+        .btn-search-execute { background-color: var(--nt-blue); color: #ffffff; border: none; padding: 0 24px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background-color 0.2s ease; }
+        .btn-search-execute:hover { background-color: #0052a3; }
+        .clinical-result-monitor { background-color: var(--nt-bg-light); border: 1px solid var(--nt-border); border-radius: 10px; padding: 16px; font-family: monospace; font-size: 13px; line-height: 1.5; color: #4a5568; min-height: 60px; }
+
+        @media (max-width: 768px) {
+            .site-header { padding: 16px 20px; }
+            .main-content { padding: 20px; gap: 24px; }
+            .corporate-banner { padding: 28px; }
+            .corporate-banner h1 { font-size: 24px; }
+            .operations-grid-layout { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="site-container">
+        
+        <header class="site-header">
+    <button class="btn-back-capsule" id="btnNoveBack">⬅ 返回</button>
+    
+    <div class="logo-block" id="logoArea">
+        <div class="logo-img-box" style="height: auto;">
+            <!-- 💡 核心修改：在这里直接写死了高度（height: 35px）。你可以把 35 改大或改小来控制 LOGO 的大小 -->
+            <img src="诺凡泰克制药2.png" alt="Novatech Pharma" style="height: 85px; width: auto; display: block; object-fit: contain;">
+        </div>
+        <span class="sub-logo-text" style="margin-top: 4px;">Novatech Group/Novatech Pharma</span>
+    </div>
+</header>
+        <!-- 🏢 官方主网站核心流式内容区 -->
+        <main class="main-content">
+            
+            <!-- ① 企业宣传大横幅 -->
+            <section class="corporate-banner">
+                <h1>重塑基因底层逻辑<br>探索生命科学边界</h1>
+                <p>诺凡泰克药业（Novatech Pharma）致力于基因靶向疗法与免疫重塑机制的创新研发。我们深耕未被满足的医疗需求，扭转人类对抗时间的衰老，为延续生命带来转机。</p>
+            </section>
+
+            <!-- ② 新闻中心板块（扩充至 5 条写实级官方新闻，带点击抽屉展开详情功能） -->
+            <section class="info-card-section">
+                <div class="section-main-title">新闻中心 / MEDIA CENTER</div>
+                <div class="news-grid-list">
+                    
+                    <!-- 新闻 1 -->
+                    <div class="news-card-wrapper">
+                        <div class="news-card-row-header">
+                            <div class="news-row-title-text">诺凡泰克抗肿瘤突破性新药正式获得国家药品监督管理局优先审评审批</div>
+                            <div class="news-row-date-tag">2026-08-01 &nbsp;•&nbsp; <span>▼</span></div>
+                        </div>
+                        <div class="news-drawer-content">
+                            【官方公告】今日，诺凡泰克自主研发的全新一代小分子靶向抗肿瘤药物正式被国家药品监督管理局（NMPA）纳入优先审评审批程序。该药在前期的临床研究中展现出优异的安全性和突破性的生存期延长数据，标志着集团在肿瘤精准医疗领域的又一重大里程碑。
+                        </div>
+                    </div>
+
+                    <!-- 新闻 2 -->
+                    <div class="news-card-wrapper">
+                        <div class="news-card-row-header">
+                            <div class="news-row-title-text">第14届亚洲基因编码与生物靶向学术技术峰会在诺凡泰克中央科学城成功召开</div>
+                            <div class="news-row-date-tag">2026-07-28 &nbsp;•&nbsp; <span>▼</span></div>
+                        </div>
+                        <div class="news-drawer-content">
+                            【学术交流】来自全球顶尖医学院校及科研机构的300余位生物医学专家昨日齐聚诺凡泰克中央科学城。本次峰会深入探讨了下一代基因重组链的高通量筛选、分子靶向小分子晶型演变等前沿课题，海内外学者对诺凡泰克开放的学术生态及科研实力给予了高度评价。
+                        </div>
+                    </div>
+
+                    <!-- 新闻 3 -->
+                    <div class="news-card-wrapper">
+                        <div class="news-card-row-header">
+                            <div class="news-row-title-text">诺凡泰克与全球顶尖临床研究组织（CRO）达成多中心临床试验战略合作</div>
+                            <div class="news-row-date-tag">2026-07-15 &nbsp;•&nbsp; <span>▼</span></div>
+                        </div>
+                        <div class="news-drawer-content">
+                            【跨国合作】为全面加速集团在研管线的国际化进程，诺凡泰克今日宣布与全球三家全功能临床研究组织（CRO）签署战略合作协议。各方将联合启动涵盖欧洲、北美及亚太地区的跨国多中心联合临床试验，进一步夯实药物全球注册的临床数据质量链。
+                        </div>
+                    </div>
+
+                    <!-- 新闻 4 -->
+                    <div class="news-card-wrapper">
+                        <div class="news-card-row-header">
+                            <div class="news-row-title-text">智慧制药示范基地二期工程正式投产，全自动化冷链物流实现全面无缝连接</div>
+                            <div class="news-row-date-tag">2026-06-30 &nbsp;•&nbsp; <span>▼</span></div>
+                        </div>
+                        <div class="news-drawer-content">
+                            【产业升级】诺凡泰克全球智慧制药示范基地（二期工程）通过全功能合规验证，于今日清晨正式投入商业化量产。基地全面应用AI中央集成控制系统，配合全新一代5G智能化高精度冷链无缝仓储调度，实现了大容量高活生物制品生产至配送的全链路数字化追溯。
+                        </div>
+                    </div>
+
+                    <!-- 新闻 5 -->
+                    <div class="news-card-wrapper">
+                        <div class="news-card-row-header">
+                            <div class="news-row-title-text">诺凡泰克（Novatech）生物医药成功举办新一代自研药品研发成果发布会</div>
+                            <div class="news-row-date-tag">07-09 &nbsp;•&nbsp; <span>▼</span></div>
+                        </div>
+                        <div class="news-drawer-content">
+                          新一代抗衰长效注射药剂研发发布会圆满落幕
+                          本年度新一代核心研发成果发布会已于今日圆满结束。
+                          本次发布会，我司正式发布全新长效抗衰老注射药剂。经内部多轮实验数据验证，该药剂可有效延缓人体衰老进程，稳定延长人体健康寿命约二十年，是我司在生命延寿领域的重大技术突破。
+                          后续我们将持续推进高阶临床实验，加速药剂合规落地、面向全社会普及应用。
+                          诺凡泰克制药
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+     <!-- ==================== ③ 研发团队 (R&D TEAM) ==================== -->
+            <section class="info-card-section">
+                <div class="section-main-title">研发团队 / R&D SCIENTISTS</div>
+                <div class="scientists-team-layout">
+                    
+                    <!-- 科学家 1 -->
+                     <div class="scientist-wrapper">
+    <div class="academician-card-header">
+        <!-- 💡 核心修改：已经为你删掉了隐藏锁，并且拿掉了遮挡的表情，图片 100% 完美亮起 -->
+        <div class="academician-photo-placeholder">
+            <img src="谢震教授.png" alt="谢震教授">
+        </div>
+        <div class="academician-info-detail">
+            <!-- 💡 顺便帮你把英文名也直接改成了中文的谢震教授，更有真实高端代入感 -->
+            <div class="academician-name-text">谢震 教授</div>
+            <div class="academician-post-text">首席科学家</div>
+        </div>
+        <span class="scientist-arrow">▼</span>
+    </div>
+    <div class="scientist-drawer-content">
+        诺凡泰克制药首席科学家，海外大学生物学专家，主攻基因治疗与合成生物学，开创衰老重编程疗法，致力于实现人类寿命大幅延长...核心研发方向：合成生物学/干细胞再生/基因治疗
+    </div>
+</div>
+                     
+                    <!-- 科学家 2 -->
+                    <div class="scientist-wrapper">
+    <div class="academician-card-header">
+        <!-- 💡 核心修改：已经为你删掉了隐藏锁，并且拿掉了遮挡的表情，图片 100% 完美亮起 -->
+        <div class="academician-photo-placeholder">
+            <img src="沈瑜教授.png" alt="沈瑜 教授">
+        </div>
+        <div class="academician-info-detail">
+            <!-- 💡 顺便帮你把英文名也直接改成了中文的谢震教授，更有真实高端代入感 -->
+            <div class="academician-name-text">沈瑜 教授</div>
+            <div class="academician-post-text">生物信息学总监</div>
+        </div>
+        <span class="scientist-arrow">▼</span>
+    </div>
+    <div class="scientist-drawer-content">
+        在分子生物学与衰老病理学领域拥有极高的学术声望。擅长从病理层面解析人体组织在衰老过程中的微观异变，为后续的特殊物质提取提供精准的靶向靶点...核心研发方向：生物信息学/AI制药/分子生物
+    </div>
+</div>
+
+                    <!-- 科学家 3 -->
+                    <div class="scientist-wrapper">
+    <div class="academician-card-header">
+        <!-- 💡 核心修改：已经为你删掉了隐藏锁，并且拿掉了遮挡的表情，图片 100% 完美亮起 -->
+        <div class="academician-photo-placeholder">
+            <img src="林珍博士.png" alt="林珍 博士">
+        </div>
+        <div class="academician-info-detail">
+            <!-- 💡 顺便帮你把英文名也直接改成了中文的谢震教授，更有真实高端代入感 -->
+            <div class="academician-name-text">林珍 博士</div>
+            <div class="academician-post-text">生物信息学总监</div>
+        </div>
+        <span class="scientist-arrow">▼</span>
+    </div>
+    <div class="scientist-drawer-content">
+        目标特殊物质的分离提纯工艺优化，建立高纯度、高活性的样本制备标准，突破微量关键物质的提取技术瓶颈。手上的细胞培养和蛋白提纯技术在业内几乎无人能...核心研发方向：药物递送/纳米材料/蛋白提纯
+    </div>
+</div>
+
+                    <!-- 科学家 4 -->
+                    <div class="scientist-wrapper">
+    <div class="academician-card-header">
+        <!-- 💡 核心修改：已经为你删掉了隐藏锁，并且拿掉了遮挡的表情，图片 100% 完美亮起 -->
+        <div class="academician-photo-placeholder">
+            <img src="玛伦.png" alt="玛伦 博士">
+        </div>
+        <div class="academician-info-detail">
+            <!-- 💡 顺便帮你把英文名也直接改成了中文的谢震教授，更有真实高端代入感 -->
+            <div class="academician-name-text">玛伦 博士</div>
+            <div class="academician-post-text">高级研究员</div>
+        </div>
+        <span class="scientist-arrow">▼</span>
+    </div>
+    <div class="scientist-drawer-content">
+        跨物种延寿干预的技术对标，特殊物质的跨环境稳定性研究，引入国际前沿的物质活性保存技术。同时负责对接国际合规性的技术参考，避免研究走国际上已... 核心研发方向：活性保存/基因治疗/合成生物学
+    </div>
+</div>
+
+                    <!-- 科学家 5 -->
+                    <div class="scientist-wrapper">
+    <div class="academician-card-header">
+        <!-- 💡 核心修改：已经为你删掉了隐藏锁，并且拿掉了遮挡的表情，图片 100% 完美亮起 -->
+        <div class="academician-photo-placeholder">
+            <img src="克拉拉.png" alt="克拉拉 博士">
+        </div>
+        <div class="academician-info-detail">
+            <!-- 💡 顺便帮你把英文名也直接改成了中文的谢震教授，更有真实高端代入感 -->
+            <div class="academician-name-text">克拉拉 博士</div>
+            <div class="academician-post-text">高级研究员</div>
+        </div>
+        <span class="scientist-arrow">▼</span>
+    </div>
+    <div class="scientist-drawer-content">
+        神经衰老的保护机制研究，验证特殊物质对大脑认知功能的正向作用，规避延寿过程中可能出现的神经退行风险。不会损伤认知、记忆等核心神经功能，填补...核心研发方向：生物信息学/纳米神经学/干细胞再生
+    </div>
+</div>
+                    <!-- 科学家 6 -->
+                    <div class="scientist-wrapper">
+    <div class="academician-card-header">
+        <!-- 💡 核心修改：已经为你删掉了隐藏锁，并且拿掉了遮挡的表情，图片 100% 完美亮起 -->
+        <div class="academician-photo-placeholder">
+            <img src="陆恒.png" alt="陆恒 博士">
+        </div>
+        <div class="academician-info-detail">
+            <!-- 💡 顺便帮你把英文名也直接改成了中文的谢震教授，更有真实高端代入感 -->
+            <div class="academician-name-text">陆恒 博士</div>
+            <div class="academician-post-text">高级研究员</div>
+        </div>
+        <span class="scientist-arrow">▼</span>
+    </div>
+    <div class="scientist-drawer-content">
+        定制化实验设备的研发与优化，搭建自动化的人体特殊物质提取生产线，保障大规模实验的稳定性与安全性。擅长搭建定制化的实验设备与自动化流程...核心研发方向：物质提取/药物递送/生物提纯
+    </div>
+</div>
+
+                </div>
+            </section>
+
+            <!-- ==================== ④ 企业内网 (INTRANET OPERATIONS) ==================== -->
+            <section class="info-card-section">
+                <div class="section-main-title">企业内网 / SYSTEM CENTRAL</div>
+                <div class="operations-grid-layout">
+                    <div class="operation-tile-btn" data-action="crm"><div class="operation-tile-btn-icon">📊</div><div class="tile-btn-name">临床数据同步</div></div>
+                    <div class="operation-tile-btn" data-action="supply"><div class="operation-tile-btn-icon">📦</div><div class="tile-btn-name">全球冷链调度</div></div>
+                    <div class="operation-tile-btn" data-action="erp"><div class="operation-tile-btn-icon">🔐</div><div class="tile-btn-name">保密协议认证</div></div>
+<a href="备用管理团队.html" class="operation-tile-btn" data-action="hr" style="text-decoration: none; color: inherit; display: block;">
+    <div class="operation-tile-btn-icon">🌐</div>
+    <div class="tile-btn-name">核心研发团队</div>
+</a>
+                </div>
+            </section>
+                        <!-- ==================== ⑤ 保密数据查询 ==================== -->
+            <section class="info-card-section" style="margin-bottom: 40px;">
+                <div class="section-main-title">保密数据查询 / CLINICAL DATA QUERY</div>
+                <div class="search-panel-wrapper">
+                    <input type="text" class="clinical-input-box" id="pharmaQueryInput" placeholder="输入核心药物研发代号(如: NT-***)">
+                    <button class="btn-search-execute" id="btnTriggerSearch">提交查询</button>
+                </div>
+                <div class="clinical-result-monitor" id="searchResultDisplayPanel">
+                    [SYSTEM]: 核心研究网络握手鉴权就绪。请输入在研药物代号。
+                    特别声明：以上信息均为架空虚构内容，无任何现实映射，不存在真实对应事件与人物，一切仅服务原创解谜故事创作
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const TOUCH_SOUND_URL = "https://mixkit.co";
+        const PHARMA_DATABASE = {
+            "NT-901": "[验证成功]: 正在安全调取核心药物 NT-901 学术档案...<br>【化学分子式】: C22H30N6O4S<br>【主要研究靶点】: EGFR/HER2 双重基因阻断小分子结构<br>【目前临床阶段】: 国际多中心临床 III 期双盲对照试验",
+            "NT-202": "[验证成功]: 正在安全调取核心药物 NT-202 学术档案...<br>【化学分子式】: C18H23ClN4O2<br>【主要研究靶点】: mRNA 免疫记忆链序列重组靶向靶点<br>【目前临床阶段】: 临床 II 期靶向免疫安全性与疗效评估",
+            "NT-108": "[验证成功]: 正在安全调取核心药物 NT-108 学术档案...<br>【化学分子式】: C25H27FN4O4<br>【主要研究靶点】: JAK3/STAT6 免疫炎症信号通路选择性抑制剂<br>【目前临床阶段】: 国际多中心临床 III 期重症耐药非盲对照试验",
+            "NT-305": "[验证成功]: 正在安全调取核心药物 NT-305 学术档案...<br>【化学分子式】: C31H36N8O5S<br>【主要研究靶点】: PD-1/PD-L1 双特异性单克隆抗体交联重组链<br>【目前临床阶段】: 临床 II 期固体肿瘤微环境浸润突破性疗法论证",
+            "NT-512": "[验证成功]: 正在安全调取核心药物 NT-512 学术档案...<br>【化学分子式】: C14H22N2O3<br>【主要研究靶点】: BBB-Permeable 阿尔茨海默症神经元突触修复因子<br>【目前临床阶段】: 临床 I 期单次递增剂量（SAD）耐受性安全锁判定",
+            "NT-706": "[验证成功]: 正在安全调取核心药物 NT-706 学术档案...<br>【化学分子式】: C28H41N5O6<br>【主要研究靶点】: CRISPR-Cas9 罕见突变病隐性基因定点修复靶点<br>【目前临床阶段】: 临床 II 期早期同源重组效率与靶向毒理临床观察",
+            "NT-880": "[验证成功]: 正在安全调取核心药物 NT-880 学术档案...<br>【化学分子式】: C19H15F3N6O<br>【主要研究靶点】: BCL-2 细胞凋亡极性诱导剂晶型微观演变组分<br>【目前临床阶段】: 国际多中心临床 III 期血液恶性肿瘤全额结算对照生存期试验"
+
+        };
+
+        const clickAudioPlayer = new Audio(TOUCH_SOUND_URL);
+        clickAudioPlayer.preload = "auto";
+        const btnNoveBack = document.getElementById('btnNoveBack');
+        const pharmaQueryInput = document.getElementById('pharmaQueryInput');
+        const btnTriggerSearch = document.getElementById('btnTriggerSearch');
+        const searchResultDisplayPanel = document.getElementById('searchResultDisplayPanel');
+
+        function playTouchSound() {
+            const soundInstance = clickAudioPlayer.cloneNode();
+            soundInstance.volume = 0.3; soundInstance.play().catch(e => {});
+        }
+
+        btnNoveBack.addEventListener('click', function(e) {
+            e.preventDefault(); playTouchSound();
+            setTimeout(function() { window.location.href = "浏览器.html"; }, 220);
+        });
+
+        // 🔴 新闻下拉折叠控制
+        const newsWrappers = document.querySelectorAll('.news-card-wrapper');
+        newsWrappers.forEach(function(wrapper) {
+            wrapper.querySelector('.news-card-row-header').addEventListener('click', function() {
+                playTouchSound();
+                const isOpen = wrapper.classList.contains('active');
+                newsWrappers.forEach(w => w.classList.remove('active'));
+                if (!isOpen) wrapper.classList.add('active');
+            });
+        });
+
+        // 🔴 研发团队下拉折叠控制
+        const scientistWrappers = document.querySelectorAll('.scientist-wrapper');
+        scientistWrappers.forEach(function(wrapper) {
+            wrapper.querySelector('.academician-card-header').addEventListener('click', function() {
+                playTouchSound();
+                const isOpen = wrapper.classList.contains('active');
+                scientistWrappers.forEach(w => w.classList.remove('active'));
+                if (!isOpen) wrapper.classList.add('active');
+            });
+        });
+
+        btnTriggerSearch.addEventListener('click', function() {
+            playTouchSound();
+            const queryCode = pharmaQueryInput.value.trim().toUpperCase();
+            if (!queryCode) {
+                searchResultDisplayPanel.innerHTML = "<span style='color:#ff3b30;'>[ERROR]: 检索条件不能为空。</span>";
+                return;
+            }
+            searchResultDisplayPanel.innerHTML = "[SYSTEM]: 正在连通中央机房安全协议验证密匙...";
+            setTimeout(function() {
+                if (PHARMA_DATABASE[queryCode]) {
+                    searchResultDisplayPanel.innerHTML = PHARMA_DATABASE[queryCode];
+                } else {
+                    searchResultDisplayPanel.innerHTML = `[SYSTEM]: 检索完毕。<br><span style='color:#718096;'>未检索到代号为 [${queryCode}] 的保密数据。可输入测试代号：NT-901 或 NT-202。</span>`;
+                }
+            }, 350);
+        });
+
+        document.querySelectorAll('.operation-tile-btn').forEach(btn => btn.addEventListener('click', playTouchSound));
+    </script>
+</body>
+</html>

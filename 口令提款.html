@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OFFSHORE SECURITY HUB | 资产清算大厅</title>
+    <style>
+        /* 银行系统高端黑金与安全钛白配色 */
+        :root {
+            --bank-black: #0B0E14;      /* 深邃量子金库黑 */
+            --bank-gold: #D4AF37;       /* 皇家尊贵拉丝金 */
+            --bank-dark-gray: #161B26;  /* 钛合金面板灰 */
+            --bank-green: #00E676;      /* 安全加密通路绿 */
+            --text-light: #E2E8F0;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bank-black);
+            color: var(--text-light);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* 1. 首关口令输入拦截墙 */
+        .auth-gate-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #1F2637 0%, var(--bank-black) 100%);
+            z-index: 5000; display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .auth-gate-card {
+            background: var(--bank-dark-gray); border: 2px solid var(--bank-gold);
+            border-radius: 16px; padding: 45px 30px; max-width: 500px; width: 100%;
+            text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+        }
+        .auth-gate-card h2 { font-size: 1.6rem; margin-bottom: 10px; color: #FFF; letter-spacing: 1px; }
+        .auth-gate-card p { font-size: 0.85rem; color: #A0AEC0; margin-bottom: 30px; }
+        .gate-input-box {
+            display: flex; background: rgba(0,0,0,0.5); padding: 6px; border-radius: 8px;
+            border: 1px solid rgba(214,175,55,0.4); margin-bottom: 20px;
+        }
+        .gate-input-box input {
+            flex: 1; border: none; background: transparent; padding: 12px; color: #FFF;
+            font-size: 1rem; outline: none; text-align: center; letter-spacing: 2px;
+        }
+        .gate-input-box button {
+            background: linear-gradient(135deg, var(--bank-gold), #B8860B); color: var(--bank-black);
+            border: none; padding: 0 26px; font-weight: bold; border-radius: 6px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .gate-input-box button:hover { background: #FFF; }
+
+        /* 2. 顶部高端黑金导航栏 */
+        .bank-nav {
+            background-color: rgba(11, 14, 20, 0.95); border-bottom: 2px solid var(--bank-gold);
+            position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);
+        }
+        .nav-container {
+            max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px;
+        }
+        .nav-brand { display: flex; align-items: center; text-decoration: none; }
+        .nav-brand img { height: 90px; width: auto; margin-right: 14px; }
+        .brand-text h1 { font-size: 1.2rem; font-weight: 700; color: #FFF; }
+        .brand-text p { font-size: 0.7rem; color: var(--bank-gold); }
+
+        /* 🧭 高科技感安全断开并返回按钮样式 */
+        .btn-disconnect-gate {
+            background: rgba(255, 59, 48, 0.1); border: 1px solid #FF3B30; color: #FF3B30;
+            padding: 8px 16px; border-radius: 4px; font-size: 0.85rem; font-weight: 700;
+            cursor: pointer; transition: all 0.2s ease; letter-spacing: 0.5px;
+        }
+        .btn-disconnect-gate:hover { background: #FF3B30; color: #FFF; box-shadow: 0 0 10px rgba(255,59,48,0.4); }
+
+        /* 3. 隐藏的清算大厅主体 */
+        .main-vault-hall { display: none; }
+
+        .balance-section { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .balance-card {
+            background: linear-gradient(135deg, var(--bank-dark-gray), #1F2637);
+            border: 1px solid rgba(214, 175, 87, 0.2); border-radius: 12px; padding: 40px; text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5); position: relative;
+        }
+        .balance-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--bank-gold), var(--bank-green));
+        }
+        .balance-amount { font-size: 3.5rem; font-weight: 800; color: #FFF; margin: 15px 0; font-family: monospace; letter-spacing: 1px; }
+
+        /* 4. 下拉式隐藏转账闸口按钮 */
+        .transfer-trigger-section { max-width: 600px; margin: 0 auto 60px auto; padding: 0 20px; }
+        .trigger-label { font-size: 0.9rem; color: #A0AEC0; margin-bottom: 12px; text-align: center; letter-spacing: 1px; }
+        
+        .vault-gate-selector {
+            background: var(--bank-dark-gray); border: 1px solid rgba(214,175,55,0.4);
+            border-radius: 8px; padding: 18px 25px; display: flex; justify-content: space-between;
+            align-items: center; cursor: pointer; transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .vault-gate-selector:hover { border-color: var(--bank-gold); background: #1F2637; }
+        .selector-text { font-weight: bold; color: #FFF; letter-spacing: 1px; }
+        .selector-arrow { color: var(--bank-gold); font-size: 1.2rem; transition: transform 0.3s; }
+        .vault-gate-selector.active .selector-arrow { transform: rotate(180deg); }
+
+        .dropdown-drawer {
+            display: none; background: #11151F; border: 1px solid rgba(214,175,55,0.2);
+            border-top: none; border-radius: 0 0 8px 8px; overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+                         <!-- 1. 局部改动：首关口令输入拦截墙（集成了返回按钮） -->
+    <div id="authGateOverlay" class="auth-gate-overlay">
+        <div class="auth-gate-card">
+            <h2>终端风控访问权限核验</h2>
+            <p>检测到未经授信的跨境节点接入，请输入提取激活口令。</p>
+            <p>银行口令AAAAAAAAAAAA"+"校验码0000</p>
+            <div class="gate-input-box">
+                <input type="text" id="gatePasscode" placeholder="输入12位字母+4位数字">
+                <button onclick="verifyGatePasscode()">核验</button>
+            </div>
+            <!-- 下方为新加入的返回按钮，href可以随时替换为您想回到的网址或文件名 -->
+            <div style="margin-top: 15px;">
+                <a href="mail.html" style="color: #A0AEC0; text-decoration: none; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s;" onmouseover="this.style.color='var(--bank-gold)'" onmouseout="this.style.color='#A0AEC0'">
+                    &laquo; 安全退出
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的清算大厅主体 -->
+    <div id="mainVaultHall" class="main-vault-hall">
+        <nav class="bank-nav">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <img src="银行LOGO.png" alt="BANK LOGO">
+                    <div class="brand-text">
+                        <h1>巴布曼特联信商业银行</h1>
+                        <p>OFFSHORE TRUST CLEARING CENTER</p>
+                    </div>
+                </div>
+                
+                <!-- 右侧集成的安全断开并返回物理按钮 -->
+                <div>
+                    <button class="btn-disconnect-gate" onclick="safelyDisconnectAndReturn()">[ 安全断开 ]</button>
+                </div>
+            </div>
+        </nav>
+
+        <section class="balance-section" style="width: 100%; padding: 0 10px;">
+    <div class="balance-card" style="width: 100%; overflow: hidden; word-break: break-all;">
+        <p style="font-size: 0.85rem; opacity: 0.9;">可支配清算余额 (AVAL LMT)</p>
+        
+        <!-- 💡 这里是核心：直接在里面写死了手机端字体自动缩小，绝不跑出框外 -->
+        <div class="balance-amount" id="accountBalance" style="font-size: calc(1.5rem + 1vw); font-weight: 700; color: #ffffff; margin: 10px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">$1,000,000.00</div>
+        
+        <p id="balanceStatusTip" style="color: var(--bank-green, #4cd964); font-size: 0.75rem;">✦ 口令认证成功，允许单笔资产全额转账结算</p>
+    </div>
+</section>
+
+        <section class="transfer-trigger-section">
+            <div class="trigger-label">点击下方安全转账闸口激活清算通道</div>
+            
+            <div class="vault-gate-selector" id="vaultGateSelector" onclick="toggleDropdownDrawer()">
+                <span class="selector-text" id="selectedChannelName">选择资产接收结算终端...</span>
+                <span class="selector-arrow">▼</span>
+            </div>
+
+            <!-- 隐藏的下拉选项抽屉卡片 -->
+            <div class="dropdown-drawer" id="dropdownDrawer">
+                <!-- 渠道选项 1 -->
+                <div class="drawer-option-card" onclick="triggerClearingProcess(1, '黑水镇社会福利院')">
+                    <div class="option-icon">🕊️</div>
+                    <div class="option-info">
+                        <h4>黑水镇社会福利院</h4>
+                        <p>公募慈善信托专用代管账户 · 地方民生救助保障资金</p>
+                    </div>
+                </div>
+                
+                <!-- 渠道选项 2 -->
+                <div class="drawer-option-card" onclick="triggerClearingProcess(2, '联邦警察局经济犯罪调查处')">
+                    <div class="option-icon">⚖️</div>
+                    <div class="option-info">
+                        <h4>巴布曼特联邦警察局经济犯罪调查处</h4>
+                        <p>国家安全及追赃冻结保全账户 · 官方特批监管库房</p>
+                    </div>
+                </div>
+
+                <!-- 渠道选项 3 -->
+                <div class="drawer-option-card" onclick="triggerClearingProcess(3, '个人秘密账户')">
+                    <div class="option-icon">🔑</div>
+                    <div class="option-info">
+                        <h4>离岸秘密个人账户</h4>
+                        <p>瑞士多重混币匿名信托托管仓 · 全数字加密规避审计</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 5. 满屏资金重组与清算转账动态显示舱（默认隐藏） -->
+    <div id="transferModal" class="vault-modal-overlay" style="display: none;">
+        <div class="vault-modal-panel">
+            <div class="modal-security-header">
+                <span class="pulse-indicator"></span>
+                <span id="modalTargetTitle">正在构建安全清算通路...</span>
+            </div>
+            
+            <!-- 满屏资金数字震撼跳动区 -->
+            <div class="modal-ticker-box">
+                <p>实时结算传输金额 (TRANSMITTING)</p>
+                <div id="modalTickerAmount" class="ticker-text">$0.00</div>
+            </div>
+
+            <!-- 高速动态进度条 -->
+            <div class="modal-progress-container">
+                <div class="progress-bar-label">量子数据包签名：<span id="progressPercent">0%</span></div>
+                <div class="progress-track">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+
+            <!-- 动态状态日志 -->
+            <div id="modalStatusConsole" class="modal-console">
+                <div>[SYSTEM] 初始化离岸金融清算中心（SWIFT协议）...</div>
+            </div>
+        </div>
+    </div>
+    <!-- 6. 仿真顶部手机短信息通知弹窗组件 -->
+    <div id="phoneNotification" class="phone-sms-toast" style="display: none;">
+        <div class="sms-header">
+            <span class="sms-icon">💬</span>
+            <span class="sms-app-name">中联移动 · 系统消息</span>
+            <span class="sms-time">刚刚</span>
+        </div>
+        <div class="sms-body">
+            <p id="smsMessageText">正在为您下发划转对账凭证...</p>
+            <!-- 预留的短信内部链接跳转按钮 -->
+            <a href="javascript:void(0);" id="smsRedirectLink" class="sms-action-link">点击查看电子回执明细 &raquo;</a>
+        </div>
+    </div>
+
+    <!-- 音频提示音预留接口 -->
+    <audio id="notificationSound" preload="auto">
+        <source src="https://mixkit.co" type="audio/wav">
+    </audio>
+
+    <!-- 追加第 2、3 部分合并后的专属自适应 CSS 样式 -->
+    <style>
+        .drawer-option-card {
+            display: flex; align-items: center; padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            cursor: pointer; transition: background 0.2s;
+        }
+        .drawer-option-card:last-child { border-bottom: none; }
+        .drawer-option-card:hover { background: rgba(214,175,55,0.08); }
+        .option-icon { font-size: 1.4rem; margin-right: 18px; width: 35px; text-align: center; }
+        .option-info h4 { font-size: 0.95rem; color: #FFF; font-weight: 600; margin-bottom: 3px; }
+        .option-info p { font-size: 0.78rem; color: #718096; }
+
+        .vault-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(8, 10, 14, 0.97); z-index: 6000;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .vault-modal-panel {
+            background: #11151F; border: 2px solid var(--bank-gold);
+            border-radius: 16px; padding: 40px; max-width: 650px; width: 100%;
+            box-shadow: 0 0 50px rgba(214,175,55,0.25); text-align: center;
+        }
+        .modal-security-header {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            font-size: 1.05rem; font-weight: 700; color: #FFF; margin-bottom: 30px;
+        }
+        .pulse-indicator {
+            width: 10px; height: 10px; background-color: var(--bank-green);
+            border-radius: 50%; box-shadow: 0 0 10px var(--bank-green);
+            animation: pulse-glow 1.5s infinite;
+        }
+        @keyframes pulse-glow {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .modal-ticker-box {
+            background: rgba(0,0,0,0.4); border-radius: 8px; padding: 25px; margin-bottom: 30px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+        }
+        .modal-ticker-box p { font-size: 0.75rem; color: #718096; letter-spacing: 1px; }
+        .ticker-text {
+            font-size: 3rem; font-weight: 800; color: var(--bank-green); margin-top: 10px;
+            font-family: monospace; text-shadow: 0 0 15px rgba(0,230,118,0.3);
+        }
+        .modal-progress-container { margin-bottom: 30px; text-align: left; }
+        .progress-bar-label { font-size: 0.8rem; color: #A0AEC0; margin-bottom: 8px; }
+        .progress-track { width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+        .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--bank-gold), var(--bank-green)); }
+        .modal-console {
+            background: #080A0E; border: 1px solid rgba(214,175,55,0.1); border-radius: 6px;
+            height: 120px; overflow-y: hidden; padding: 15px; text-align: left;
+            font-family: monospace; font-size: 0.8rem; color: #718096; line-height: 1.6;
+        }
+        .text-log-green { color: var(--bank-green); }
+
+        .phone-sms-toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 420px; background: rgba(255, 255, 255, 0.98);
+            color: #1A202C; border-radius: 14px; padding: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 7000;
+            animation: slide-down 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes slide-down {
+            0% { top: -100px; opacity: 0; }
+            100% { top: 20px; opacity: 1; }
+        }
+        .sms-header { display: flex; align-items: center; margin-bottom: 6px; font-size: 0.75rem; color: #718096; font-weight: bold; }
+        .sms-icon { margin-right: 6px; font-size: 0.9rem; }
+        .sms-app-name { flex: 1; letter-spacing: 0.5px; }
+        .sms-time { color: #A0AEC0; }
+        .sms-body p { font-size: 0.88rem; line-height: 1.4; color: #2D3748; font-weight: 600; }
+        .sms-action-link {
+            display: inline-block; margin-top: 10px; color: #3182CE;
+            text-decoration: none; font-size: 0.8rem; font-weight: 700;
+            border-top: 1px solid #E2E8F0; width: 100%; padding-top: 8px;
+        }
+        .sms-action-link:hover { color: #2B6CB0; }
+        
+        @media (max-width: 768px) {
+            .ticker-text { font-size: 2.2rem; }
+            .vault-modal-panel { padding: 30px 20px; }
+        }
+    </style>
+    <!-- 7. 核心业务处理脚本（会话级流程引擎，完美支持刷新、返回与隐藏恢复） -->
+    <script>
+        // 三大选项独立手机短信内容及跳转链接配置
+            
+        const TRANSFER_SMS_CONFIG = {
+            1: {
+                message: "【黑水镇社会福利院】尊敬的捐赠人您好！我们已收到您捐赠资金$1,000,000.00（One Million United States Dollars）... ...",
+                link: "短信回执黑水镇福利院短信回执.html"
+            },
+            2: {
+                message: "【联邦警察局】巴布曼特联邦警察局】通知：您尾号6571账户以对经济犯罪调查处ECID转出 $1,000,000.00... ...",
+                link: "短信回执警察局短信回执.html"
+            },
+            3: {
+                message: "【联信商业银行UTB】通知：您尾号6571个人账户入账 $1,000,000.00，。交易类型：专项兑付资金... ...",
+                link: "短信回执各人账户短信回执.html"
+            }
+        };
+
+        // 页面初始化加载逻辑
+        window.addEventListener('DOMContentLoaded', () => {
+            renderPageByStatus();
+        });
+
+        // 依照当前会话状态绘制界面的公共函数
+        function renderPageByStatus() {
+            const currentStatus = sessionStorage.getItem('vault_state');
+            const savedChannel = sessionStorage.getItem('vault_channel_name');
+
+            if (currentStatus === 'transferred') {
+                // 如果曾经转过账，直接抹除口令墙，进入0元锁死展示态
+                document.getElementById('authGateOverlay').style.display = "none";
+                document.getElementById('mainVaultHall').style.display = "block";
+                document.getElementById('accountBalance').innerText = "$0.00";
+                document.getElementById('accountBalance').style.color = "#718096";
+                document.getElementById('balanceStatusTip').innerText = "✦ 结算完成：资产清算通路已关闭，本日配额已耗尽";
+                document.getElementById('balanceStatusTip').style.color = "#FF3B30";
+                
+                // 锁定转账门，改为已清算外观
+                const selector = document.getElementById('vaultGateSelector');
+                selector.removeAttribute('onclick');
+                selector.style.cursor = 'not-allowed';
+                selector.style.opacity = '0.6';
+                document.getElementById('selectedChannelName').innerText = "已清算通道: " + savedChannel;
+            } else {
+                // 初始未转账状态下的复原恢复
+                document.getElementById('accountBalance').innerText = "$1,000,000.00";
+                document.getElementById('accountBalance').style.color = "#FFF";
+                document.getElementById('balanceStatusTip').innerText = "✦ 口令认证成功，允许单笔资产全额转账结算";
+                document.getElementById('balanceStatusTip').style.color = "var(--bank-green)";
+                
+                const selector = document.getElementById('vaultGateSelector');
+                selector.setAttribute('onclick', 'toggleDropdownDrawer()');
+                selector.style.cursor = 'pointer';
+                selector.style.opacity = '1';
+                document.getElementById('selectedChannelName').innerText = "选择资产接收结算终端...";
+            }
+        }
+
+        // 🧭 安全断开并返回口令拦截墙（在此状态下即可使用开发者还原指令）
+        function safelyDisconnectAndReturn() {
+            // 隐藏大厅主干
+            document.getElementById('mainVaultHall').style.display = "none";
+            // 重新拉起口令拦截墙
+            document.getElementById('authGateOverlay').style.display = "flex";
+            // 保持清除状态信息，方便随时在此处进行后台重置
+            document.getElementById('phoneNotification').style.display = "none";
+            document.getElementById('gatePasscode').value = "";
+            document.getElementById('dropdownDrawer').style.display = "none";
+            document.getElementById('vaultGateSelector').classList.remove('active');
+        }
+
+        // 验证第一关激活口令（深度集成隐藏重置逻辑）
+        function verifyGatePasscode() {
+            const inputPasscode = document.getElementById('gatePasscode').value.trim();
+            
+            // 🕵️ 隐藏恢复指令：配合安全断开，随时随地在拦截墙输入来复活100万美金！
+            if (inputPasscode === "开发者还原") {
+                sessionStorage.clear();
+                alert('【开发者后台】数据锁已解除，金库资产与清算大厅已完好如初！');
+                // 恢复页面初始设定
+                renderPageByStatus();
+                // 保持拦截墙状态供重新通关测试
+                return;
+            }
+            
+            // 🔒 
+            if (inputPasscode === "LUNARECLIPSE+2646") {
+                document.getElementById('authGateOverlay').style.display = "none";
+                document.getElementById('mainVaultHall').style.display = "block";
+            } else {
+                alert('【风控提示】未能识别正确激活口令，当前终端权限拒绝请求。');
+            }
+        }
+
+        // 控制下拉抽屉展开与闭合
+        function toggleDropdownDrawer() {
+            const selector = document.getElementById('vaultGateSelector');
+            const drawer = document.getElementById('dropdownDrawer');
+            if (drawer.style.display === "none" || drawer.style.display === "") {
+                drawer.style.display = "block";
+                selector.classList.add('active');
+            } else {
+                drawer.style.display = "none";
+                selector.classList.remove('active');
+            }
+        }
+
+        // 启动100万清算资金链动态跳动
+        function triggerClearingProcess(channelId, channelName) {
+            toggleDropdownDrawer();
+            document.getElementById('selectedChannelName').innerText = "选定渠道: " + channelName;
+
+            const modal = document.getElementById('transferModal');
+            const targetTitle = document.getElementById('modalTargetTitle');
+            const tickerAmount = document.getElementById('modalTickerAmount');
+            const progressFill = document.getElementById('progressFill');
+            const progressPercent = document.getElementById('progressPercent');
+            const consoleBox = document.getElementById('modalStatusConsole');
+            
+            targetTitle.innerText = "清算通路构建完成 ➡️ 正在划转至 [" + channelName + "]";
+            modal.style.display = 'flex';
+            
+            let progress = 0;
+            let currentTransmitted = 0;
+            const targetAmount = 1000000; 
+            
+            const logs = [
+                "[INFO] 正在调用国际SWIFT清算接口...",
+                "[SECURE] 正在分配量子签名加密信道...",
+                "[DATA] 密匙对验证通过，资产链开始重组...",
+                "[TRANSMIT] 数据块广播发送中...",
+                "[SUCCESS] 目标账本回执签名成功！"
+            ];
+
+            const interval = setInterval(() => {
+                progress += 2;
+                currentTransmitted = Math.floor((progress / 100) * targetAmount);
+                tickerAmount.innerText = "$" + currentTransmitted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                
+                progressFill.style.width = progress + "%";
+                progressPercent.innerText = progress + "%";
+                
+                if (progress === 20) appendLog(logs);
+                if (progress === 40) appendLog(logs);
+                if (progress === 60) appendLog(logs);
+                if (progress === 80) appendLog(logs);
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    appendLog(logs, 'text-log-green');
+                    
+                    setTimeout(() => {
+                        modal.style.display = 'none';
+                        
+                        // 主页面余额扣减变成0
+                        document.getElementById('accountBalance').innerText = "$0.00";
+                        document.getElementById('accountBalance').style.color = "#718096";
+                        document.getElementById('balanceStatusTip').innerText = "✦ 结算完成：资产清算通路已关闭，本日配额已耗尽";
+                        document.getElementById('balanceStatusTip').style.color = "#FF3B30";
+                        
+                        // 锁定状态记录
+                        sessionStorage.setItem('vault_state', 'transferred');
+                        sessionStorage.setItem('vault_channel_name', channelName);
+                        sessionStorage.setItem('vault_channel_id', channelId);
+
+                        const selector = document.getElementById('vaultGateSelector');
+                        selector.removeAttribute('onclick');
+                        selector.style.cursor = 'not-allowed';
+                        selector.style.opacity = '0.6';
+                        document.getElementById('selectedChannelName').innerText = "已清算通道: " + channelName;
+                        
+                        // 动画完结，立刻在顶部下发对应的仿真手机短信通知横幅
+                        triggerSmsNotification(channelId);
+                    }, 1000);
+                }
+            }, 50); 
+            
+            function appendLog(text, className = '') {
+                const div = document.createElement('div');
+                if (className) div.className = className;
+                div.innerText = text;
+                consoleBox.appendChild(div);
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
+        }
+
+        // 弹出短信框
+        function triggerSmsNotification(channelId) {
+            const smsBox = document.getElementById('phoneNotification');
+            const smsText = document.getElementById('smsMessageText');
+            const smsLink = document.getElementById('smsRedirectLink');
+            const sound = document.getElementById('notificationSound');
+            const config = TRANSFER_SMS_CONFIG[channelId];
+            
+            smsText.innerText = config.message;
+            smsLink.href = config.link;
+            
+            if (sound) {
+                sound.play().catch(err => {
+                    console.log("提示音由于策略拦截，用户交互后完美播放。");
+                });
+            }
+            smsBox.style.display = 'block';
+        }
+
+        // 绑定回车键事件
+        document.getElementById('gatePasscode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') { verifyGatePasscode(); }
+        });
+    </script>
+    <!-- 插入提示音音频源，src 替换为您的 MP3 真实文件路径 -->
+<audio id="notificationSound" src="短信音.AAC" preload="auto"></audio>
+
+</body>
+</html>

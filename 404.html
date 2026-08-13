@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - 页面未找到</title>
+    <style>
+        :root {
+            --primary-color: #4F46E5;
+            --primary-hover: #4338CA;
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --bg-color: #F9FAFB;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* LOGO 区域：完美适配蜂鸟浏览器 LOGO 并注入飞行器特效 */
+        .logo-area {
+            margin-bottom: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70px; /* 增加基础高度，留出上下飞行的安全空间 */
+        }
+
+        .logo-area img {
+            max-height: 55px; /* 限制最大高度，防止图片过大撑破布局 */
+            width: auto;      /* 宽度自动按比例缩放 */
+            object-fit: contain;
+            display: block;   /* 确保图片正常可见 */
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.06)); /* 增强阴影，让悬浮感更逼真 */
+            
+            /* 核心：绑定缓慢飞行动画（2.5秒一个来回，平滑循环） */
+            animation: hummerFly 2.5s ease-in-out infinite; 
+            transition: filter 0.3s ease;
+        }
+
+        /* 蜂鸟上下缓慢飞行动画（中等跨度：上下各移动12px） */
+        @keyframes hummerFly {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-12px); /* 向上飞行12像素 */
+            }
+        }
+
+        /* 404 数字特效 */
+        .error-code {
+            font-size: 120px;
+            font-weight: 900;
+            line-height: 1;
+            background: linear-gradient(135deg, #6366F1 0%, #A855F7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+            letter-spacing: -2px;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-main);
+        }
+
+        p {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-bottom: 36px;
+            line-height: 1.6;
+        }
+
+        /* 核心返回按钮 */
+        .btn-home {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-home:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px -2px rgba(79, 70, 229, 0.3);
+        }
+
+        /* 装饰背景流体圆圈 */
+        .bg-glow {
+            position: absolute;
+            background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(255,255,255,0) 70%);
+            width: 600px;
+            height: 600px;
+            z-index: 1;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        @media (max-width: 480px) {
+            .error-code { font-size: 90px; }
+            .btn-home { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-glow"></div>
+
+    <div class="container">
+        <!-- LOGO 区域 -->
+        <div class="logo-area">
+            <img src="蜂鸟浏览器LOGO.png" alt="蜂鸟浏览器 LOGO">
+        </div>
+
+        <!-- 错误提示 -->
+        <div class="error-code">404</div>
+        <h1>抱歉，页面消失了</h1>
+        <p>蜂鸟提示：您访问的网页可能已被删除、更名或暂时不可用。</p>
+
+        <!-- 唯一返回按钮 -->
+        <a href="浏览器.html" class="btn-home">返回首页</a>
+    </div>
+
+</body>
+</html>

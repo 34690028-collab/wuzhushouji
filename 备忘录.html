@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>仿真手机云备忘录</title>
+    <style>
+        /* [第2段和第3段的全新极高质感自适应 CSS 稍后将粘贴到这里] */
+        /* ==================== 1. 全局清除与手机外壳 ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #0d0d0d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .phone-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 430px;   
+            max-height: 932px;  
+            background: #1c1c1e; 
+            border-radius: 45px;
+            border: 12px solid #2c2c2e; 
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .phone-ui-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 15px 0 20px 0;
+        }
+
+        /* ==================== 2. 仿真状态栏（安全不重叠机制） ==================== */
+        .status-bar {
+            height: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 0 24px;
+            width: 100%;
+        }
+
+        .status-left, .status-right { display: flex; align-items: center; gap: 6px; }
+        .signal-bars { display: flex; align-items: flex-end; gap: 2.5px; height: 11px; }
+        .bar { width: 3px; background-color: rgba(255, 255, 255, 0.4); border-radius: 1px; }
+        .bar:nth-child(1) { height: 30%; background-color: #fff; }
+        .bar:nth-child(2) { height: 50%; background-color: #fff; }
+        .bar:nth-child(3) { height: 75%; background-color: #fff; }
+        .bar:nth-child(4) { height: 100%; background-color: #fff; }
+        .battery-outer { width: 24px; height: 12px; border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 3.5px; padding: 1px; position: relative; }
+        .battery-outer::after { content: ''; position: absolute; right: -3.5px; top: 3.5px; width: 1.5px; height: 4px; background-color: rgba(255, 255, 255, 0.8); border-radius: 0 1px 1px 0; }
+        .battery-core { height: 100%; background-color: #fff; border-radius: 1.5px; width: 85%; }
+
+        /* ==================== 3. 顶部工具栏 ==================== */
+        .toolbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; width: 100%; }
+        .btn-back { background-color: rgba(255, 255, 255, 0.1); color: #ff9500; border: none; padding: 6px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .btn-back:active { background-color: rgba(255, 255, 255, 0.2); }
+        .toolbar-title { color: #ffffff; font-size: 24px; font-weight: 700; flex: 1; margin-left: 15px; }
+
+        /* ==================== 4. 选项卡分类切换卡 ==================== */
+        .tab-bar-container {
+            display: flex;
+            background-color: #2c2c2e;
+            margin: 10px 20px;
+            padding: 3px;
+            border-radius: 10px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 8px 0;
+            border: none;
+            background: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            background-color: #ff9500;
+            color: #ffffff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 列表总面板管理 */
+        .memo-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 20px;
+            background-color: #1c1c1e;
+        }
+        .memo-container::-webkit-scrollbar { display: none; }
+        .view-panel { display: none; flex-direction: column; gap: 12px; }
+        .view-panel.active { display: flex; }
+        /* ==================== 5. 待办事项与便利贴（含玩家删除红标按钮） ==================== */
+        .todo-item {
+            background-color: #2c2c2e;
+            padding: 14px 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .todo-left-click {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            cursor: pointer;
+        }
+        .todo-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ff9500;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            color: transparent;
+            transition: all 0.1s ease;
+        }
+        .todo-item.completed .todo-checkbox {
+            background-color: #ff9500;
+            color: #ffffff;
+        }
+        .todo-text { color: #ffffff; font-size: 15px; }
+        .todo-item.completed .todo-text {
+            color: rgba(255, 255, 255, 0.3);
+            text-decoration: line-through;
+        }
+        
+        .btn-delete-card {
+            background: none;
+            border: none;
+            color: #ff3b30;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background-color 0.1s ease;
+        }
+        .btn-delete-card:active {
+            background-color: rgba(255, 59, 48, 0.15);
+        }
+
+        /* 便利贴网格 */
+        .sticky-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .sticky-item {
+            padding: 14px;
+            border-radius: 12px;
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .sticky-yellow { background-color: #fff4bd; color: #333300; }
+        .sticky-blue { background-color: #c4faf6; color: #003333; }
+        .sticky-pink { background-color: #ffc6ff; color: #330033; }
+        
+        .sticky-click-area { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px; cursor: pointer; overflow: hidden; }
+        .sticky-title { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+         .sticky-preview { 
+  font-size: 13px; 
+  line-height: 1.3; 
+  overflow: hidden; 
+  display: -webkit-box; 
+  -webkit-line-clamp: 3; 
+  line-clamp: 3; /* 加上这一行，波浪线就消失了 */
+  -webkit-box-orient: vertical; 
+  opacity: 0.8; 
+}
+        
+        .sticky-bottom-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 4px; }
+        .sticky-date { font-size: 11px; opacity: 0.5; }
+
+        /* ==================== 6. 底部工具栏与安全隔离防重叠编辑器 ==================== */
+        .bottom-bar { padding: 10px 20px; display: flex; justify-content: flex-end; align-items: center; background-color: #1c1c1e; border-top: 0.5px solid rgba(255, 255, 255, 0.1); }
+        .btn-new-memo { background: none; border: none; color: #ff9500; font-size: 24px; cursor: pointer; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; }
+
+        .editor-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #1c1c1e; z-index: 100;
+            display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.25s cubic-bezier(0.1, 0.76, 0.55, 0.94);
+            padding-top: 54px; /* 🧱 隔离防文字重叠高度 */
+        }
+        .editor-overlay.active { transform: translateY(0); }
+        .editor-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background-color: #1c1c1e; }
+        .btn-editor-action { background: none; border: none; color: #ff9500; font-size: 16px; font-weight: 500; cursor: pointer; }
+        .editor-content-area { flex: 1; padding: 15px 24px; display: flex; flex-direction: column; gap: 12px; }
+        .input-memo-title { background: none; border: none; color: #ffffff; font-size: 22px; font-weight: 700; outline: none; width: 100%; }
+        .textarea-memo-body { background: none; border: none; color: rgba(255, 255, 255, 0.85); font-size: 16px; line-height: 1.5; outline: none; resize: none; width: 100%; flex: 1; font-family: inherit; }
+
+        @media (max-width: 450px) { .phone-wrapper { width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh; border: none; border-radius: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="phone-wrapper">
+        <div class="phone-ui-content">
+            
+            <!-- 主页面状态栏 -->
+            <div class="status-bar">
+                <div class="status-left">
+                    <span class="carrier">中联移动</span>
+                    <div class="signal-bars"><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
+                </div>
+                <div class="status-center"></div>
+                <div class="status-right">
+                    <span id="statusBarTime">00:00</span>
+                    <div class="battery-outer"><div class="battery-core"></div></div>
+                </div>
+            </div>
+
+            <!-- 工具栏 -->
+            <div class="toolbar">
+                <button class="btn-back" onclick="window.location.href='主页.html';">⬅ 返回</button>
+                <div class="toolbar-title">备忘录</div>
+            </div>
+
+            <!-- 分类选项卡 -->
+            <div class="tab-bar-container">
+                <button class="tab-btn active" id="tabTodo">待办事项</button>
+                <button class="tab-btn" id="tabSticky">便利贴</button>
+            </div>
+
+            <!-- 动态网格总容器 -->
+            <div class="memo-container">
+                <div class="view-panel active" id="panelTodo"></div>
+                <div class="view-panel" id="panelSticky">
+                    <div class="sticky-grid" id="stickyGridBox"></div>
+                </div>
+            </div>
+
+            <!-- 底部添加栏 -->
+            <div class="bottom-bar">
+                <button class="btn-new-memo" id="btnNewMemo">📝</button>
+            </div>
+
+        </div>
+
+        <!-- 全屏编辑器弹窗 -->
+        <div class="editor-overlay" id="editorOverlay">
+            
+            <!-- 编辑器顶置状态栏 -->
+            <div class="status-bar" style="position: absolute; top: 15px; left: 0;">
+                <div class="status-left">
+                    <span class="carrier">中联移动</span>
+                    <div class="signal-bars"><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
+                </div>
+                <div class="status-center"></div>
+                <div class="status-right">
+                    <span class="editor-status-time" style="color: #fff;">00:00</span>
+                    <div class="battery-outer"><div class="battery-core"></div></div>
+                </div>
+            </div>
+
+            <div class="editor-toolbar">
+                <button class="btn-editor-action" id="btnCancelEdit">取消</button>
+                <button class="btn-editor-action" id="btnSaveMemo" style="font-weight: 600;">完成</button>
+            </div>
+            
+            <div class="editor-content-area">
+                <input type="text" class="input-memo-title" id="memoTitleInput" placeholder="标题">
+                <textarea class="textarea-memo-body" id="memoBodyInput" placeholder="在此处开始打字..."></textarea>
+            </div>
+        </div>
+
+    </div>
+    <script>
+        const CLICK_SOUND_URL = "https://mixkit.co";
+        const clickAudioPlayer = new Audio(CLICK_SOUND_URL);
+        clickAudioPlayer.preload = "auto";
+
+        // 🔴 固定的 5 个出厂原始待办事项（不灭金身，允许勾选，无法删除）
+        const ORIGINAL_TODOS = [
+            { id: "t1", text: "去找顾老邪喝喝茶", completed: false, isOriginal: true },
+            { id: "t2", text: "大邦迪和洗发水要买", completed: false, isOriginal: true },
+            { id: "t3", text: "优美良品的化妆品周日5折，切记", completed: true, isOriginal: true },
+            { id: "t4", text: "总被耽搁，这次一定找机会和艾拉谈谈她弟弟的事", completed: false, isOriginal: true },
+            { id: "t5", text: "带露露检查心脏，买药", completed: true, isOriginal: true },
+            { id: "t5", text: "周末同学聚会，切记", completed: true, isOriginal: true }
+        ];
+
+        // 🔴 固定的 5 个出厂原始便利贴（不灭金身，三色交替，无法删除）
+        const ORIGINAL_STICKIES = [
+            { id: "s1", title: "半杯咖啡/歌词", body: "霓虹晕开 雨痕爬过玻璃 消息框里 是又一次的催逼 熬冷的汤 凉透半块面包 我蜷在沙发 没力气动一根手指。你说的话 总裹着关心的刺 要懂事 要体谅 要维持体面的样子 电话挂断 房间静得像溺水 我数着呼吸 连叹气都不敢太大声。我背着太多 没说出口的疲惫 像雨里的灯 撑着微弱的光辉 不敢停 不敢退 不敢说我很累 就慢慢沉 在这城市的夜黑... ...", date: "最近", color: "sticky-yellow", isOriginal: true },
+            { id: "s2", title: "买帝王蟹", body: "uncle要吃，这次真是出血了，痛...", date: "08月09日", color: "sticky-blue", isOriginal: true },
+            { id: "s3", title: "姨妈突袭", body: "果睡，龙眼，暖手宝。姜茶山楂和泡脚。保持乐观少不了。", date: "08月02日", color: "sticky-pink", isOriginal: true },
+            { id: "s4", title: "黑客", body: "老同学介绍了一黑客，吹的很神，不知道靠不靠谱，先备注上：xiaoerheiheiyouhei168888", date: "07月15日", color: "sticky-yellow", isOriginal: true },
+            { id: "s5", title: "校验码", body: "银行莫名其妙的发来一串校验码：2646 务必妥善保管，千万别删除了", date: "07月09日", color: "sticky-blue", isOriginal: true },
+            { id: "s3", title: "罚款", body: "小林又气我，罚他200元", date: "05月12日", color: "sticky-pink", isOriginal: true },
+            { id: "s1", title: "缓存过载猪脑", body: " WIFI：zhonglian5g-lulu 密码：000618                   蜂鸟账号：yueliang2000 密码：Yueliang000618  银行卡号：6571。密码：露露生日 ", date: "昨天", color: "sticky-yellow", isOriginal: true }
+        ];
+
+        // 从本地缓存读取玩家永久数据，如为空则初始化
+        let user_todos = JSON.parse(localStorage.getItem('user_todos')) || [];
+        let user_stickies = JSON.parse(localStorage.getItem('user_stickies')) || [];
+        let todo_check_states = JSON.parse(localStorage.getItem('todo_check_states')) || {};
+        
+        // 恢复出厂数据的打钩钩记忆状态
+        ORIGINAL_TODOS.forEach(function(item) {
+            if (todo_check_states[item.id] !== undefined) {
+                item.completed = todo_check_states[item.id];
+            }
+        });
+
+        // 动态融合成最终总数据链
+        let TODO_DATA = [].concat(user_todos, ORIGINAL_TODOS);
+        let STICKY_DATA = [].concat(user_stickies, ORIGINAL_STICKIES);
+        let currentActiveTab = "todo";
+
+        // 节点批量获取
+        const statusBarTime = document.getElementById('statusBarTime');
+        const editorStatusTime = document.querySelector('.editor-status-time');
+        const tabTodo = document.getElementById('tabTodo'); const tabSticky = document.getElementById('tabSticky');
+        const panelTodo = document.getElementById('panelTodo'); const panelSticky = document.getElementById('panelSticky');
+        const stickyGridBox = document.getElementById('stickyGridBox'); const btnNewMemo = document.getElementById('btnNewMemo');
+        const editorOverlay = document.getElementById('editorOverlay'); const btnCancelEdit = document.getElementById('btnCancelEdit');
+        const btnSaveMemo = document.getElementById('btnSaveMemo'); const memoTitleInput = document.getElementById('memoTitleInput');
+        const memoBodyInput = document.getElementById('memoBodyInput');
+
+        // 同步状态栏系统时钟
+        function syncTime() {
+            const now = new Date();
+            let hrs = now.getHours().toString().padStart(2, '0');
+            let mins = now.getMinutes().toString().padStart(2, '0');
+            let timeString = hrs + ":" + mins;
+            statusBarTime.textContent = timeString;
+            if (editorStatusTime) editorStatusTime.textContent = timeString;
+        }
+        syncTime(); setInterval(syncTime, 1000);
+
+        // 声音播放
+        function playTouchSound() {
+            const soundInstance = clickAudioPlayer.cloneNode();
+            soundInstance.volume = 0.3;
+            soundInstance.play().catch(e => {});
+        }
+
+        // 选项卡左右切换事件绑定
+        tabTodo.addEventListener('click', function() {
+            playTouchSound(); currentActiveTab = "todo";
+            tabTodo.classList.add('active'); tabSticky.classList.remove('active');
+            panelTodo.classList.add('active'); panelSticky.classList.remove('active');
+            renderTodos();
+        });
+
+        tabSticky.addEventListener('click', function() {
+            playTouchSound(); currentActiveTab = "sticky";
+            tabSticky.classList.add('active'); tabTodo.classList.remove('active');
+            panelSticky.classList.add('active'); panelTodo.classList.remove('active');
+            renderStickyNotes();
+        });
+        // ==================== 5. 待办事项动态渲染（含出厂盾牌拦截） ====================
+        function renderTodos() {
+            panelTodo.innerHTML = "";
+            TODO_DATA.forEach(function(item) {
+                const todoDiv = document.createElement('div');
+                todoDiv.className = 'todo-item' + (item.completed ? ' completed' : '');
+                // 🔴 智能防爆：只有用户自己建的记录才带有删除键，初始预设的不带
+                const delBtnHtml = item.isOriginal ? '' : '<button class="btn-delete-card">删除</button>';
+                todoDiv.innerHTML = `<div class="todo-left-click"><div class="todo-checkbox">✓</div><div class="todo-text">${item.text}</div></div>${delBtnHtml}`;
+                
+                // 绑定打钩永久记忆事件
+                todoDiv.querySelector('.todo-left-click').addEventListener('click', function() {
+                    playTouchSound(); item.completed = !item.completed;
+                    if (item.isOriginal) {
+                        todo_check_states[item.id] = item.completed;
+                        localStorage.setItem('todo_check_states', JSON.stringify(todo_check_states));
+                    } else {
+                        localStorage.setItem('user_todos', JSON.stringify(user_todos));
+                    }
+                    renderTodos();
+                });
+
+                // 绑定用户自建数据的物理删除
+                const delBtn = todoDiv.querySelector('.btn-delete-card');
+                if (delBtn) {
+                    delBtn.addEventListener('click', function(e) {
+                        e.stopPropagation(); playTouchSound();
+                        user_todos = user_todos.filter(t => t.id !== item.id);
+                        TODO_DATA = TODO_DATA.filter(t => t.id !== item.id);
+                        localStorage.setItem('user_todos', JSON.stringify(user_todos)); renderTodos();
+                    });
+                }
+                panelTodo.appendChild(todoDiv);
+            });
+        }
+
+        // ==================== 6. 便利贴动态网格渲染（含出厂盾牌拦截） ====================
+        const colorPool = ["sticky-yellow", "sticky-blue", "sticky-pink"];
+        function renderStickyNotes() {
+            stickyGridBox.innerHTML = "";
+            STICKY_DATA.forEach(function(note) {
+                const noteDiv = document.createElement('div');
+                noteDiv.className = "sticky-item " + note.color;
+                // 🔴 智能防爆：只有用户自建的便签才带有删除键
+                const delBtnHtml = note.isOriginal ? '' : '<button class="btn-delete-card" style="color:#ff3b30;">删除</button>';
+                noteDiv.innerHTML = `<div class="sticky-click-area"><div class="sticky-title">${note.title || "无标题"}</div><div class="sticky-preview">${note.body || "暂无内容"}</div></div><div class="sticky-bottom-row"><div class="sticky-date">${note.date}</div>${delBtnHtml}</div>`;
+                
+                // 点击全屏看详情（只读锁死状态）
+                noteDiv.querySelector('.sticky-click-area').addEventListener('click', function() {
+                    playTouchSound(); memoTitleInput.value = note.title; memoBodyInput.value = note.body;
+                    memoTitleInput.disabled = true; memoBodyInput.disabled = true; btnSaveMemo.style.display = "none";
+                    editorOverlay.classList.add('active');
+                });
+
+                // 绑定用户便利贴的物理删除
+                const delBtn = noteDiv.querySelector('.btn-delete-card');
+                if (delBtn) {
+                    delBtn.addEventListener('click', function(e) {
+                        playTouchSound(); user_stickies = user_stickies.filter(s => s.id !== note.id);
+                        STICKY_DATA = STICKY_DATA.filter(s => s.id !== note.id);
+                        localStorage.setItem('user_stickies', JSON.stringify(user_stickies)); renderStickyNotes();
+                    });
+                }
+                stickyGridBox.appendChild(noteDiv);
+            });
+        }
+
+        // 按钮点击：呼出新建编辑器弹窗
+        btnNewMemo.addEventListener('click', function() {
+            playTouchSound(); memoTitleInput.disabled = false; memoBodyInput.disabled = false; btnSaveMemo.style.display = "block";
+            if (currentActiveTab === "todo") {
+                memoTitleInput.value = ""; memoTitleInput.placeholder = "输入新待办事项..."; memoBodyInput.style.display = "none";
+            } else {
+                memoTitleInput.value = ""; memoTitleInput.placeholder = "便利贴标题"; memoBodyInput.value = ""; memoBodyInput.style.display = "block";
+            }
+            editorOverlay.classList.add('active');
+        });
+
+        // 取消编辑
+        btnCancelEdit.addEventListener('click', function() {
+            playTouchSound(); editorOverlay.classList.remove('active');
+            setTimeout(function() { memoBodyInput.style.display = "block"; }, 250);
+        });
+
+        // 核心完成保存逻辑（集成 🔴 开发者后门精准割除算法）
+        btnSaveMemo.addEventListener('click', function() {
+            playTouchSound(); const titleTxt = memoTitleInput.value.trim(); const bodyTxt = memoBodyInput.value.trim();
+
+            // 🛠️ 🔴 精准清除测试缓存金手指：只杀掉用户自己添加的内容，100%保留并复原出厂的 5+5 原始形态
+            if (titleTxt === "开发者还原") {
+                localStorage.removeItem('user_todos'); localStorage.removeItem('user_stickies'); localStorage.removeItem('todo_check_states');
+                alert("⚙️ 开发者系统状态连动提示：测试产生的垃圾信息已被精准斩除，系统无缝复原回干净的出厂 5+5 原始资料状态！");
+                location.reload(); return;
+            }
+
+            if (currentActiveTab === "todo") {
+                if (!titleTxt) { editorOverlay.classList.remove('active'); return; }
+                let newTodo = { id: "t_" + Date.now(), text: titleTxt, completed: false };
+                user_todos.unshift(newTodo); TODO_DATA.unshift(newTodo);
+                localStorage.setItem('user_todos', JSON.stringify(user_todos)); renderTodos();
+            } else {
+                if (!titleTxt && !bodyTxt) { editorOverlay.classList.remove('active'); return; }
+                const randomColor = colorPool[Math.floor(Math.random() * colorPool.length)];
+                let newSticky = { id: "s_" + Date.now(), title: titleTxt || "无标题", body: bodyTxt, date: "今天", color: randomColor };
+                user_stickies.unshift(newSticky); STICKY_DATA.unshift(newSticky);
+                localStorage.setItem('user_stickies', JSON.stringify(user_stickies)); renderStickyNotes();
+            }
+            editorOverlay.classList.remove('active');
+            setTimeout(function() { memoBodyInput.style.display = "block"; }, 250);
+        });
+
+        // 页面开机渲染
+        renderTodos();
+    </script>
+</body>
+</html>

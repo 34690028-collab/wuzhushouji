@@ -1,0 +1,203 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- 💡 手动写一组 style 标签把代码包起来 -->
+    <style>
+        .search-card-logo {
+            display: flex;
+            justify-content: center; 
+            margin-bottom: 20px;     
+            width: 100%;
+        }
+        .search-card-logo img {
+            height: 100px;            
+            width: auto;             
+            display: block;
+        }
+    </style>
+</head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Novatech Pharma | 核心资产检索控制台</title>
+    <style>
+        body {
+            background-color: #f4f5f7;
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 85vh;
+            box-sizing: border-box;
+        }
+
+        /* 1. 界面全用户多尺寸完美兼容布局 */
+        .search-card {
+            width: 100%;
+            max-width: 550px; /* 电脑大屏上控制最大宽度，保持严谨质感 */
+            background-color: #ffffff;
+            padding: 35px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
+            box-sizing: border-box;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0a2540;
+            margin-bottom: 8px;
+        }
+
+        .card-desc {
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        /* 输入框与按钮区域自适应弹性盒子 */
+        .input-group {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            width: 100%;
+        }
+
+        #filterInput {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        #searchBtn {
+            background-color: #0a2540;
+            color: #ffffff;
+            border: none;
+            padding: 0 25px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #searchBtn:hover {
+            background-color: #1a365d;
+        }
+
+        /* 📱 针对窄屏手机用户的顶级媒体查询微调 */
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .search-card { padding: 25px 15px; }
+            .card-title { font-size: 16px; }
+            /* 手机屏幕太窄时，输入框和按钮自动变成上下堆叠排列，防止挤压变形 */
+            .input-group { flex-direction: column; }
+            #searchBtn { padding: 12px 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 检索终端外壳 -->
+<div class="search-card">
+    
+    <div class="search-card-logo">
+        <img src="诺凡泰克制药2.png" alt="Novatech Pharma Logo">
+    </div>
+
+    <div class="card-title">Novatech Pharma 资产索引快速追溯终端</div>
+    <div class="card-desc">请输入特定实验批次代码（如：NF-*****）或专属管线凭证。</div>
+    
+    <div class="input-group">
+        <input type="text" id="filterInput" placeholder="输入编码后按回车或点击检索...">
+        <button id="searchBtn" onclick="doSearchAction()">检索</button>
+    </div>
+
+    <!-- 💡 核心插入：在卡片内部最下方加入纯黑返回键（将 index.html 换成你实际想返回的网页名） -->
+    <div class="search-card-footer">
+        <a href="诺凡泰克集团官网.html" class="back-link">← 返回主页</a>
+    </div>
+
+</div>
+
+
+
+    <!-- =================================================== -->
+    <!-- ⚠️ 2 & 3. 简单实用的核心跳转与报错拦截逻辑 -->
+    <!-- =================================================== -->
+    <script>
+        function doSearchAction() {
+            var inputEl = document.getElementById('filterInput');
+            if (!inputEl) return;
+
+            var val = inputEl.value.trim(); // 获取用户输入的明文
+            if (val === "") return;
+
+            // 🔒 核心防御：把用户输入的每一个中文字、英文字母瞬间转成安全的 Unicode 数字串
+            var codeArr = [];
+            for (var i = 0; i < val.length; i++) {
+                codeArr.push(val.charCodeAt(i));
+            }
+            var secretVal = codeArr.join(","); // 转换为类似于 "48,48,49,21495" 的物理防看密文
+
+            // 2. 简单粗暴的单行比对跳转逻辑（已为您预留好了对应的跳转位置）
+            
+            // 💡 对应明文：NF-200610
+            if (secretVal === "78,70,45,50,48,48,54,49,48") {
+                window.location.href = "实验数据01.html";
+            } 
+            // 💡 对应明文：NF-209559
+            else if (secretVal === "78,70,45,50,48,57,53,53,57") {
+                window.location.href = "report_001.html";
+            } 
+            // 💡 对应明文：002号
+            else if (secretVal === "48,48,50,21495") {
+                window.location.href = "report_002.html";
+            } 
+            // 💡 对应明文：003号
+            else if (secretVal === "48,48,51,21495") {
+                window.location.href = "report_003.html";
+            } 
+            // 💡 对应明文：702
+            else if (secretVal === "55,48,50") {
+                window.location.href = "facility_702.html";
+            } 
+            // 💡 对应明文：诺凡泰克
+            else if (secretVal === "35834,403凡,311泰,4克") {
+                alert("SYSTEM NOTICE\n----------------------------------------\nINDEX RESERVED\nTarget link is currently under maintenance.");
+            }
+            // 💡 对应明文：行政局
+            else if (secretVal === "34892,25919,23616") {
+                alert("SYSTEM NOTICE\n----------------------------------------\nINDEX RESERVED\nTarget link is currently under maintenance.");
+            }
+            // 3. 输入错误时，弹出死板实用的系统警告框
+            else {
+                alert("诺凡泰克制药提醒您：\n----------------------------------------\n对不起\n您的搜索无效: '" + val + "'");
+            }
+        }
+
+        // 4. 事件绑定：确保手机端/电脑端用户敲击回车键（Enter）时100%完美触发
+        document.addEventListener('DOMContentLoaded', function() {
+            var inputEl = document.getElementById('filterInput');
+            if (inputEl) {
+                inputEl.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        doSearchAction();
+                    }
+                });
+            }
+        });
+    </script>
+
+
+
+</body>
+</html>

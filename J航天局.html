@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻中心</title>
+    <style>
+        :root {
+            --news-blue: #003066;     
+            --news-accent: #0056b3;   
+            --bg-light: #f6f7f8;      
+            --card-bg: #ffffff;
+            --text-dark: #111111;
+            --text-muted: #555555;
+            --border-color: #e3e5e8;  
+        }
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+        body { background-color: var(--bg-light); color: var(--text-dark); line-height: 1.6; position: relative; }
+        .site-watermark {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='300' height='300' viewBox='0 0 100 100'%3E%3Ctext x='50%25' y='50%25' font-size='12' fill='rgba(0, 48, 102, 0.03)' font-weight='bold' text-anchor='middle' transform='rotate(-30 50 50)'%3E官方新闻%3C/text%3E%3C/svg%3E");
+            pointer-events: none; z-index: 9999;
+        }
+        header {
+            background-color: var(--news-blue); color: #fff; padding: 14px 6%;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 4px solid var(--news-accent);
+        }
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .logo-placeholder {
+            width: 90px; height: 34px; background-color: #fff; color: var(--news-blue);
+            font-weight: 900; font-size: 18px; letter-spacing: 2px;
+            display: flex; align-items: center; justify-content: center; border-radius: 2px;
+        }
+        .secure-footer {
+    background-color: #1e2530; /* 深色沉稳背景 */
+    color: #95a5a6;
+    padding: 20px 0;
+    text-align: center;
+    font-size: 12px;
+    border-top: 2px solid #c0392b; /* 警示红线，彰显保密级别 */
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    margin-top: 40px; /* 与上方内容保持距离 */
+}
+.footer-container p {
+    margin: 4px 0; /* 紧凑字间距 */
+    line-height: 1.5;
+}
+.security-level {
+    color: #e74c3c; /* 红色高亮保密字样 */
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+.system-info {
+    color: #7f8c8d;
+}
+
+.logo-text h1 { 
+    font-size: 18px; 
+    color: #ffffff; 
+    font-weight: bold; 
+    margin-left: -26px; /* 👈 加这一行！数字是负的，就会强行把文字往左拉，贴近LOGO */
+}
+
+        /* 核心修复：顶栏右侧组件一字排开 */
+        .nav-tools { display: flex; align-items: center; gap: 8px; }
+        .search-box {
+            display: flex; align-items: center; background: rgba(255, 255, 255, 0.15); 
+            border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 2px; height: 34px;
+        }
+        .search-box:focus-within { background: #ffffff; border-color: #ffffff; }
+        .search-box input {
+            border: none; background: transparent; padding: 0 10px; outline: none;
+            width: 150px; height: 100%; font-size: 13px; color: #ffffff;
+        }
+        .search-box:focus-within input { color: #111111; }
+        .btn-search-trigger {
+            background: rgba(255, 255, 255, 0.15); color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 2px;
+            width: 36px; height: 34px; cursor: pointer; font-size: 14px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-search-trigger:hover { background: var(--news-accent); border-color: var(--news-accent); }
+        .btn-back {
+            display: inline-flex; align-items: center; padding: 0 14px;
+            border: 1px solid rgba(255,255,255,0.3); color: #ffffff; text-decoration: none;
+            border-radius: 2px; font-size: 13px; height: 34px; background: transparent;
+        }
+        .btn-back:hover { background-color: rgba(255, 255, 255, 0.15); border-color: #ffffff; }
+        
+        main { max-width: 1200px; margin: 35px auto; padding: 0 24px; }
+        .section-title {
+            font-size: 20px; color: var(--news-blue); border-bottom: 2px solid var(--news-blue);
+            padding-bottom: 8px; margin-bottom: 24px; font-weight: bold;
+        }
+        .news-container { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 2px; padding: 28px; margin-bottom: 40px; }
+        .main-news-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; border-bottom: 1px solid var(--border-color); padding-bottom: 30px; margin-bottom: 24px; }
+        .main-news-item { display: flex; flex-direction: column; }
+        .news-header-trigger { cursor: pointer; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; min-height: 56px; }
+        .news-header-trigger h2 { font-size: 17px; color: var(--text-dark); font-weight: bold; line-height: 1.45; }
+        .badge-hot { background-color: var(--news-blue); color: #fff; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 2px; margin-right: 4px; }
+        .news-img-placeholder { width: 100%; aspect-ratio: 16 / 9; background-color: #eaebed; border: 1px solid #dcdfe6; border-radius: 2px; margin-top: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 13px; }
+        .news-detail-target { display: none; margin-top: 14px; background-color: #f8f9fa; padding: 14px; border-left: 3px solid var(--news-blue); }
+        .news-text { font-size: 14px; color: #2c3e50; text-align: justify; }
+        .sub-news { padding: 6px 0; }
+        .sub-news-trigger { cursor: pointer; font-size: 15px; color: #222222; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+        .arrow-icon { font-size: 12px; color: var(--text-muted); background: #f0f2f5; padding: 2px 8px; border-radius: 12px; }
+        .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .grid-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-top: 4px solid var(--news-blue); border-radius: 2px; padding: 22px; cursor: pointer; }
+        .grid-card:hover { border-top-color: var(--news-accent); }
+        .grid-card h3 { font-size: 16px; margin-bottom: 8px; color: var(--text-dark); font-weight: bold; }
+        .grid-card p { font-size: 13px; color: var(--text-muted); }
+        @media (max-width: 900px) { .main-news-grid { grid-template-columns: 1fr; gap: 24px; } .news-header-trigger { min-height: auto; } }
+        @media (max-width: 650px) { header { flex-direction: column; align-items: flex-start; gap: 10px; } .nav-tools { width: 100%; } .search-box { flex-grow: 1; } .grid-container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="site-watermark"></div>
+
+    <header>
+<div class="logo-area">
+            <!-- 贴LOGO图的位置：把 logo.png 换成你自己的真实图片路径即可 -->
+            <!-- style 里的 height: 34px 和 width: auto 确保了图片会自动等比例自适应，绝不撑大导航栏 -->
+            <img src="FANS-LOGO.png" alt="官方新闻网LOGO" style="height: 70px; width: auto; display: block; object-fit: contain;">
+            <div class="logo-text">
+                <h1>FASA联邦航空与太空管理局</h1>
+            </div>
+        </div>
+
+        <div class="nav-tools">
+            <div class="search-box">
+             <input type="text" id="searchInput" placeholder="请输入密钥..." onkeydown="if(event.key === 'Enter') executeSearch()">
+            </div>
+            <!-- 这里已将 🔍 图标完美修改为“搜索”两个字 -->
+            <button type="button" class="btn-search-trigger" style="width: auto; padding: 0 12px;" onclick="executeSearch()">搜索</button>
+            <a href="javascript:void(0);" onclick="triggerBackLink();" class="btn-back">← 返回</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="section-title">为了全人类的福祉   For the benefit of all </section>
+        
+        <div class="news-container">
+            <div class="main-news-grid">
+                
+                <div class="main-news-item">
+                    <div class="news-header-trigger" onclick="toggleNews('newsDetail1', 'arrow1')">
+                        <h2><span class="badge-hot">最新</span> 联邦天文台宣布发现新类地天体</h2>
+                        <span class="arrow-icon" id="arrow1">▼ 展开详情</span>
+                    </div>
+ <div class="news-img-placeholder">
+    <!-- 将原来的文字替换为 img 标签 -->
+    <img src="3星球.jpg" alt="科技创新大会现场" style="width: 100%; height: auto; display: block;">
+    <div style="font-size: 11px; margin-top:4px; color: #95a5a6;"> </div>
+</div>
+<div id="newsDetail1" class="news-detail-target">
+    <div class="news-text">
+        <p>联邦天文台今日宣布，一组天文学家通过位于南半球的大型光学望远镜，确认发现一颗此前未被记录的新天体。该天体位于距离太阳系约42光年的恒星区域，初步观测显示其直径约为地球的1.1倍，表面可能存在稀薄大气、冰盖与暗色峡谷结构。</p>
+        <p>研究团队将这颗临时编号为“凯洛斯‑7b”的天体列入重点观测目录。目前，天文学家尚未确认其是否存在稳定磁场或液态水，但它的轨道位置与恒星辐射强度使其成为未来深空研究的重要目标。联邦天文台表示，后续将启用更高分辨率望远镜，进一步分析其大气成分与地质特征。</p>
+    </div>
+</div>
+
+                </div>
+
+                <div class="main-news-item">
+                    <div class="news-header-trigger" onclick="toggleNews('newsDetail2', 'arrow2')">
+                        <h2><span class="badge-hot">最新</span>近地轨道大型空间站群完成组装</h2>
+                        <span class="arrow-icon" id="arrow2">▼ 展开详情</span>
+                    </div>
+  <div class="news-img-placeholder">
+    <!-- 将原来的文字替换为 img 标签 -->
+    <img src="3空间站.jpg" alt="科技创新大会现场" style="width: 100%; height: auto; display: block;">
+    <div style="font-size: 11px; margin-top:4px; color: #95a5a6;"> </div>
+  </div>
+                    <div id="newsDetail2" class="news-detail-target">
+                        <div class="news-text">
+                            <p>联邦航天署今日公布新型近地轨道设施图像，一座由多个舱段组合而成的大型空间站群已完成核心组装。该设施由国际合作模块、实验舱、居住舱、能源帆板与无人对接节点共同构成，总规模超过现有轨道平台，可支持长期在轨科研、微重力实验、深空探测中转任务。</p>
+                            <p>官方介绍，这座新型空间站采用模块化扩展设计，未来可根据任务需求继续连接实验舱、维修舱和货运舱段。图像显示，空间站群在地球轨道上展开，太阳能帆板持续供电，舱体金属结构与对接节点清晰可见。航天专家表示，该设施将成为近地轨道科研与国际合作的重要平台。</p>
+                        </div>
+                   </div>
+                </div>
+
+            </div>
+<!-- 第一段（你原本的那段） -->
+<div class="sub-news">
+    <div class="sub-news-trigger" onclick="toggleNews('subNewsDetail', 'subArrow')">
+        <div>• 阿瑞斯-V 号火箭已进去发射准备阶段</div>
+        <span class="arrow-icon" id="subArrow">▼ 展开详情</span>
+    </div>
+    <div id="subNewsDetail" class="news-detail-target">
+        <div class="news-text">
+            <p>任务简报: 火星探测器运输任务</p>
+        </div>
+    </div>
+</div>
+
+<!-- 新增第二段（已修改 ID 为 2） -->
+<div class="sub-news">
+    <div class="sub-news-trigger" onclick="toggleNews('subNewsDetail2', 'subArrow2')">
+        <div>• 乌洛波洛斯-X39火箭已进去发射准备阶段</div>
+        <span class="arrow-icon" id="subArrow2">▼ 展开详情</span>
+    </div>
+    <div id="subNewsDetail2" class="news-detail-target">
+        <div class="news-text">
+            <p>任务简报: 伊特尼塔空间站实验室物资运送</p>
+        </div>
+    </div>
+</div>
+
+<!-- 新增第三段（已修改 ID 为 3） -->
+<div class="sub-news">
+    <div class="sub-news-trigger" onclick="toggleNews('subNewsDetail3', 'subArrow3')">
+        <div>• 伊特尼塔-69火箭已进去发射准备阶段</div>
+        <span class="arrow-icon" id="subArrow3">▼ 展开详情</span>
+    </div>
+    <div id="subNewsDetail3" class="news-detail-target">
+        <div class="news-text">
+            <p>任务简报: 伊特尼塔空间站实验室物资运送</p>
+        </div>
+    </div>
+</div>
+
+        <section class="section-title">核心板块</section>
+        
+        <div class="grid-container">
+            <div class="grid-card" onclick="handleBlockLink('国际观察')">
+                <h3>🌐 航天器任务查询</h3>
+                <p> </p>
+            </div>
+            
+            <div class="grid-card" onclick="handleBlockLink('财经前沿')">
+                <h3>📊 宇航员信息查询</h3>
+                <p> </p>
+            </div>
+        </div>
+    </main>
+
+<script>
+    // 1. 设置内部 HTML 文件名（支持中文）
+    const TARGET_PAGE = "浏览器.html"
+    // 使用 encodeURIComponent 确保中文路径在所有浏览器中都能正确解析
+    const BACK_LINK_URL = encodeURIComponent(TARGET_PAGE); 
+
+    // 2. 定义返回跳转函数
+    function triggerBackLink() {
+        alert('【系统提示】\n已触发返回键Z主页跳转。');
+        window.location.href = BACK_LINK_URL; // 执行跳转到 内部.html
+    }
+
+    // 3. 拦截浏览器/手机物理返回键
+    // 页面加载时，向历史记录隐式添加一个状态
+    history.pushState(null, null, document.URL);
+
+    // 监听用户点击“后退”或手机“返回”手势
+    window.addEventListener('popstate', function () {
+        triggerBackLink(); // 触发跳转
+        
+        // 保持历史记录状态，防止多次点击时直接退出
+        history.pushState(null, null, document.URL);
+    });
+        function toggleNews(id, arrowId) {
+            const detailBlock = document.getElementById(id);
+            const arrowEl = document.getElementById(arrowId);
+            const isDisplayed = window.getComputedStyle(detailBlock).display;
+            
+            if (isDisplayed === 'block') {
+                detailBlock.style.display = 'none';
+                arrowEl.textContent = '▼ 展开详情';
+            } else {
+                detailBlock.style.display = 'block';
+                arrowEl.textContent = '▲ 收起详情';
+            }
+        }
+
+function executeSearch() {
+    const query = document.getElementById('searchInput').value.trim();
+    if (!query) { alert('请输入检索关键词。'); return; }
+
+    if (query === '9947') {
+        window.location.href = '航空发射.html'; 
+    } else if (query === '预留' || query === '预留') {
+        window.location.href = '#.html'; 
+    } else {
+        alert(`【安全提示】\n内网中未匹配到关于 "${query}" 的结果。当前系统物理隔离，已限制外网链接。`);
+    }
+}
+
+// === 新增：监听回车键代码 ===
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function(event) {
+            // 当按下的键是 Enter 时触发
+            if (event.key === 'Enter') {
+                executeSearch();
+            }
+        });
+    }
+});
+
+    </script>
+    <footer class="secure-footer">
+    <div class="footer-container">
+        <p class="security-level">【 内部机密文件 · 请勿外传 】</p>
+        <p class="copyright">Copyright © 2026 联邦航空综合技术研究院 · 蜂鸟安全系统</p>
+        <p class="system-info">特别声明：以上信息均为架空虚构内容，无任何现实映射，</p>
+        <p class="system-info">不存在真实对应事件与人物，一切仅服务原创解谜故事创作。</p>
+    </div>
+</footer>
+
+</body>
+
+</html>

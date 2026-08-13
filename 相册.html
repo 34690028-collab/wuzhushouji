@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仿真手机相册</title>
+    <style>
+    /* 全局基础重置 */
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* 浅色模式变量 */
+    :root {
+        --bg-main: #f0f2f5;
+        --bg-phone: #ffffff;
+        --bg-shell: #000000;
+        --text-primary: #000000;
+        --text-secondary: #8e8e93;
+        --border-color: #eeeeee;
+        --card-bg: #f2f2f7;
+        --blur-bg: rgba(255, 255, 255, 0.8);
+        --sms-bg: rgba(255, 255, 255, 0.95);
+        --key-bg: #f2f2f7;
+    }
+
+    /* 深色模式变量：自动跟随手机系统 */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-main: #1c1c1e;
+            --bg-phone: #000000;
+            --bg-shell: #2c2c2e;
+            --text-primary: #ffffff;
+            --text-secondary: #aeaea3;
+            --border-color: #2c2c2e;
+            --card-bg: #1c1c1e;
+            --blur-bg: rgba(0, 0, 0, 0.8);
+            --sms-bg: rgba(28, 28, 30, 0.95);
+            --key-bg: #2c2c2e;
+        }
+    }
+
+    body {
+        background-color: var(--bg-main);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        transition: background 0.3s ease;
+    }
+
+/* 仿真手机物理外壳 - 优化高度与响应式 */
+.phone-container {
+    width: 100%;
+    max-width: 375px;      /* 缩减宽度（更贴近标准iPhone） */
+    height: 680px;         /* 【核心修改】显著缩短了模拟手机的高度 */
+    background: var(--bg-shell);
+    border-radius: 40px;
+    padding: 12px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    position: relative;
+    /* aspect-ratio: 9 / 19.5; */ /* 注释掉此行，防止固定比例冲突 */
+}
+
+
+    .phone-screen {
+        width: 100%;
+        height: 100%;
+        background: var(--bg-phone);
+        border-radius: 32px;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+    /* 仿真状态栏 */
+    .status-bar {
+        height: 44px;
+        padding: 0 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        background: var(--blur-bg);
+        backdrop-filter: blur(10px);
+        z-index: 10;
+    }
+    .status-left { display: flex; align-items: center; gap: 6px; }
+    .operator { font-size: 12px; color: var(--text-secondary); }
+    .status-right { display: flex; align-items: center; gap: 8px; }
+
+    /* 电池图标 */
+    .battery-icon {
+        width: 25px;
+        height: 13px;
+        border: 1px solid var(--text-primary);
+        border-radius: 3px;
+        padding: 1px;
+        position: relative;
+    }
+    .battery-icon::after {
+        content: ''; position: absolute; right: -3px; top: 3px;
+        width: 2px; height: 5px; background: var(--text-primary);
+        border-radius: 0 1px 1px 0;
+    }
+    .battery-level { width: 85%; height: 100%; background: var(--text-primary); border-radius: 1px; }
+
+    /* 内容滚动区域与相册网格 */
+    .page-content { flex: 1; overflow-y: auto; background: var(--bg-phone); position: relative; }
+    .page { display: none; height: 100%; padding: 15px; }
+    .page.active { display: block; }
+    .page-title { font-size: 28px; font-weight: 700; margin-bottom: 15px; color: var(--text-primary); }
+
+    .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    .photo-item { aspect-ratio: 1 / 1; overflow: hidden; background: var(--card-bg); cursor: pointer; }
+    .photo-item img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* 灯箱大图复原查看器 */
+    .lightbox {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: #000000; z-index: 100; display: none;
+        justify-content: center; align-items: center; cursor: pointer;
+    }
+    .lightbox img { width: 100%; max-height: 100%; object-fit: contain; }
+
+    /* 小窗口视频预览卡片 */
+    .video-list { display: flex; flex-direction: column; gap: 15px; }
+    .video-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; }
+    .video-thumb-window {
+        width: 100%; aspect-ratio: 16 / 9; background: #000000;
+        position: relative; cursor: pointer; display: flex;
+        justify-content: center; align-items: center;
+    }
+    .video-placeholder-text { color: #ffffff; font-size: 14px; position: absolute; z-index: 2; pointer-events: none; }
+    .play-btn-icon {
+        font-size: 40px; color: rgba(255,255,255,0.8); z-index: 2;
+        background: rgba(0,0,0,0.4); width: 60px; height: 60px;
+        border-radius: 50%; display: flex; justify-content: center; align-items: center;
+    }
+    .video-thumb-window video { width: 100%; height: 100%; object-fit: contain; display: none; }
+    .video-info { padding: 10px 12px; font-size: 13px; color: var(--text-primary); font-weight: 500; }
+
+    /* 安全验证锁屏与全新对称键盘 */
+    .lock-screen {
+        position: absolute; top: 44px; left: 0; width: 100%;
+        height: calc(100% - 109px); background: var(--bg-phone);
+        z-index: 20; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; padding: 30px;
+    }
+    .password-dots { display: flex; gap: 15px; margin-bottom: 30px; }
+    .dot { width: 12px; height: 12px; border: 1.5px solid var(--text-secondary); border-radius: 50%; }
+    .dot.filled { background: var(--text-primary); border-color: var(--text-primary); }
+
+    .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px 25px; justify-items: center; }
+    .key {
+        width: 60px; height: 60px; border-radius: 50%; background: var(--key-bg);
+        display: flex; justify-content: center; align-items: center;
+        font-size: 24px; color: var(--text-primary); cursor: pointer; user-select: none;
+    }
+    .key:active { opacity: 0.7; }
+    .key-action { font-size: 13px; color: #007aff; cursor: pointer; grid-column: span 3; margin-top: 15px; text-align: center; }
+    /* 仿真系统下滑短信横幅 */
+    .sms-notification {
+        position: absolute; top: -120px; left: 12px; right: 12px;
+        background: var(--sms-bg); backdrop-filter: blur(20px); border-radius: 18px;
+        padding: 12px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        z-index: 200; display: flex; flex-direction: column; gap: 4px;
+        transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .sms-notification.show { top: 50px; }
+    .sms-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+    .sms-body { font-size: 14px; color: var(--text-primary); font-weight: 500; line-height: 1.3; }
+    .sms-title { font-weight: 700; }
+    .alert-toast { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.8); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 150; display: none; }
+
+    /* 底部全新并列四栏导航栏 */
+    .tab-bar {
+        height: 65px; border-top: 1px solid var(--border-color);
+        background: var(--blur-bg); backdrop-filter: blur(10px);
+        display: flex; justify-content: space-around; align-items: center;
+        padding-bottom: 15px; z-index: 10;
+    }
+    .tab-item {
+        flex: 1; display: flex; flex-direction: column;
+        align-items: center; font-size: 11px;
+        color: var(--text-secondary); cursor: pointer; gap: 4px;
+    }
+    .tab-item.active { color: #007aff; }
+    .tab-icon { font-size: 18px; }
+</style>
+</head>
+<body>
+<!-- 仿真手机容器骨架 -->
+<div class="phone-container">
+    <div class="phone-screen">
+        
+        <!-- 仿真横幅短信通知栏 -->
+        <div class="sms-notification" id="sms-pop">
+            <div class="sms-header">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span>💬</span>
+                    <strong>信息</strong>
+                </div>
+                <span>现在</span>
+            </div>
+            <div class="sms-body">
+                <div class="sms-title">中联移动 安全中心</div>
+                <div id="sms-text">您的验证码为：xxxx</div>
+            </div>
+        </div>
+
+        <!-- 仿真状态栏 -->
+        <div class="status-bar">
+            <div class="status-left">
+                <span id="current-time">09:41</span>
+                <span class="operator">中联移动</span>
+            </div>
+            <div class="status-right">
+                <!-- 4格信号 -->
+                <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor">
+                    <rect x="0" y="8" width="2.5" height="3" rx="0.5" />
+                    <rect x="4.5" y="6" width="2.5" height="5" rx="0.5" />
+                    <rect x="9" y="3" width="2.5" height="8" rx="0.5" />
+                    <rect x="13.5" y="0" width="2.5" height="11" rx="0.5" />
+                </svg>
+                <!-- 电池 -->
+                <div class="battery-icon">
+                    <div class="battery-level"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 照片点击放大/复原查看器 -->
+        <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+            <img id="lightbox-img" src="" alt="大图查看">
+        </div>
+
+        <!-- 全局文字提示窗口 -->
+        <div class="alert-toast" id="alert-toast"></div>
+
+        <!-- 主内容滚动区域 -->
+        <div class="page-content">
+            
+            <!-- 1. 照片页面 -->
+            <div id="page-photos" class="page active">
+                <div class="page-title">照片</div>
+                <div class="photo-grid" id="photo-container">
+                    <!-- 预设6张支持自适应缩放的图片，后期可在此往下追加 <div> -->
+<div class="photo-item" onclick="openLightbox(this)">
+    <img src="照片1.jpg" alt="照片 1">
+</div>                    
+<div class="photo-item" onclick="openLightbox(this)">
+    <img src="照片2.jpg" alt="照片 1">
+</div>                     
+<div class="photo-item" onclick="openLightbox(this)">
+    <img src="照片3.jpg" alt="照片 1">
+</div>                    
+<div class="photo-item" onclick="openLightbox(this)">
+    <img src="照片4.jpg" alt="照片 1">
+</div> 
+<div class="photo-item" onclick="openLightbox(this)">
+    <img src="照片5.jpg" alt="照片 1">
+</div> 
+<div class="photo-item" onclick="openLightbox(this)">
+    <img src="照片6.jpg" alt="照片 1">
+</div> 
+            </div>
+            </div>
+    <!-- 2. 视频页面（小窗口预览，点击才加载播放）这里111 -->
+<!-- ====== [对齐参照] 上接第 4 段末尾的 </div></div> 页面的闭合 ====== -->
+
+    <!-- 2. 视频页面（完美预留封面图，点击才加载拉取视频流） -->
+    <div id="page-videos" class="page">
+        <div class="page-title">视频</div>
+        <div class="video-list" id="video-container">
+            
+            <!-- 视频卡片 1 -->
+            <div class="video-card">
+                <!-- poster="" 内可以填入你准备好的本地封面图片路径，如 poster="cover1.jpg" -->
+                <div class="video-thumb-window" onclick="loadAndPlayVideo(this)">
+                    <div class="play-btn-icon">▶</div>
+                    <video src="" poster="" controls preload="none"></video>
+                </div>
+                <div class="video-info">视频损毁</div>
+            </div>
+         
+        </div>
+    </div>
+
+    <!-- 3. 最近删除页面 -->
+    <div id="page-deleted" class="page" style="padding: 15px;">
+        <!-- 安全验证锁屏界面 -->
+        <div class="lock-screen" id="lock-screen" style="top:44px; left:0; width:100%; height:calc(100% - 109px);">
+            <div class="lock-title">输入相册密码解锁</div>
+            <div class="password-dots">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+            <!-- 加 * 字键完美对称键盘 -->
+            <div class="keypad">
+                <div class="key" onclick="pressKey(1)">1</div>
+                <div class="key" onclick="pressKey(2)">2</div>
+                <div class="key" onclick="pressKey(3)">3</div>
+                <div class="key" onclick="pressKey(4)">4</div>
+                <div class="key" onclick="pressKey(5)">5</div>
+                <div class="key" onclick="pressKey(6)">6</div>
+                <div class="key" onclick="pressKey(7)">7</div>
+                <div class="key" onclick="pressKey(8)">8</div>
+                <div class="key" onclick="pressKey(9)">9</div>
+                <div class="key" onclick="showToast('* 键暂无特殊业务逻辑')">*</div>
+                <div class="key" onclick="pressKey(0)">0</div>
+                <div class="key" onclick="deleteLastDigit()" style="font-size:15px; font-weight:500;">删除</div>
+                <div class="key-action" onclick="askForHintKeyword()">忘记密码？</div>
+            </div>
+        </div>
+
+        <!-- 密码正确后的加密内容区 -->
+        <div id="deleted-content" style="display: none;">
+            <div class="page-title">最近删除</div>
+            <div class="photo-grid" id="deleted-container">
+<div class="photo-item" onclick="openLightbox(this)">
+    <img src="照片回收站照片.jpg" alt="照片 1">
+</div> 
+<div class="photo-item" onclick="openLightbox(this)">
+    <img src="照片回收站照片2.jpg" alt="照片 1">
+</div>
+    </div>
+        </div>
+    </div>
+
+</div> <!-- .page-content 闭合 -->
+
+<!-- 底部四栏并列标签导航栏 -->
+<div class="tab-bar">
+    <div class="tab-item active" id="tab-photos" onclick="switchPage('photos', this)">
+        <div class="tab-icon">📷</div><span>照片</span>
+    </div>
+    <div class="tab-item" id="tab-videos" onclick="switchPage('videos', this)">
+        <div class="tab-icon">🎥</div><span>视频</span>
+    </div>
+    <div class="tab-item" id="tab-deleted" onclick="switchPage('deleted', this)">
+        <div class="tab-icon">🗑️</div><span>最近删除</span>
+    </div>
+<div class="tab-item" onclick="if(document.referrer) { window.history.back(); } else { window.location.href='主页.html'; }">
+    <div class="tab-icon">↩️</div><span>返回</span>
+</div>
+</div>
+
+</div> <!-- .phone-screen 闭合 -->
+</div> <!-- .phone-container 闭合 -->
+
+<audio id="sms-sound" src="" preload="auto"></audio>
+
+<script>
+
+// ====== [对齐参照] 下接第 6 段开头的 const ALBUM_PASSWORD = "1234"; ======
+// 全局核心参数配置
+const ALBUM_PASSWORD = "1234";         // 登录密码
+const CORRECT_HINT_KEYWORD = "千万人之中只为你而来";   // 找回密码的提示词 
+
+let currentPasswordInput = "";
+let isUnlocked = false;
+
+// 1. 状态栏数字时钟自动同步
+function updateDigitalClock() {
+    const timeElement = document.getElementById('current-time');
+    if (timeElement) {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        timeElement.textContent = `${hours}:${minutes}`;
+    }
+}
+setInterval(updateDigitalClock, 1000);
+updateDigitalClock();
+
+// 2. 底部独立[返回]键的全局安全一键撤退逻辑
+function globalBackToHome() {
+    const photoTab = document.getElementById('tab-photos');
+    switchPage('photos', photoTab);
+}
+
+// 3. 底部导航栏页面切换核心逻辑
+function switchPage(pageId, tabElement) {
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    document.querySelectorAll('.tab-item').forEach(tab => tab.classList.remove('active'));
+    
+    const targetPage = document.getElementById(`page-${pageId}`);
+    if (targetPage) targetPage.classList.add('active');
+    if (tabElement) tabElement.classList.add('active');
+
+    if (pageId !== 'videos') {
+        document.querySelectorAll('#page-videos video').forEach(video => video.pause());
+    }
+
+    if (pageId === 'deleted' && !isUnlocked) {
+        resetPasswordState();
+    }
+}
+
+// 4. 照片点击全屏放大/再次点击完美复原
+function openLightbox(element) {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    if (lightbox && lightboxImg) {
+        lightboxImg.src = element.querySelector('img').src;
+        lightbox.style.display = 'flex';
+    }
+}
+
+function closeLightbox() {
+    const lightbox = document.getElementById('lightbox');
+    if (lightbox) lightbox.style.display = 'none';
+}
+
+// 5. 视频小窗口懒加载交互控制逻辑
+function loadAndPlayVideo(windowElement) {
+    const video = windowElement.querySelector('video');
+    const placeholderText = windowElement.querySelector('.video-placeholder-text');
+    const playIcon = windowElement.querySelector('.play-btn-icon');
+
+    if (video) {
+        if (video.style.display !== 'block') {
+            if (placeholderText) placeholderText.style.display = 'none';
+            if (playIcon) playIcon.style.display = 'none';
+            video.style.display = 'block';
+            video.style.pointerEvents = 'auto';
+        }
+        video.play().catch(err => console.log("视频加载播放被拦截:", err));
+    }
+}
+
+// 6. 全局轻量化 Toast 弹窗通知
+function showToast(message) {
+    const toast = document.getElementById('alert-toast');
+    if (toast) {
+        toast.textContent = message;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 2500);
+    }
+}
+
+// 7. 数字键盘点击输入逻辑
+function pressKey(number) {
+    if (isUnlocked) return;
+    if (currentPasswordInput.length < 4) {
+        currentPasswordInput += number;
+        updatePasswordDots();
+        if (currentPasswordInput.length === 4) {
+            setTimeout(verifyPassword, 200);
+        }
+    }
+}
+
+// 8. 键盘删除键（退格）
+function deleteLastDigit() {
+    if (currentPasswordInput.length > 0) {
+        currentPasswordInput = currentPasswordInput.slice(0, -1);
+        updatePasswordDots();
+    }
+}
+
+// 9. 实时同步更新密码小圆点的填充状态
+function updatePasswordDots() {
+    const dots = document.querySelectorAll('.lock-screen .dot');
+    dots.forEach((dot, index) => {
+        if (index < currentPasswordInput.length) {
+            dot.classList.add('filled');
+        } else {
+            dot.classList.remove('filled');
+        }
+    });
+}
+
+// 10. 重置并清空当前输入的密码状态
+function resetPasswordState() {
+    currentPasswordInput = "";
+    updatePasswordDots();
+}
+
+// 11. 核心安全校验：验证相册密码
+function verifyPassword() {
+    if (currentPasswordInput === ALBUM_PASSWORD) {
+        isUnlocked = true;
+        document.getElementById('lock-screen').style.display = 'none';
+        document.getElementById('deleted-content').style.display = 'block';
+        showToast("🔓 密码正确，已进入私密相册");
+    } else {
+        showToast("❌ 密码错误，请重新输入");
+        resetPasswordState();
+    }
+}
+
+// 12. 忘记密码交互：校验提示词并触发系统短信通知
+function askForHintKeyword() {
+    const userInput = prompt("请输入提示词找回密码:");
+    if (userInput === null) return;
+    if (userInput.trim() === CORRECT_HINT_KEYWORD) {
+        triggerSmsNotification();
+    } else {
+        showToast("❌ 提示词错误，请重新输入");
+    }
+}
+
+// 13. 触发系统通知横幅平滑弹跳下滑动效
+function triggerSmsNotification() {
+    const smsPop = document.getElementById('sms-pop');
+    const smsText = document.getElementById('sms-text');
+    const smsSound = document.getElementById('sms-sound');
+
+    if (smsPop && smsText) {
+        smsText.textContent = `【中联移动】验证码：${ALBUM_PASSWORD}。您正在尝试通过提示词找回相册密码，请勿向他人泄露。`;
+        if (smsSound) {
+            smsSound.play().catch(err => console.log("提示：音效播放受浏览器安全限制，需用户在页面上产生至少一次点击后才能自动播放。", err));
+        }
+        smsPop.classList.add('show');
+        setTimeout(() => { smsPop.classList.remove('show'); }, 5000);
+    }
+}
+</script>
+</body>
+</html>

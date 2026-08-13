@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAPD - Missing Persons Division (Babumante Federal Police Department)</title>
+    <!-- 引入美式政务与警局系统最爱的硬朗现代无衬线黑体 -->
+    <link href="#" rel="stylesheet">
+    <!-- FontAwesome 国际通用政务警务图标库 -->
+    <link rel="stylesheet" href="#">
+    
+    <style>
+        /* ==========================================================================
+           【第 1 部分】全站大牌美学基础色彩与基础样式变量（A面样式）
+           ========================================================================== */
+        :root {
+            --lapd-navy: #0B1B3D;       /* LAPD 官方制服深徽蓝 */
+            --lapd-gold: #D4AF37;       /* 警徽庄重金 */
+            --lapd-red: #B31942;        /* 美式紧急协查红 */
+            --text-dark: #1A1A1A;       /* 严谨档案黑 */
+            --text-muted: #666666;      /* 案件编号辅助灰 */
+            --border-lapd: #CDD4E0;     /* 警务系统规格化边框线 */
+            --bg-officework: #F4F7FA;   /* 联邦冷色调办公背景灰 */
+            --font-global: 'Inter', 'Noto Sans SC', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-global);
+            color: var(--text-dark);
+            background-color: #ffffff;
+            line-height: 1.4;
+            -webkit-font-smoothing: antialiased;
+            position: relative;
+            min-height: 100vh;
+        }
+        a { text-decoration: none; color: inherit; transition: all 0.2s ease; }
+
+        .container {
+            width: 100%;
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 0 16px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* 置顶功能性返回导航条 */
+        .lapd-top-nav { background-color: #ffffff; border-bottom: 1px solid var(--border-lapd); padding: 8px 0; }
+        .lapd-top-nav .container { display: flex; justify-content: space-between; align-items: center; }
+        .lapd-back-btn { font-size: 12px; font-weight: 700; color: var(--lapd-navy); display: flex; align-items: center; gap: 4px; }
+        .lapd-back-btn:hover { color: var(--lapd-red); }
+
+        /* LAPD 双语威严主标头 */
+        .lapd-header-panel { background: linear-gradient(180deg, var(--lapd-navy) 0%, #050E2A 100%); color: #ffffff; padding: 18px 0; border-bottom: 4px solid var(--lapd-gold); }
+        .lapd-title-box h1 { font-size: 20px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+        .lapd-title-box p { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px; font-weight: 700; }
+
+        /* 首页精准检索框组件 */
+        .lapd-search-bar-section { background-color: var(--bg-officework); padding: 15px; border: 1px solid var(--border-lapd); margin-top: 20px; }
+        .lapd-search-form { display: flex; background: #ffffff; border: 2px solid var(--lapd-navy); border-radius: 4px; overflow: hidden; }
+        .lapd-search-input { width: 100%; padding: 8px 12px; border: none; outline: none; font-size: 13px; font-weight: 600; }
+        .lapd-search-submit { background: var(--lapd-navy); color: #ffffff; border: none; padding: 0 16px; cursor: pointer; font-size: 13px; }
+        .lapd-search-submit:hover { background: var(--lapd-red); }
+        /* ==========================================================================
+           【第 2 部分】双列并排、圆形头像、就地展开与高级固定遮罩弹窗样式
+           ========================================================================== */
+        /* 左右男女分栏网格：核心硬性要求，手机端也必须死死保持 1:1 双列并排 */
+        .gender-split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .gender-column { background-color: rgba(255, 255, 255, 0.95); border: 1px solid var(--border-lapd); padding: 10px; }
+        .gender-column-title { font-size: 11px; font-weight: 900; color: #ffffff; padding: 6px 10px; margin-bottom: 12px; }
+        .gender-column.male-zone .gender-column-title { background-color: var(--lapd-navy); border-left: 4px solid var(--lapd-gold); }
+        .gender-column.female-zone .gender-column-title { background-color: var(--lapd-red); border-left: 4px solid var(--lapd-gold); }
+        .lapd-photo-matrix { display: flex; flex-direction: column; gap: 10px; }
+
+        /* 精致圆形小头像卡片与尺寸锁死 */
+        .case-profile-card { border: 1px solid var(--border-lapd); background: #ffffff; padding: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .case-profile-card:hover { border-color: var(--lapd-gold); background-color: #fafafa; }
+        .case-avatar-box { width: 46px !important; height: 46px !important; border-radius: 50% !important; overflow: hidden; flex-shrink: 0; border: 1px solid #e2e2e2; background-color: var(--bg-officework); }
+        .case-avatar-box img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+        .case-brief-info { display: flex; flex-direction: column; justify-content: center; }
+        .case-brief-info h3 { font-size: 12px; font-weight: 700; color: var(--text-dark); }
+        .case-brief-info p { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+        .case-status-badge { align-self: flex-start; font-size: 8px; padding: 1px 3px; font-weight: 900; background: #FFF0F0; color: var(--lapd-red); margin-top: 2px; border: 1px solid rgba(179,25,66,0.15); }
+
+        /* 档案卡片点击就地展开详情面板样式 */
+        .case-extended-details { display: none; background-color: var(--bg-officework); border-left: 2px solid var(--lapd-gold); padding: 10px; margin: 4px 0; font-size: 11px; color: #333333; line-height: 1.5; }
+        .case-extended-details.active { display: block; animation: lapdSlideDown 0.2s ease-out; }
+        @keyframes lapdSlideDown { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 156页动态翻页组件与全黑底页脚样式 */
+        .pagination-lapd-wrapper { background-color: var(--bg-officework); border: 1px solid var(--border-lapd); padding: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .pagination-info-text { font-size: 11px; font-weight: 700; color: var(--lapd-navy); }
+        .pagination-action-buttons { display: flex; gap: 4px; align-items: center; }
+        .pg-btn-lapd { background-color: #ffffff; border: 1px solid var(--border-lapd); color: var(--text-dark); padding: 5px 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .pg-btn-lapd:hover { background-color: var(--lapd-navy); color: #ffffff; }
+        .pg-btn-lapd.direction-ends { background-color: #121212; color: #ffffff; }
+        .pg-btn-lapd.direction-ends:hover { background-color: var(--lapd-red); }
+        .current-page-num-display { font-size: 11px; font-weight: 900; color: var(--lapd-red); padding: 0 4px; }
+        .site-footer { background-color: #050E2A; color: #777777; padding: 25px 0 15px 0; font-size: 11px; border-top: 3px solid var(--lapd-red); text-align: center; }
+
+        /* ==========================================================================
+           高质感全屏固定毛玻璃案卷调阅大弹窗核心定位样式
+           ========================================================================== */
+        .search-modal-overlay {
+            position: fixed !important; top: 0 !important; left: 0 !important;
+            width: 100vw !important; height: 100vh !important;
+            background-color: rgba(0, 0, 0, 0.6) !important;
+            backdrop-filter: blur(6px) !important; -webkit-backdrop-filter: blur(6px) !important;
+            display: flex !important; align-items: center !important; justify-content: center !important;
+            z-index: 999999 !important; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .search-modal-overlay.active { opacity: 1 !important; pointer-events: auto !important; }
+        .search-modal-window {
+            background-color: #ffffff !important; width: 90% !important; max-width: 620px !important;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important; border-top: 5px solid var(--lapd-gold) !important;
+            padding: 0 !important; overflow: hidden !important; border-radius: 4px !important;
+        }
+        /* ==========================================================================
+           【第 3 部分】全屏防伪水印复盖、弹窗照片与双实体返回键美化样式
+           ========================================================================== */
+        /* 【完美水印修复】提升至最高层盖在卡片上方，并开启鼠标 100% 绝对穿透 */
+        .lapd-watermark-container {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 450px; height: 450px; z-index: 99999; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .lapd-watermark-container img { width: 100%; height: 100%; object-fit: contain; opacity: 0.12; }
+
+        /* 检索结果专用弹窗内部栅格与真人圆形照片规范 */
+        .modal-case-grid { display: grid; grid-template-columns: 140px 1fr; gap: 20px; padding: 20px; }
+        .modal-avatar-frame { width: 140px !important; height: 140px !important; border-radius: 50% !important; overflow: hidden; border: 3px solid var(--lapd-gold); background-color: var(--bg-officework); flex-shrink: 0; }
+        .modal-avatar-frame img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+        .modal-info-details { display: flex; flex-direction: column; justify-content: flex-start; }
+        .redirect-alert-box { background-color: #f1f8e9; border-left: 4px solid #7cb342; padding: 10px; margin-bottom: 12px; color: #33691e; font-size: 12px; font-weight: 700; }
+
+        /* 精确锁定弹窗右上角 X 关闭按键 */
+        .modal-header { position: relative; padding: 16px 20px; background: var(--bg-officework); border-bottom: 1px solid var(--border-lapd); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { font-size: 15px; font-weight: 900; color: var(--lapd-navy); }
+        .modal-close-btn { position: absolute !important; top: 50% !important; right: 20px !important; transform: translateY(-50%) !important; background: none !important; border: none !important; font-size: 20px !important; color: #999999 !important; cursor: pointer !important; z-index: 100 !important; }
+        .modal-close-btn:hover { color: var(--lapd-red) !important; }
+
+        /* 右下角警用藏蓝底实体返回长条按钮 */
+        .modal-action-row { display: flex !important; justify-content: flex-end !important; margin-top: 14px !important; }
+        .btn-police-return { background-color: var(--lapd-navy) !important; color: #ffffff !important; border: 1px solid var(--lapd-gold) !important; padding: 8px 16px !important; font-size: 12px !important; font-weight: 700 !important; cursor: pointer !important; border-radius: 3px !important; display: flex !important; align-items: center !important; gap: 6px !important; }
+        .btn-police-return:hover { background-color: var(--lapd-red) !important; border-color: var(--lapd-red) !important; }
+
+        /* 极致多端响应式兼容媒体查询 */
+        @media (max-width: 768px) {
+            .gender-split-grid { gap: 8px; margin: 12px 0; }
+            .gender-column { padding: 6px; }
+            .case-profile-card { padding: 6px; gap: 6px; }
+            .case-avatar-box { width: 40px !important; height: 40px !important; }
+            .case-brief-info h3 { font-size: 11px; }
+            .case-brief-info p { font-size: 9px; }
+            .pagination-lapd-wrapper { flex-direction: column; text-align: center; }
+        }
+        @media (max-width: 600px) {
+            .modal-case-grid { grid-template-columns: 1fr; justify-items: center; }
+            .modal-avatar-frame { width: 110px !important; height: 110px !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================================================
+       【第 4 部分】全站背景半透明 Logo 水印挂载区与双语威严主标头 HTML
+       ========================================================================== -->
+    <!-- 背景半透明 Logo 局徽防伪水印：提升至最高层盖在卡片上方且开启 100% 绝对穿透 -->
+    <div class="lapd-watermark-container" id="lapd-bg-watermark">
+        <!-- 【后台配置】：您后期可以在这里的 src="" 内直接填入您的彩色联邦/LAPD警徽大图路径（如 src="badge.png"） -->
+        <!-- 底层样式会自动将其强制压低并淡化为 12% 微显防伪纹路，绝不干扰任何文字的选中与阅读 -->
+        <img src="巴布曼特警察局LOGO.png" alt="LAPD OFFICIAL WATERMARK" id="lapd-internal-img">
+    </div>
+
+    <!-- 置顶双功能性返回导航条 -->
+    <nav class="lapd-top-nav">
+        <div class="container">
+            <!-- 预留超链接 2：点击安全返回特定的公安厅或警局上级目录档案库 -->
+            <a href="巴布曼特联邦警察局.html" class="lapd-back-btn">
+                <i class="fa-solid fa-shield-halved"></i> 返回官网
+            </a>
+            <!-- 预留超链接 1：点击完美跨文件直跳回您的蜂鸟新闻门户主页面 -->
+            <a href="浏览器.html" class="lapd-back-btn">
+                <i class="fa-solid fa-house-chimney"></i> 返回主页
+            </a>
+
+        </div>
+    </nav>
+
+    <!-- LAPD 官方威严深徽蓝主标头 -->
+    <header class="police-header-panel lapd-header-panel">
+        <div class="container">
+            <div class="lapd-title-box">
+                <h1><i class="fa-solid fa-star-of-life" style="color:var(--lapd-gold);"></i> 巴布曼特联邦警察局失踪人口协查网</h1>
+                <p>Babumante Federal Police Department · MISSING PERSONS SECTION · OFFICIAL PORTAL</p>
+            </div>
+        </div>
+    </header>
+    <!-- ==========================================================================
+       【第 5 部分】首页精准检索框与手机端强制 1:1 并排左右男女分栏大网格 HTML
+       ========================================================================== -->
+    <div class="container">
+        
+        <!-- LAPD 首页精准检索框（预设5名真实名单专用搜索栏） -->
+        <section class="lapd-search-bar-section">
+            <form class="lapd-search-form" onsubmit="executeLapdSearch(event)">
+                <input type="text" class="lapd-search-input" id="lapd-keyword-input" placeholder="输入案号进行精准检索 **** " required>
+                <button type="submit" class="lapd-search-submit">
+                    <i class="fa-solid fa-magnifying-glass"></i> 检索 (Search)
+                </button>
+            </form>
+        </section>
+
+        <!-- 联邦警务红头紧急协查提示条 -->
+        <div style="background-color: #FFF3CD; border: 1px solid #FFEBAA; color: #856404; padding: 10px 15px; font-size: 11px; font-weight: 700; margin: 15px 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-triangle-exclamation" style="color:var(--lapd-red); font-size:14px;"></i>
+            <span>巴布曼特联邦警察局: 点击下方头像卡片即可就地向下展开案卷详情。输入案号可唤醒独立照片弹窗。</span>
+        </div>
+
+        <!-- 左右男女两大主板块分栏大网格（死死锁定 1:1 左右并排，手机端也绝不乱行） -->
+        <main class="gender-split-grid">
+            
+            <!-- 【左侧栏：MALE DIVISION / 男性失踪立案档案】 -->
+            <section class="gender-column male-zone">
+                <div class="gender-column-title">
+                    <span><i class="fa-solid fa-mars"></i> MALE / 男</span>
+                    <span style="opacity: 0.7;">6 CASES</span>
+                </div>
+                <!-- 核心：男性卡片和就地展开详情层的数据注入大槽 -->
+                <div class="lapd-photo-matrix" id="male-cards-container"></div>
+            </section>
+
+            <!-- 【右侧栏：FEMALE DIVISION / 女性失踪立案档案】 -->
+            <section class="gender-column female-zone">
+                <div class="gender-column-title">
+                    <span><i class="fa-solid fa-venus"></i> FEMALE / 女</span>
+                    <span style="opacity: 0.7;">6 CASES</span>
+                </div>
+                <!-- 核心：女性卡片和就地展开详情层的数据注入大槽 -->
+                <div class="lapd-photo-matrix" id="female-cards-container"></div>
+            </section>
+
+        </main>
+        <!-- ==========================================================================
+           【第 6 部分 - A 部分】156页仿真翻页、全黑页脚与高级案卷大弹窗结构 HTML
+           ========================================================================== -->
+        <!-- 156 页高仿真翻页控制栏挂载槽 -->
+        <div class="pagination-lapd-wrapper" id="lapd-pagination-bar"></div>
+
+    </div> <!-- 关闭自第 5 部分最前方开启的 .container 主容器 -->
+
+    <!-- LAPD 官方全黑极简页脚 -->
+    <footer class="site-footer">
+        <div class="container">
+            <p style="margin-bottom: 5px; color: #ffffff; font-weight: 700;">Babumante Federal Police Department</p>
+            <p>巴布曼特联邦警察局官方失踪人员合规体系·保护与服务</p>
+            <p style="color: #445577; margin-top: 10px; font-size: 10px;">© 2026 巴布曼特联邦警察局版权所有</p>
+            <p style="color: #445577; margin-top: 10px; font-size: 10px;">本网站为解密游戏剧情虚构，与真实</p>
+        </div>
+    </footer>
+
+    <!-- 真实名单专属高级案卷遮罩大弹窗（已完美加装右下角长条实体返回关闭键） -->
+    <div class="search-modal-overlay" id="lapd-search-modal">
+        <div class="search-modal-window">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-folder-open" style="color:var(--lapd-gold);"></i>  绝密案卷调阅中心</h3>
+                <!-- 右上角经典关闭按钮 -->
+                <button class="modal-close-btn" onclick="closeLapdModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-case-grid">
+                    <!-- 左侧：失踪人纯圆形高清肖像照片挂载区 -->
+                    <div class="modal-avatar-frame">
+                        <img src="" alt="失踪人肖像" id="modal-case-photo">
+                    </div>
+                    <!-- 右侧：结构化警务立案数据表格 -->
+                    <div class="modal-info-details">
+                        <div class="redirect-alert-box">
+                            💡 成功匹配预设名单：[ <span id="modal-case-name" style="color:var(--lapd-red)"></span> ] 核心案卷已通过联邦网络安全中转。
+                        </div>
+                        <table style="width:100%; border-collapse:collapse; font-size:12px; line-height: 1.8; margin-bottom: 16px;">
+                            <tr style="border-bottom:1px solid #ddd;"><td style="padding:4px 0; font-weight:700; width:80px; color:var(--lapd-navy);">登记姓名：</td><td id="modal-case-id"></td></tr>
+                            <tr style="border-bottom:1px solid #ddd;"><td style="padding:4px 0; font-weight:700; color:var(--lapd-navy);">基本特征：</td><td id="modal-case-traits"></td></tr>
+                            <tr style="border-bottom:1px solid #ddd;"><td style="padding:4px 0; font-weight:700; color:var(--lapd-navy);">失踪时间：</td><td id="modal-case-date"></td></tr>
+                            <tr style="border-bottom:1px solid #ddd;"><td style="padding:4px 0; font-weight:700; color:var(--lapd-navy);">最后轨迹：</td><td id="modal-case-loc"></td></tr>
+                            <tr><td style="padding:6px 0; font-weight:700; vertical-align:top; color:var(--lapd-red);">案情线索：</td><td id="modal-case-desc" style="color:#444; padding-top:6px;"></td></tr>
+                        </table>
+                        
+                        <!-- 右下角加装大牌藏蓝色实体返回关闭按钮 -->
+                        <div class="modal-action-row">
+                            <button class="btn-police-return" onclick="closeLapdModal()">
+                                <i class="fa-solid fa-shield-halved"></i> 关闭并返回协查网
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ==========================================================================
+       【第 6 部分 - B 部分】真实名单检索、20-35岁随机年龄与自动洗牌核心 JS 引擎
+       ========================================================================== -->
+    <script>
+        // 【照片大库后台配置区】：支持直接填写本地圆形小头像路径（如 'images/m1.jpg'）
+        const PHOTO_DATABASE_MALE = [
+            'S51.png',
+            'S52.png',
+            'S53.png',
+            'S54.png',
+            'S55.png',
+            'S56.png',
+            'S57.png',
+            'S58.png',
+            'S59.png',
+            'S60.png',
+            'S61.png',
+            'S62.png',
+            'S63.png',
+            'S64.png'
+        ];
+
+        const PHOTO_DATABASE_FEMALE = [
+            'S1.png',
+            'S2.png',
+            'S3.png',
+            'S4.png',
+            'S5.png',
+            'S6.png',
+            'S7.png',
+            'S8.png',
+            'S9.png',
+            'S10.png',
+            'S1.png'
+        ];
+
+        // 5 名真实预设名单总控（已精准配置好您指定的张伟本地真人照片路径 S16.png）
+        const REAL_MISSING_PRESETS = {
+            "0591": { 
+                age: "28岁", height: "175cm", sex: "男", id: "伊莱", date: "2026年05月12日", loc: "巴布曼特兰纳街小巷", 
+                desc: "【真实立案案卷】该人于2026年5月12日在兰纳街失联。离家时身穿灰色连帽衫，携带一个棕色公文包，家属已向警局备案。如见此人请速报案。",
+                photo: "S伊莱.png" 
+            },
+            "迈克尔": { age: "31岁", height: "182cm", sex: "男", id: "LAPD-RM-992", date: "2026年05月04日", loc: "好莱坞高地商圈", desc: "【真实立案案卷】体型匀称，离家后与家人失去联系，手提电话关机，最后已知移动轨迹位于星光大道十字路口。", photo: "images/michael.jpg" },
+            "王芳": { age: "24岁", height: "162cm", sex: "女", id: "LAPD-RF-993", date: "2026年04月20日", loc: "南加州大学西门校区", desc: "【真实立案案卷】长发，离校散步后未归。身穿白色长裙，携带浅色挎包。目前学校与警方正在动员多方社会力量全力寻找。", photo: "images/wangfang.jpg" },
+            "大卫": { age: "34岁", height: "178cm", sex: "男", id: "LAPD-RM-994", date: "2026年02月15日", loc: "圣莫尼卡海滩步道", desc: "【真实立案案卷】短发，皮肤较黑，离家后音讯全无。当天曾驾驶一辆轻型皮卡，车辆已被巡逻警员在海滩公共停车场寻获。", photo: "images/david.jpg" },
+            "露西": { age: "29岁", height: "166cm", sex: "女", id: "LAPD-RF-995", date: "2026年06月01日", loc: "比弗利山庄罗德欧大道", desc: "【真实立案案卷】职员，下班后未归。最后目击时间为当晚20时整。手机关机，未发现银行个人账户资金变动动向，情况十分紧急。", photo: "images/lucy.jpg" }
+        };
+
+        let currentPage = 1;
+        const TOTAL_PAGES = 156;
+
+        function shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
+        // 核心随机年龄算法：死死锁死在您指定的 20 到 35 岁之间
+        function getRandomAge() { return Math.floor(Math.random() * (35 - 20 + 1)) + 20; }
+
+        // 核心抽样渲染：确保 20 张以上本地图全员参与随机打乱抽样
+        function renderMatrix(gender) {
+            const containerId = gender === 'M' ? 'male-cards-container' : 'female-cards-container';
+            const container = document.getElementById(containerId);
+            const photoDb = gender === 'M' ? PHOTO_DATABASE_MALE : PHOTO_DATABASE_FEMALE;
+            if (!container) return;
+            
+            container.innerHTML = '';
+            let shuffledPhotos = shuffle([...photoDb]);
+            
+            for (let i = 0; i < 6; i++) {
+                const detailId = `${gender}-detail-${i}`;
+                const age = getRandomAge() + "岁"; 
+                const height = Math.floor(Math.random() * (185 - 160 + 1)) + 160 + "cm";
+                const randomYear = 2018 + ((currentPage * 6 + i) % 7); 
+                const fakeId = "BFPD-"+ randomYear + "-" + String(5000 + currentPage * 6 + i);
+                const photoSrc = shuffledPhotos[i % shuffledPhotos.length];
+
+                const cardHtml = `
+                    <div class="case-profile-card" onclick="toggleDetails('${detailId}')">
+                        <div class="case-avatar-box"><img src="${photoSrc}" alt="LAPD Photo"></div>
+                        <div class="case-brief-info">
+                            <h3>档案: CASE-${gender}${i+1}</h3>
+                            <p>特征: ${age} · ${height}</p>
+                            <p>案号: ${fakeId}</p>
+                            <span class="case-status-badge">失踪</span>
+                        </div>
+                    </div>
+                    <div class="case-extended-details" id="${detailId}">
+                        <strong>【BFPD 巴布曼特联邦警察局失踪协查临时案卷】</strong><br>
+                        <span style="color:var(--lapd-navy); font-weight:700;">基本特征：</span>${age} / ${height}<br>
+                        <span style="color:var(--lapd-navy); font-weight:700;">案件状态：</span>在案滚动备份中 (第 ${currentPage} 页)<br>
+                        <span style="color:var(--lapd-red); font-weight:700;">案情概要：</span>该失踪人信息属于巴布曼特联邦协查快照。如发现在案线索请立即致电当地警区或781-911。
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            }
+        }
+
+        function toggleDetails(id) {
+            const target = document.getElementById(id);
+            if (!target) return;
+            const isOpened = target.classList.contains('active');
+            const sibs = target.parentElement.querySelectorAll('.case-extended-details');
+            sibs.forEach(s => s.classList.remove('active'));
+            if (!isOpened) target.classList.add('active');
+        }
+
+        function renderPager() {
+            const bar = document.getElementById('lapd-pagination-bar');
+            if (!bar) return;
+            bar.innerHTML = `
+                <div class="pagination-info-text"><i class="fa-solid fa-server"></i> 登记失踪人口: 1,872 条记录 · PAGE ${currentPage} OF ${TOTAL_PAGES}</div>
+                <div class="pagination-action-buttons">
+                    <button class="pg-btn-lapd direction-ends" onclick="turnPage(1)"><i class="fa-solid fa-angles-left"></i> 一页到前</button>
+                    <button class="pg-btn-lapd" onclick="turnPage('prev')"><i class="fa-solid fa-angle-left"></i> 上一页</button>
+                    <span class="current-page-num-display">第 ${currentPage} / ${TOTAL_PAGES} 页</span>
+                    <button class="pg-btn-lapd" onclick="turnPage('next')">下一页 <i class="fa-solid fa-angle-right"></i></button>
+                    <button class="pg-btn-lapd direction-ends" onclick="turnPage(${TOTAL_PAGES})">一页到底 <i class="fa-solid fa-angles-right"></i></button>
+                </div>
+            `;
+        }
+
+        function turnPage(action) {
+            if (action === 'prev') { if (currentPage > 1) currentPage--; else return; }
+            else if (action === 'next') { if (currentPage < TOTAL_PAGES) currentPage++; else return; }
+            else if (typeof action === 'number') { currentPage = action; }
+            
+            renderMatrix('M'); renderMatrix('F'); renderPager();
+            document.getElementById('lapd-bg-watermark').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // 精准检索拦截函数：100%打通中央高档模态弹窗与真人圆形照片渲染
+        function executeLapdSearch(event) {
+            event.preventDefault(); 
+            const input = document.getElementById('lapd-keyword-input');
+            if (!input) return;
+            const name = input.value.trim();
+            if (!name) return;
+
+            if (REAL_MISSING_PRESETS[name]) {
+                const data = REAL_MISSING_PRESETS[name];
+                
+                document.getElementById('modal-case-name').innerText = name;
+                document.getElementById('modal-case-id').innerText = data.id;
+                document.getElementById('modal-case-traits').innerText = `${data.sex} / ${data.age} / ${data.height}`;
+                document.getElementById('modal-case-date').innerText = data.date;
+                document.getElementById('modal-case-loc').innerText = data.loc;
+                document.getElementById('modal-case-desc').innerText = data.desc;
+                document.getElementById('modal-case-photo').src = data.photo; 
+                
+                const modalEl = document.getElementById('lapd-search-modal');
+                if (modalEl) modalEl.classList.add('active');
+            } else {
+                alert(`【档案库没有您的资料】`);
+            }
+        }
+
+        function closeLapdModal() {
+            const modalEl = document.getElementById('lapd-search-modal');
+            if(modalEl) modalEl.classList.remove('active');
+        }
+
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeLapdModal();
+        });
+
+        renderMatrix('M'); renderMatrix('F'); renderPager();
+    </script>
+</body>
+</html>

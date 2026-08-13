@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Map Tactical System</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #111; }
+        
+        /* 地图外部视口 */
+        .map-viewport { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; overflow: auto; display: flex; align-items: center; justify-content: center; }
+        
+        /* 图片地图核心：默认全屏铺满（一级状态） */
+        #map-canvas {
+            width: 100vw; height: 100vh;
+            background: url('地图.jpg') no-repeat center center; 
+            background-size: cover;
+            transition: width 0.3s ease, height 0.3s ease;
+            cursor: grab;
+        }
+        
+        /* 二级放大状态：尺寸直接翻倍 */
+        #map-canvas.zoomed {
+            width: 200vw; height: 200vh;
+        }
+
+        .search-container {
+            position: absolute; top: 16px; left: 16px; z-index: 10; width: 360px; max-width: calc(100% - 32px);
+            background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .search-bar { width: 100%; height: 48px; display: flex; align-items: center; padding: 0 16px; }
+        .search-bar input { flex: 1; height: 100%; border: none; outline: none; font-size: 16px; color: #3c4043; }
+        .search-icon, .menu-icon { color: #70757a; font-size: 18px; cursor: pointer; margin-right: 12px; }
+        .suggestions-list { max-height: 260px; overflow-y: auto; border-top: 1px solid #dfe1e5; display: none; background: #fff; }
+        .suggestion-item { padding: 14px 16px; cursor: pointer; display: flex; align-items: center; font-size: 15px; color: #202124; border-bottom: 1px solid #f1f3f4; }
+        .suggestion-item:hover { background-color: #f1f3f4; }
+        .suggestion-item::before { content: "📍 "; margin-right: 8px; }
+
+        .floating-buttons { position: absolute; bottom: 30px; right: 16px; z-index: 10; display: flex; flex-direction: column; gap: 10px; }
+        .circle-btn {
+            width: 45px; height: 45px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: pointer; font-size: 20px; border: none; outline: none; font-weight: bold;
+        }
+        .back-btn { background: #1a73e8; color: #fff; font-size: 16px; }
+        
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);
+            z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+            opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-box { background: #fff; width: 320px; padding: 24px; border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); text-align: center; }
+        .modal-title { font-size: 18px; font-weight: bold; color: #202124; margin-bottom: 12px; }
+        .modal-text { font-size: 14px; color: #5f6368; margin-bottom: 20px; line-height: 1.5; }
+        .code-input { width: 100%; padding: 12px; border: 1px solid #dadce0; border-radius: 4px; font-size: 16px; text-align: center; margin-bottom: 16px; outline: none; }
+        .code-input:focus { border-color: #1a73e8; }
+        .btn-group { display: flex; justify-content: flex-end; gap: 10px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; }
+        .btn-text { background: transparent; color: #1a73e8; }
+        .btn-contained { background: #1a73e8; color: #fff; }
+        .logo-placeholder {
+            position: absolute; bottom: 16px; left: 16px; z-index: 10; padding: 8px 16px;
+            background: rgba(255,255,255,0.95); border-radius: 4px; font-size: 12px; color: #3c4043; border: 2px dashed #1a73e8; font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- 地图外层包裹容器，缩放时允许自由滑动查看 -->
+    <div class="map-viewport">
+        <div id="map-canvas" title="双击地图也可快速放大/缩小"></div>
+    </div>
+
+    <!-- 预留的Logo位置，可以直接将文字替换为 <img src="logo.png"> -->
+    <div class="logo-placeholder" id="gameLogo">
+        [ LOGO POSITION ]
+    </div>
+
+    <div class="search-container">
+        <div class="search-bar">
+            <span class="menu-icon">☰</span>
+            <input type="text" id="mapSearch" placeholder="搜索战术地图地点..." autocomplete="off">
+            <span class="search-icon">🔍</span>
+        </div>
+        <div class="suggestions-list" id="suggestions"></div>
+    </div>
+
+    <div class="floating-buttons">
+        <button class="circle-btn back-btn" onclick="triggerBackLink()">◀</button>
+        <button class="circle-btn" onclick="setMapZoom(true)">＋</button>
+        <button class="circle-btn" onclick="setMapZoom(false)">－</button>
+    </div>
+
+    <!-- 弹窗一：是否调取监控 -->
+    <div class="modal-overlay" id="monitorModal">
+        <div class="modal-box">
+            <div class="modal-title" id="locationTitle">发现目标地点</div>
+            <div class="modal-text">系统检测到该区域配备保密监控，是否强制调取此处监控录像？</div>
+            <div class="btn-group">
+                <button class="btn btn-text" onclick="closeModal('monitorModal')">否</button>
+                <button class="btn btn-contained" onclick="proceedToAuth()">是</button>
+            </div>
+        </div>
+    </div>
+    <!-- 弹窗二：输入密码 -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-box">
+            <div class="modal-title">安全加密访问</div>
+            <div class="modal-text">请输入该区域的监控调取授权口令：</div>
+            <input type="text" class="code-input" id="authCode" placeholder="请输入口令" autocomplete="off">
+            <div class="btn-group">
+                <button class="btn btn-text" onclick="closeModal('authModal')">取消</button>
+                <button class="btn btn-contained" onclick="verifyAuthCode()">确认授权</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗三：选择一（监控损坏提示） -->
+    <div class="modal-overlay" id="damagedModal">
+        <div class="modal-box">
+            <div class="modal-title" style="color: #d93025;">⚠️ 访问受阻</div>
+            <div class="modal-text">【系统报告】<br>此处监控物理硬盘已于 48 小时前被蓄意损毁，无法读取历史录像数据。</div>
+            <div class="btn-group">
+                <button class="btn btn-contained" onclick="closeModal('damagedModal')">确认并返回</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =======================================================
+        // 🛠️ 核心配置区（在这里修改您的数据）
+        // =======================================================
+        const BACK_PAGE_URL = "浏览器.html";         // 虚拟/物理返回键跳转目标
+        const CORRECT_CODE = "PASSWORD123";        // 正确的访问口令
+        const NEXT_STAGE_URL = "跳转另一界面.html";  // 监控未坏时的跳转目标
+
+        // 20个预留地名名单
+        const MAP_LOCATIONS = [
+            "西西里废弃造船厂", "雾之町第三精神病院", "诺凡泰克制药研究所", "联信商业银行", "银座中央银行金库",
+            "奥斯汀私人停机坪", "皇家花园广场", "教堂钟楼", "红皇后俱乐部", "极夜号广场",
+            "北岸红树林无线电塔", "第4自来水厂", "黑水镇福利院", "莫比乌斯数据中心", "巴布曼特证券交易所",
+            "联邦航空与太空管理局", "破晓报社", "老橡树五金杂货铺", "巴布曼特联邦警察局", "HNN蜂鸟新闻"
+        ];
+
+        // 🛠️ 导演自定义控制台（绝对不随机）：
+        // 在下面方括号里的地点，监控【全是坏的】（弹窗提示物理损毁）。
+        // 不在下面名单里的地点，口令正确后【直接跳转】到 NEXT_STAGE_URL 界面。
+        const DAMAGED_LOCATIONS = [
+            "西西里废弃造船厂",
+            "雾之町第三精神病院",
+            "黑鸦大桥下层管道",
+            "银座中央银行金库"
+        ];
+        let currentSelectedLocation = "";
+        const searchInput = document.getElementById('mapSearch');
+        const suggestionsContainer = document.getElementById('suggestions');
+        const mapCanvas = document.getElementById('map-canvas');
+
+        // 两级放大缩小控制（true为放大到二级，false为缩小到一级）
+        function setMapZoom(isZoomIn) {
+            if (isZoomIn) {
+                mapCanvas.classList.add('zoomed');
+            } else {
+                mapCanvas.classList.remove('zoomed');
+            }
+        }
+        // 双击地图也可以来回切换两级缩放
+        mapCanvas.addEventListener('dblclick', () => {
+            mapCanvas.classList.toggle('zoomed');
+        });
+
+        // 搜索列表渲染核心
+        function renderSuggestions(filterText = "") {
+            suggestionsContainer.innerHTML = "";
+            const filtered = MAP_LOCATIONS.filter(item => item.includes(filterText));
+            if(filtered.length === 0) { suggestionsContainer.style.display = 'none'; return; }
+            filtered.forEach(loc => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.textContent = loc;
+                // 核心修复：点击下拉项时直接绑定激活第一个弹窗
+                div.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectLocation(loc);
+                });
+                suggestionsContainer.appendChild(div);
+            });
+            suggestionsContainer.style.display = 'block';
+        }
+
+        searchInput.addEventListener('input', (e) => renderSuggestions(e.target.value));
+        searchInput.addEventListener('focus', () => renderSuggestions(searchInput.value));
+        
+        document.addEventListener('click', (e) => {
+            if (!document.querySelector('.search-container').contains(e.target)) { 
+                suggestionsContainer.style.display = 'none'; 
+            }
+        });
+
+        function selectLocation(name) {
+            currentSelectedLocation = name;
+            suggestionsContainer.style.display = 'none';
+            searchInput.value = name;
+            document.getElementById('locationTitle').textContent = "📍 " + name;
+            openModal('monitorModal'); // 100% 触发第一个弹窗
+        }
+
+        function proceedToAuth() { closeModal('monitorModal'); document.getElementById('authCode').value = ""; openModal('authModal'); }
+
+        function verifyAuthCode() {
+            const inputCode = document.getElementById('authCode').value.trim();
+            closeModal('authModal');
+            if (inputCode === CORRECT_CODE) {
+                // 精准读取黑名单，自己掌控剧情走向
+                if (DAMAGED_LOCATIONS.includes(currentSelectedLocation)) {
+                    openModal('damagedModal'); // 分支一：监控坏了
+                } else {
+                    window.location.href = NEXT_STAGE_URL; // 分支二：没坏直接跳转
+                }
+            } else {
+                alert("安全警报：授权口令错误，访问已被自动切断。");
+            }
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // 返回键底层重写拦截
+        function triggerBackLink() { window.location.href = BACK_PAGE_URL; }
+        history.pushState(null, null, document.URL);
+        window.addEventListener('popstate', function () {
+            history.pushState(null, null, document.URL);
+            triggerBackLink(); 
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安全检索门户</title>
+    <style>
+        /* --- 基础样式（完全脱离外网依赖） --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- 核心：画面比例锁定 (16:9) 与多端自适应容器 --- */
+        .aspect-locked-container {
+            aspect-ratio: 16 / 9;
+            width: 100%;
+            max-width: 1100px;
+            background-color: #ffffff; /* 严格白色背景 */
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+            position: relative;
+            z-index: 10; /* 保证内容层在基础层之上 */
+        }
+
+        /* 针对超宽屏或平板的防溢出锁定 */
+        @media (min-aspect-ratio: 16/9) {
+            .aspect-locked-container {
+                height: 85vh;
+                width: auto;
+                            /* ==========================================================================
+               【分段发送 - 第 3 段：手机端返回按钮防错位微调】
+               ========================================================================== */
+            .top-back-btn {
+                position: static; /* 🛠️ 手机端取消绝对定位，使其按流式排版在最上方 */
+                align-self: flex-start; /* 让它在最左边靠齐 */
+                margin-bottom: 16px; /* 和下方的Logo拉开间距 */
+                padding: 6px 12px; /* 稍微缩小一点尺寸 */
+                font-size: 13px;
+            }
+
+            }
+        }
+
+        /* --- 顶部大 Logo 区域 --- */
+        .header-logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .logo-circle {
+            width: 140px;
+            height: 140px;
+            background-color: #2563eb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+        .logo-text {
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 32px;
+            letter-spacing: 2px;
+        }
+
+        /* --- 中部 3个搜索框区域 --- */
+        .search-section {
+            margin: auto 0;
+            width: 100%;
+            max-width: 550px;
+            align-self: center;
+        }
+        .search-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            outline: none;
+            font-size: 15px;
+            transition: border-color 0.2s ease;
+            background-color: #ffffff;
+        }
+        .search-input:focus {
+            border-color: #2563eb;
+        }
+        .key-hint {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+            padding-left: 4px;
+        }
+        .submit-btn {
+            width: 100%;
+            background-color: #2563eb;
+            color: white;
+            font-weight: bold;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- 纯正网页尾角 --- */
+        /* ==========================================
+           【分段发送 - 第 1 段：电脑端页脚完美居中】
+           ========================================== */
+        .footer-area {
+            border-top: 1px solid #f3f4f6;
+            padding-top: 16px;
+            display: flex;
+            justify-content: center; /* 🛠️ 关键修改：由 flex-end 改为 center 确保彻底居中 */
+            align-items: center;
+            font-size: 12px;
+            color: #9ca3af;
+            text-align: center; /* 🛠️ 新增：确保多行文字时也能行行居中 */
+            width: 100%; /* 🛠️ 新增：撑满容器宽度 */
+        }
+
+
+        /* --- 水印图层：置于最上方 (z-index: 50) 且预留图标贴图位置 --- */
+        .watermark-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none; /* 穿透点击，不影响输入框输入 */
+            z-index: 50; 
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            gap: 80px;
+            padding: 40px;
+        }
+
+        /* 水印图标贴图核心样式 */
+        .watermark-icon-item {
+            width: 120px;   /* 预留图标贴图的宽度 */
+            height: 120px;  /* 预留图标贴图的高度 */
+            transform: rotate(-25deg);
+            user-select: none;
+            
+            /* 🔽 预留贴图位置：请将您本地的图标命名为 watermark-icon.png 并放在同级目录下 */
+            /* 如果暂时没有图片，它会默认渲染下方通过 JS 生成的灰度遮罩 */
+            background-image: url('watermark-icon.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        /* --- 手机端多端流式自适应微调 --- */
+        @media (max-width: 768px) {
+            .aspect-locked-container {
+                padding: 20px;
+                aspect-ratio: auto; /* 手机端自动转为流式布局，防止内容重叠 */
+                min-height: 85vh;
+                            /* ==========================================================================
+               【分段发送 - 第 2 段：手机端页脚行行居中优化】
+               ========================================================================== */
+            .footer-area { 
+                justify-content: center; 
+                text-align: center; /* 🛠️ 确保在手机窄屏上，长文字折行后依然每行都完美居中 */
+                width: 100%;
+            }
+
+            }
+            .logo-circle { width: 100px; height: 100px; }
+            .logo-text { font-size: 24px; }
+            .footer-area { justify-content: center; }
+        }
+        /* 新增：Logo图片完美适配圆形的样式 */
+.logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;     /* 💡 核心：防止图片拉伸变形，自动等比例裁剪填充 */
+    border-radius: 50%;    /* 💡 核心：让图片本身也变成完美圆形 */
+}
+        /* ==========================================================================
+           【分段发送 - 第 2 段：左上角返回按钮基础样式】
+           ========================================================================== */
+        .top-back-btn {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #4b5563; /* 稳重的深灰字 */
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 16px;
+            background-color: #f3f4f6; /* 浅灰底色 */
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            z-index: 60; /* 确保层级高于水印，能够正常点击 */
+        }
+
+        .top-back-btn:hover {
+            color: #2563eb; /* 悬浮时变为和你Logo一致的蓝色 */
+            border-color: #2563eb;
+            background-color: #eff6ff; /* 极浅的蓝底 */
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 水印图层：牢牢锁定在最上方，内部全部为图标贴图组件 -->
+    <div id="watermark-layer" class="watermark-overlay">
+        <div class="watermark-icon-item"></div>
+        <div class="watermark-icon-item"></div>
+        <div class="watermark-icon-item"></div>
+        <div class="watermark-icon-item"></div>
+        <div class="watermark-icon-item"></div>
+        <div class="watermark-icon-item"></div>
+    </div>
+
+    <!-- 画面比例锁定主容器（白色背景） -->
+    <main class="aspect-locked-container">
+            <!-- ==========================================
+             【分段发送 - 第 1 段：左上角返回按钮结构】
+             ========================================== -->
+        <a href="巴布曼特联邦警察局.html" class="top-back-btn" title="返回上一页">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>返回门户</span>
+        </a>
+    
+        <!-- 顶部：大 Logo -->
+<header class="header-logo" style="flex-direction: column; gap: 12px;">
+    <div class="logo-circle">
+        <img src="巴布曼特警察局LOGO.png" alt=" " class="logo-img">
+    </div>
+    <!-- 🔽 在这里添加您的文字 -->
+    <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; letter-spacing: 2px;">巴布曼特警察局举报中心</h1>
+</header>
+      <!-- 中部：3个搜索框及下方的云盘密钥标注 -->
+        <section class="search-section">
+            <form id="search-form" class="search-form" onsubmit="event.preventDefault(); handleTripleSearch();">
+                
+                <div class="input-group">
+                    <input type="text" id="search1" placeholder="请输入检举揭发的人（***）+（***）" class="search-input">
+                    <p class="key-hint">🔑 云盘密钥：人证+人证</p>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="search2" placeholder="请输入第二个搜索词..." class="search-input">
+                    <p class="key-hint">🔑 云盘密钥：物证******</p>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="search3" placeholder="请输入第三个搜索词..." class="search-input">
+                    <p class="key-hint">🔑 云盘密钥：其他证明</p>
+                </div>
+
+                <button type="submit" class="submit-btn">合并发送</button>
+            </form>
+        </section>
+
+        <!-- 底部：网页尾角 -->
+        <footer class="footer-area">
+            <div>
+                <p>© 特别声明：以上信息均为架空虚构内容，无任何现实映射，不存在真实对应事件与人物，一切仅服务原创解谜故事创作
+
+</p>
+            </div>
+        </footer>
+
+    </main>
+
+    <script>
+        // ==========================================
+        // 🛠️ 代码控制区：您可以在这里直接调节水印图标深浅
+        // ==========================================
+        // 数值范围 0.0（完全透明隐藏） 到 1.0（100% 显现无透明）
+        // 比如 0.12 代表 12% 的视觉深浅度
+        const WATERMARK_OPACITY = 0.12; 
+
+        // 页面加载时由系统底层代码自动渲染深浅度
+        window.addEventListener('DOMContentLoaded', () => {
+            const iconItems = document.querySelectorAll('.watermark-icon-item');
+            iconItems.forEach(item => {
+                item.style.opacity = WATERMARK_OPACITY;
+                
+                // 占位逻辑：若本地暂时没有 watermark-icon.png 贴图，代码自动用灰色块模拟贴图轮廓
+                if (!item.style.backgroundImage || item.style.backgroundImage === "url(\"watermark-icon.png\")") {
+                    item.style.backgroundColor = "rgba(156, 163, 175, 0.4)";
+                    item.style.borderRadius = "12px";
+                }
+            });
+        });
+
+        // ==========================================
+        // 3个搜索框正确词条联动与本地跳转逻辑
+        // ==========================================
+        function handleTripleSearch() {
+            const val1 = document.getElementById('search1').value.trim();
+            const val2 = document.getElementById('search2').value.trim();
+            const val3 = document.getElementById('search3').value.trim();
+
+            // 预设正确词条
+            const correctWord1 = "666";
+            const correctWord2 = "EPT999";
+            const correctWord3 = "999";
+
+            // 同时满足跳转特定本地链接
+            const targetUrl = "target_project.html";
+
+            if (val1 === correctWord1 && val2 === correctWord2 && val3 === correctWord3) {
+                window.location.href = targetUrl;
+            } else {
+                alert("校验未通过，请确认三个输入框词条是否全部正确。");
+            }
+        }
+        
+    </script>
+</body>
+</html>

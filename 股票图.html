@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Market Terminal | Live Tracker</title>
+    <style>
+        :root {
+            --market-bg: #07090e;       /* 彭博黑底色 */
+            --panel-bg: #0d121d;        /* 暗蓝控制面板 */
+            --goog-border: #1f293d;     /* 刻度划分线 */
+            --bull-red: #ff3b30;        /* 红色代表上涨 */
+            --bear-green: #00ff66;      /* 绿色代表下跌 */
+            --text-light: #e2e8f0;      /* 白色高可读字 */
+            --text-muted: #4e5d78;      /* 灰色辅助字 */
+        }
+
+        /* 1. 界面全用户多尺寸全适用自适应布局 */
+        body {
+            background-color: var(--market-bg);
+            color: var(--text-light);
+            font-family: 'Consolas', 'Courier New', -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            width: 100%;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* 顶部状态条 */
+        .market-ticker-top {
+            background-color: #030407;
+            border-bottom: 1px solid var(--goog-border);
+            padding: 10px 4%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+
+        /* 导航栏区域（保留独立LOGO与一键返回键） */
+        .navbar {
+            background-color: var(--panel-bg);
+            border-bottom: 2px solid var(--goog-border);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.5);
+        }
+
+        /* 独立LOGO图片位置样式控制（防止拉伸变形） */
+        .brand-logo img {
+            height: 80px;
+            width: auto;
+            display: block;
+        }
+
+        /* 一键返回按钮：强制纯白、无下划线 */
+        .back-home-btn {
+            color: #FFFFFF !important;
+            text-decoration: none !important;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border: 1px solid var(--text-muted);
+            padding: 7px 16px;
+            background-color: rgba(255,255,255,0.02);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .back-home-btn:hover {
+            background-color: #FFFFFF;
+            color: #000000 !important;
+            border-color: #FFFFFF;
+        }
+
+        /* 全尺寸自适应大屏布局双栏网格 */
+        .market-container {
+            width: 92%;
+            max-width: 1450px;
+            margin: 30px auto;
+            display: grid;
+            grid-template-columns: 2fr 0.9fr;
+            gap: 25px;
+            box-sizing: border-box;
+        }
+
+        .financial-panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--goog-border);
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 股票核心指数信息头部 */
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .title-group h1 {
+            font-size: 21px;
+            margin: 0 0 5px 0;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .ticker-sub-code {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        /* 📊 顶级物理动态交互视口 */
+        .chart-interactive-viewport {
+            width: 100%;
+            height: 380px;
+            background-color: #04060a;
+            border: 1px solid var(--goog-border);
+            position: relative;
+            margin-bottom: 10px;
+            cursor: crosshair;
+        }
+
+        #stockCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* 交互悬停时在顶端实时刷新的高精仿真数据浮动条 */
+        .chart-live-overlay-bar {
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            gap: 15px;
+            font-size: 11px;
+            font-family: monospace;
+            color: #a0aec0;
+            pointer-events: none; /* 确保不挡住鼠标滑动事件 */
+            background-color: rgba(4,6,10,0.85);
+            padding: 5px 10px;
+            border-radius: 2px;
+            flex-wrap: wrap;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+        .live-val-highlight {
+            font-weight: bold;
+        }
+
+        /* 右侧盘口高频流水数据排版 */
+        .order-book-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .order-node {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #141a29;
+        }
+
+        /* 📱 手机、平板电脑多端屏幕全适用完美自适应 */
+        @media (max-width: 1024px) {
+            .market-container { grid-template-columns: 1fr; gap: 20px; width: 94%; }
+            .chart-interactive-viewport { height: 300px; }
+        }
+        @media (max-width: 480px) {
+            .market-ticker-top { padding: 6px 4%; font-size: 10px; }
+            .navbar { padding: 12px 4%; }
+            .brand-logo img { height: 24px; }
+            .back-home-btn { padding: 5px 10px; font-size: 11px; }
+            .title-group h1 { font-size: 17px; }
+            .chart-live-overlay-bar { font-size: 9px; gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部市场高频数据态势条 -->
+    <div class="market-ticker-top">
+        <div style="font-family: monospace;">            
+            <span style="color: var(--bear-green); margin-left: 15px;">投资有风险 入市需谨慎</span>
+        </div>
+    </div>
+
+    <!-- 导航栏控制层：预留独立LOGO与纯白一键返回键 -->
+    <nav class="navbar">
+        <div class="brand-logo">
+            <!-- 💡 独立LOGO更换点：请将 hummingbird_market_logo.png 替换为您本地的图片路径 -->
+            <img src="蜂鸟财经LOGO.png" alt="Financial Terminal Logo">
+        </div>
+        <a href="新闻网站.html" class="back-home-btn">返回</a>
+    </nav>
+
+    <!-- 自适应金融主仪表盘布局 -->
+    <main class="market-container">
+        
+        <!-- 左侧大屏：高精动态 Canvas 交互画布视口 -->
+        <section class="financial-panel">
+            <div class="stock-header">
+                <div class="title-group">
+                    <h1>诺凡泰克生物制药 Novantech Biotech(NVTH)</h1>
+                    <div class="ticker-sub-code">巴布曼特证券交易所 Bapmant Stock Exchange 历史交易记录</div>
+                    <div class="ticker-sub-code">诺凡泰克生物制药 Novantech Biotech(股票代码：NVTH)</div>
+                  </div>
+                <!-- 顶部状态展示组：默认显示最终下挫后的 229 美元，并标记为绿色跌幅 -->
+                <div style="text-align: right;">
+                    <div style="font-size: 28px; font-weight: bold; color: var(--bear-green); line-height: 1;" id="topLivePrice">$229.00</div>
+                    <div style="font-size: 13px; font-weight: bold; color: var(--bear-green); margin-top: 5px;">-62.72 (-21.50%) ▼</div>
+                </div>
+            </div>
+
+            <!-- 📊 核心展示图：支持鼠标滑动/手指轻触十字线的高精交互视口 -->
+            <div class="chart-interactive-viewport" id="chartViewport">
+                
+                <!-- 交互悬停时在顶端实时刷新的仿真高精动态数据流 -->
+                <div class="chart-live-overlay-bar">
+                    <div>PERIOD: <span id="liveTime" class="live-val-highlight" style="color: #ffffff;">AUGUST</span></div>
+                    <div>PRICE: <span id="livePrice" class="live-val-highlight" style="color: var(--bear-green);">$229.00</span></div>
+                    <div>VOLUME: <span id="liveVol" class="live-val-highlight" style="color: #ffaa00;">41,200,000</span></div>
+                    <div>CHG: <span id="liveChg" class="live-val-highlight" style="color: var(--bear-green);">-21.50%</span></div>
+                </div>
+
+                <!-- 核心 HTML5 仿真动态画布节点 -->
+                <canvas id="stockCanvas"></canvas>
+            </div>
+            
+            <!-- 以月为单位的时间轴下限辅助标刻，彻底斩断在 8 月 -->
+            <div style="font-size: 11px; color: var(--text-muted); font-family: monospace; display: flex; justify-content: space-between; margin-top: 5px; padding: 0 5px;">
+                <span>A</span>
+                <span>B</span>
+                <span>C</span>
+                <span>D</span>
+                <span>E [NOW: $229]</span>
+            </div>
+        </section>
+
+        <!-- 右侧大屏：高密度高频盘口买卖流水账 -->
+        <aside class="financial-panel">
+            <div style="font-size: 12px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--goog-border); padding-bottom: 10px; margin-bottom: 15px;">
+                Order Book // 实盘大宗调仓日志
+            </div>
+            
+            <div class="order-book-flow">
+                <div class="order-node"><span style="color:var(--text-muted);">08月 终盘 [大跌]</span><span style="color:var(--bear-green); font-weight:bold;">$229.00 VOLUME HIGH</span></div>
+                <div class="order-node"><span style="color:var(--text-muted);">07月 巅峰 [暴涨]</span><span style="color:var(--bull-red); font-weight:bold;">$539.00 PEAK MAX</span></div>
+                <div class="order-node"><span style="color:var(--text-muted);">05月 盘口 [推进]</span><span style="color:var(--bull-red); font-weight:bold;">$412.50 VOLUME UP</span></div>
+                <div class="order-node"><span style="color:var(--text-muted);">03月 挂牌 [建仓]</span><span style="color:var(--bull-red); font-weight:bold;">$345.20 POSITION</span></div>
+                <div class="order-node"><span style="color:var(--text-muted);">01月 开盘 [基准]</span><span style="color:#ffffff; font-weight:bold;">$291.72 BASE_LINE</span></div>
+            </div>
+        </aside>
+
+    </main>
+    <!-- =================================================== -->
+    <!-- ⚠️ 核心控制逻辑：Canvas 月内大逆转与鼠标十字线实时变色算法 -->
+    <!-- =================================================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var canvas = document.getElementById('stockCanvas');
+            var viewport = document.getElementById('chartViewport');
+            if (!canvas || !viewport) return;
+            
+            var ctx = canvas.getContext('2d');
+            
+            // 💡 严格截止到 8 月份的时间轴（后面不要有了）
+            var months = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST"];
+            var stockData = [];
+            var totalPoints = 90; // 采集 90 个精细高频子数据节点，用来平滑勾勒月内抛物线
+            
+            // 📊 ⚡ 全新月内惊天逆转（先涨后跌）数学模型
+            for (var i = 0; i < totalPoints; i++) {
+                var progress = i / (totalPoints - 1);
+                var monthIndex = Math.floor(progress * 7.99);
+                var currentMonthStr = months[monthIndex];
+                
+                var price = 291.72; // 开盘挂牌基准价
+                var vol = Math.floor(15000 + Math.random() * 30000);
+                
+                if (progress <= 0.80) {
+                    // 【第一阶段：大涨】1月 到 7月初（progress约0.80处），股价单边一路上涨拉升至 $490.00 附近
+                    var riseProgress = progress / 0.80;
+                    price = 291.72 + (riseProgress * (490.00 - 291.72)) - Math.sin(riseProgress * Math.PI) * 12 + (Math.random() * 4 - 2);
+                    vol = Math.floor(140000 + Math.random() * 70000);
+                } 
+                else {
+                    // 【第二阶段：一个月内由涨到跌】7月中旬 到 8月现在（progress最后20%区间内）
+                    var monthProgress = (progress - 0.80) / (1 - 0.80); // 0 到 1 的月内总进度
+                    
+                    if (monthProgress <= 0.3) {
+                        // 📈 【月内前半段：最后的疯狂冲高】前30%的日子里，由于惯性狠狠冲破天际触及最高顶点 $539
+                        var microRise = monthProgress / 0.3;
+                        price = 490.00 + (microRise * (539.00 - 490.00));
+                        // 强制给最高顶点数据锁死
+                        if (i === 74 || i === 75) price = 539.00;
+                    } else {
+                        // 📉 【月内后半段：断崖大雪崩】后70%的日子里，大火黑幕彻底大白，股价瞬间闪崩，垂直斩断砸到底部 $229
+                        var microCrash = (monthProgress - 0.3) / (1 - 0.3);
+                        price = 539.00 - (microCrash * (539.00 - 229.00));
+                    }
+                    vol = Math.floor(390000 + Math.random() * 110000); // 崩盘恐慌爆量
+                }
+                
+                // 强制将最后一个节点（8月底）死死拍板在您指定的 $229.00，后面不要有了
+                if (i === totalPoints - 1) price = 229.00;
+                
+                price = parseFloat(price.toFixed(2));
+                var chg = parseFloat((((price - 291.72) / 291.72) * 100).toFixed(2));
+                var chgStr = (chg >= 0 ? "+" : "") + chg + "%";
+                
+                stockData.push({ time: currentMonthStr, price: price, vol: vol, chg: chgStr });
+            }
+
+            // 自适应不同屏幕的分辨率画布自重绘
+            function resizeCanvas() {
+                canvas.width = viewport.clientWidth;
+                canvas.height = viewport.clientHeight;
+                drawChart(-1); // 默认未滑动时不显示交叉虚线
+            }
+
+            // 核心 Canvas 分段实时染色引擎
+            function drawChart(mouseX) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                var width = canvas.width;
+                var height = canvas.height;
+                var paddingBottom = 40;
+                var paddingTop = 40;
+                var chartHeight = height - paddingTop - paddingBottom;
+                
+                var maxPrice = 580; // 锁定坐标轴价格天花板
+                var minPrice = 180; // 锁定坐标轴价格地板
+
+                function getX(index) { return (index / (totalPoints - 1)) * width; }
+                function getY(p) { return height - paddingBottom - ((p - minPrice) / (maxPrice - minPrice)) * chartHeight; }
+
+                // 背景彭博终端网格线绘制
+                ctx.strokeStyle = '#121824';
+                ctx.lineWidth = 1;
+                for (var g = 1; g < 5; g++) {
+                    var yGrid = paddingTop + (chartHeight / 5) * g;
+                    ctx.beginPath(); ctx.moveTo(0, yGrid); ctx.lineTo(width, yGrid); ctx.stroke();
+                    
+                    var xGrid = (width / 5) * g;
+                    ctx.beginPath(); ctx.moveTo(xGrid, 0); ctx.lineTo(xGrid, height - paddingBottom); ctx.stroke();
+                }
+
+                // 填充背景底部淡绿色溢出渐变
+                var gradient = ctx.createLinearGradient(0, 0, 0, height);
+                gradient.addColorStop(0, 'rgba(0, 255, 102, 0.06)');
+                gradient.addColorStop(1, 'rgba(0, 255, 102, 0.0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.moveTo(getX(0), getY(stockData[0].price));
+                for (var k = 1; k < totalPoints; k++) { ctx.lineTo(getX(k), getY(stockData[k].price)); }
+                ctx.lineTo(getX(totalPoints - 1), height - paddingBottom);
+                ctx.lineTo(getX(0), height - paddingBottom);
+                ctx.closePath(); ctx.fill();
+
+                // 🎬 核心优化：高频差值分段上色算法。后一点比前一点便宜，整小段线条立刻、100%强制变绿
+                for (var j = 0; j < totalPoints - 1; j++) {
+                    var p1 = stockData[j];
+                    var p2 = stockData[j + 1];
+                    
+                    if (p2.price < p1.price) {
+                        ctx.strokeStyle = '#00ff66'; // 只要是单边大跌下坡，100%是纯绿线！
+                    } else {
+                        ctx.strokeStyle = '#ff3b30'; // 只要在单边拉升上坡，100%是纯红线！
+                    }
+                    
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(getX(j), getY(p1.price));
+                    ctx.lineTo(getX(j + 1), getY(p2.price));
+                    ctx.stroke();
+                }
+
+                // 🎬 鼠标移动/触屏滑行 十字测量线精确坐标拦截
+                if (mouseX >= 0 && mouseX <= width) {
+                    var dataIndex = Math.round((mouseX / width) * (totalPoints - 1));
+                    if (dataIndex >= 0 && dataIndex < totalPoints) {
+                        var currentPoint = stockData[dataIndex];
+                        var crossX = getX(dataIndex);
+                        var crossY = getY(currentPoint.price);
+
+                        // 激光蓝高精十字虚线
+                        ctx.strokeStyle = '#00bfff';
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([4, 4]); // 开启专业测量虚线
+                        ctx.beginPath(); ctx.moveTo(crossX, 0); ctx.lineTo(crossX, height - paddingBottom); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(0, crossY); ctx.lineTo(width, crossY); ctx.stroke();
+                        ctx.setLineDash([]); // 还原实线
+
+                        // 交叉焦点随动锚点小球（颜色随涨跌同步变红或变绿）
+                        ctx.fillStyle = (dataIndex > 0 && stockData[dataIndex].price < stockData[dataIndex-1].price) ? '#00ff66' : '#ff3b30';
+                        ctx.beginPath(); ctx.arc(crossX, crossY, 5, 0, Math.PI * 2); ctx.fill();
+                        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
+
+                        // 毫秒级数据反向注入，强行驱动顶层浮动交互条的文字切变
+                        var displayMonth = currentPoint.time;
+                        if (displayMonth === "AUGUST") displayMonth = "AUGUST (NOW)";
+                        document.getElementById('liveTime').innerText = displayMonth;
+                        document.getElementById('livePrice').innerText = "$" + currentPoint.price.toFixed(2);
+                        document.getElementById('liveVol').innerText = currentPoint.vol.toLocaleString();
+                        document.getElementById('liveChg').innerText = currentPoint.chg;
+
+                        // 顶层浮动条的文字颜色判定规则（严格保持只要大跌就整体切变为绿色）
+                        var clr = (dataIndex > 0 && stockData[dataIndex].price < stockData[dataIndex-1].price) ? '#00ff66' : '#ff3b30';
+                        document.getElementById('livePrice').style.color = clr;
+                        document.getElementById('liveChg').style.color = clr;
+                    }
+                }
+            }
+
+            // 4. 多设备（电脑鼠标滑过 / 手机软屏大拇指滑行）总线事件绑定
+            function handleMove(e) {
+                var rect = canvas.getBoundingClientRect();
+                var clientX = e.clientX || (e.touches && e.touches.clientX);
+                if (clientX) {
+                    var mouseX = clientX - rect.left;
+                    drawChart(mouseX);
+                }
+            }
+
+            function handleLeave() {
+                // 滑动离开后，顶部默认死死锁在 8 月份最终大跌停牌的 $229.00 静态位置
+                document.getElementById('liveTime').innerText = "AUGUST (NOW)";
+                document.getElementById('livePrice').innerText = "$229.00";
+                document.getElementById('liveVol').innerText = "41,200,000";
+                document.getElementById('liveChg').innerText = "-21.50%";
+                document.getElementById('livePrice').style.color = '#00ff66';
+                document.getElementById('liveChg').style.color = '#00ff66';
+                drawChart(-1); // 抹除十字线
+            }
+
+            // 电脑总线绑定
+            viewport.addEventListener('mousemove', handleMove);
+            viewport.addEventListener('mouseleave', handleLeave);
+            // 手机/平板大面积滑动总线兼容（全屏幕尺寸自适应核心）
+            viewport.addEventListener('touchmove', handleMove, { passive: true });
+            viewport.addEventListener('touchend', handleLeave);
+
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas(); // 初始化首次高保真画线渲染
+        });
+    </script>
+
+</body>
+</html>

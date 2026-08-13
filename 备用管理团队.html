@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生命科学与系统生物学中心 - 专家团队</title>
+    <!-- 引入 TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Font Awesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 自定义字体与平滑滚动 */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            scroll-behavior: smooth;
+        }
+        /* 隐藏滚动条但保留功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* 卡片悬停微动效 */
+        .expert-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .expert-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
+
+    <!-- 1. 官方导航栏 -->
+    <nav class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <!-- Logo 区域 -->
+                <div class="flex-shrink-0 flex items-center gap-3 cursor-pointer" onclick="window.scrollTo(0,0)">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        <i class="fa-solid fa-dna"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-xl tracking-tight text-slate-900">Novatech <span class="text-blue-600">Pharma</span></h1>
+                        <p class="text-xs text-slate-500 font-medium">诺凡泰克集团/诺凡泰克制药</p>
+                    </div>
+                </div>
+                
+                <!-- 桌面端导航链接 -->
+                <div class="hidden md:flex space-x-8 items-center">
+                    <a href="药.html" class="text-slate-600 hover:text-blue-600 font-medium transition-colors">首页</a>
+                    <a href="#" class="text-blue-600 font-semibold border-b-2 border-blue-600 pb-1">专家团队</a>
+                    <a href="#" class="text-slate-600 hover:text-blue-600 font-medium transition-colors">研究成果</a>
+                    <a href="新闻.html" class="text-slate-600 hover:text-blue-600 font-medium transition-colors">新闻动态</a>
+                </div>
+
+                <!-- 右侧操作按钮 -->
+                <div class="flex items-center gap-4">
+                    <button class="hidden md:block text-slate-500 hover:text-blue-600 transition-colors">
+                        <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                    </button>
+                    <a href="药.html" class="bg-slate-900 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full text-sm font-medium transition-all shadow-md hover:shadow-lg">
+                        返回主页
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 2. Hero 区域：确立官方基调 -->
+    <section class="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white py-24 overflow-hidden">
+        <!-- 背景装饰 -->
+        <div class="absolute inset-0 opacity-20">
+            <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <path d="M0 100 C 20 0 50 0 100 100 Z" fill="url(#grad1)" />
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:rgb(59,130,246);stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:rgb(147,197,253);stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+            <span class="inline-block py-1 px-3 rounded-full bg-blue-500/30 border border-blue-400/30 text-blue-100 text-xs font-semibold tracking-wider mb-4 backdrop-blur-sm">
+                诺凡泰克集团/诺凡泰克制药
+            </span>
+            <h2 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
+                解码生命逻辑 <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-cyan-200">重塑人类未来</span>
+            </h2>
+            <p class="mt-4 max-w-2xl mx-auto text-xl text-slate-300 font-light">
+                依托巴布曼特联邦大学生命科学学院人类基因专业，致力于合成生物学底层工具开发与临床转化应用。
+            </p>
+        </div>
+    </section>
+
+    <!-- 3. 核心团队展示区 -->
+    <section id="team" class="py-20 bg-slate-50 flex-grow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <!-- 区域标题与筛选器 -->
+            <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+                <div>
+                    <h3 class="text-3xl font-bold text-slate-900">核心研发团队</h3>
+                    <p class="mt-2 text-slate-500">汇聚全球顶尖学者，推动合成生物学从理论走向实践。</p>
+                </div>
+                
+                <!-- 筛选标签 -->
+                <div class="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200 overflow-x-auto no-scrollbar">
+                    <button onclick="filterExperts('all')" class="filter-btn active px-6 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white shadow-md" data-filter="all">全部专家</button>
+                    <button onclick="filterExperts('chief')" class="filter-btn px-6 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-all" data-filter="chief">首席科学家</button>
+                    <button onclick="filterExperts('core')" class="filter-btn px-6 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-all" data-filter="core">核心骨干</button>
+                </div>
+            </div>
+
+            <!-- 专家卡片网格 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="expert-grid">
+                
+                <!-- 专家卡片 1: 谢震 教授 (您要求的重点) -->
+                <article class="expert-card bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl relative group" data-category="chief">
+                    <div class="flex items-start gap-5">
+                        <!-- 固定尺寸头像容器 -->
+                        <div class="avatar-box w-20 h-20 min-w-[80px] rounded-full overflow-hidden relative border-2 border-white shadow-md bg-gradient-to-br from-blue-50 to-blue-100">
+                            <img src="谢震教授.png" 
+                                 alt="谢震教授免冠正面职业照" 
+                                 class="w-full h-full object-cover">
+                            <span class="absolute bottom-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-tl-lg border-l border-t border-white"> </span>
+                        </div>
+                        
+                        <div class="flex-1">
+                            <h2 class="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">谢震 教授</h2>
+                            <div class="text-blue-600 text-xs font-bold uppercase tracking-wide mt-1">合成生物学首席科学家</div>
+                        </div>
+                    </div>
+                    
+                    <p class="mt-4 text-slate-600 text-sm leading-relaxed line-clamp-3">
+                        诺凡泰克制药首席科学家，海外大学生物学专家，主攻基因治疗与合成生物学，开创衰老重编程疗法，致力于实现人类寿命大幅延长。
+                    </p>
+                    
+                    <div class="mt-5 pt-4 border-t border-slate-100">
+                        <div class="text-xs text-slate-400 font-semibold mb-2">核心研发方向：</div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">合成生物学</span>
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">干细泡再生</span>
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">基因治疗</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 悬停显示的详情按钮 -->
+                    <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button class="text-slate-300 hover:text-blue-600"><i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </article>
+
+                <!-- 专家卡片 2: 示例 -->
+                <article class="expert-card bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl relative group" data-category="core">
+                    <div class="flex items-start gap-5">
+                        <div class="avatar-box w-20 h-20 min-w-[80px] rounded-full overflow-hidden relative border-2 border-white shadow-md bg-gradient-to-br from-purple-50 to-purple-100">
+                            <img src="沈瑜教授.png" 
+                                 alt="沈瑜教授免冠正面职业照" 
+                                 class="w-full h-full object-cover">
+                            <span class="absolute bottom-0 right-0 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-tl-lg border-l border-t border-white"> </span>
+                        </div>
+                        <div class="flex-1">
+                            <h2 class="text-xl font-bold text-slate-900 group-hover:text-purple-600 transition-colors">沈瑜 教授</h2>
+                            <div class="text-purple-600 text-xs font-bold uppercase tracking-wide mt-1">生物信息学总监</div>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-slate-600 text-sm leading-relaxed line-clamp-3">
+                        在分子生物学与衰老病理学领域拥有极高的学术声望。擅长从病理层面解析人体组织在衰老过程中的微观异变，为后续的特殊物质提取提供精准的靶向靶点指引。
+                    </p>
+                    <div class="mt-5 pt-4 border-t border-slate-100">
+                        <div class="text-xs text-slate-400 font-semibold mb-2">核心研发方向：</div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">生物信息学</span>
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">AI制药</span>
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">分子生物</span>
+                        </div>
+                    </div>
+                </article>
+
+                 <!-- 专家卡片 3: 示例 -->
+                 <article class="expert-card bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl relative group" data-category="core">
+                    <div class="flex items-start gap-5">
+                        <div class="avatar-box w-20 h-20 min-w-[80px] rounded-full overflow-hidden relative border-2 border-white shadow-md bg-gradient-to-br from-emerald-50 to-emerald-100">
+                            <img src="林珍博士.png" 
+                                 alt="林珍博士免冠正面职业照" 
+                                 class="w-full h-full object-cover">
+                            <span class="absolute bottom-0 right-0 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-tl-lg border-l border-t border-white"> </span>
+                        </div>
+                        <div class="flex-1">
+                            <h2 class="text-xl font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">林珍 博士</h2>
+                            <div class="text-emerald-600 text-xs font-bold uppercase tracking-wide mt-1">高级研究员</div>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-slate-600 text-sm leading-relaxed line-clamp-3">
+                        目标特殊物质的分离提纯工艺优化，建立高纯度、高活性的样本制备标准，突破微量关键物质的提取技术瓶颈。手上的细胞培养和蛋白提纯技术在业内几乎无人能及。
+                    </p>
+                    <div class="mt-5 pt-4 border-t border-slate-100">
+                        <div class="text-xs text-slate-400 font-semibold mb-2">核心研发方向：</div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">药物递送</span>
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">纳米材料</span>
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">蛋白提纯</span>
+                        </div>
+                    </div>
+                </article>
+                                 <!-- 专家卡片 3: 示例 -->
+                 <article class="expert-card bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl relative group" data-category="core">
+                    <div class="flex items-start gap-5">
+                        <div class="avatar-box w-20 h-20 min-w-[80px] rounded-full overflow-hidden relative border-2 border-white shadow-md bg-gradient-to-br from-emerald-50 to-emerald-100">
+                            <img src="玛伦.png" 
+                                 alt="玛伦博士免冠正面职业照" 
+                                 class="w-full h-full object-cover">
+                            <span class="absolute bottom-0 right-0 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-tl-lg border-l border-t border-white"> </span>
+                        </div>
+                        <div class="flex-1">
+                            <h2 class="text-xl font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">玛伦 博士</h2>
+                            <div class="text-emerald-600 text-xs font-bold uppercase tracking-wide mt-1">高级研究员</div>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-slate-600 text-sm leading-relaxed line-clamp-3">
+                        跨物种延寿干预的技术对标，特殊物质的跨环境稳定性研究，引入国际前沿的物质活性保存技术。同时负责对接国际合规性的技术参考，避免研究走国际上已经被验证失败的弯路。
+                    </p>
+                    <div class="mt-5 pt-4 border-t border-slate-100">
+                        <div class="text-xs text-slate-400 font-semibold mb-2">核心研发方向：</div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">活性保存</span>
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">基因治疗</span>
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">合成生物学</span>
+                        </div>
+                    </div>
+                </article>
+                 <!-- 专家卡片 3: 示例 -->
+                 <article class="expert-card bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl relative group" data-category="core">
+                    <div class="flex items-start gap-5">
+                        <div class="avatar-box w-20 h-20 min-w-[80px] rounded-full overflow-hidden relative border-2 border-white shadow-md bg-gradient-to-br from-emerald-50 to-emerald-100">
+                            <img src="克拉拉.png" 
+                                 alt="克拉拉博士免冠正面职业照" 
+                                 class="w-full h-full object-cover">
+                            <span class="absolute bottom-0 right-0 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-tl-lg border-l border-t border-white"> </span>
+                        </div>
+                        <div class="flex-1">
+                            <h2 class="text-xl font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">克拉拉 博士</h2>
+                            <div class="text-emerald-600 text-xs font-bold uppercase tracking-wide mt-1">高级研究员</div>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-slate-600 text-sm leading-relaxed line-clamp-3">
+                        神经衰老的保护机制研究，验证特殊物质对大脑认知功能的正向作用，规避延寿过程中可能出现的神经退行风险。不会损伤认知、记忆等核心神经功能，填补了团队在神经衰老干预方向的研究空白。
+                    </p>
+                    <div class="mt-5 pt-4 border-t border-slate-100">
+                        <div class="text-xs text-slate-400 font-semibold mb-2">核心研发方向：</div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">生物信息学</span>
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">纳米神经学</span>
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">干细泡再生</span>
+                        </div>
+                    </div>
+                </article>
+                                 <!-- 专家卡片 3: 示例 -->
+                 <article class="expert-card bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl relative group" data-category="core">
+                    <div class="flex items-start gap-5">
+                        <div class="avatar-box w-20 h-20 min-w-[80px] rounded-full overflow-hidden relative border-2 border-white shadow-md bg-gradient-to-br from-emerald-50 to-emerald-100">
+                            <img src="陆恒.png" 
+                                 alt="陆恒博士免冠正面职业照" 
+                                 class="w-full h-full object-cover">
+                            <span class="absolute bottom-0 right-0 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-tl-lg border-l border-t border-white"> </span>
+                        </div>
+                        <div class="flex-1">
+                            <h2 class="text-xl font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">陆恒 博士</h2>
+                            <div class="text-emerald-600 text-xs font-bold uppercase tracking-wide mt-1">高级研究员</div>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-slate-600 text-sm leading-relaxed line-clamp-3">
+                        定制化实验设备的研发与优化，搭建自动化的人体特殊物质提取生产线，保障大规模实验的稳定性与安全性。擅长搭建定制化的实验设备与自动化流程。
+                    </p>
+                    <div class="mt-5 pt-4 border-t border-slate-100">
+                        <div class="text-xs text-slate-400 font-semibold mb-2">核心研发方向：</div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">物质提取</span>
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">药物递送</span>
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">生物提纯</span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. 页脚 -->
+    <footer class="bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center gap-2 text-white font-bold text-xl mb-4">
+                        <i class="fa-solid fa-dna text-blue-500"></i> 诺凡泰克制药
+                    </div>
+                    <p class="text-sm max-w-xs leading-relaxed">
+                        致力于通过工程化手段理解并重构生命系统，为人类健康、能源与环境问题提供创新解决方案。
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">快速链接</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-blue-400 transition-colors">关于我们</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition-colors">研究平台</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition-colors">加入我们</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">联系方式</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><i class="fa-solid fa-location-dot mr-2"></i> 巴布曼特皇家科技园</li>
+                        <li><i class="fa-solid fa-envelope mr-2"></i> contact@cssb.tsinghua.edu.cn</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs">
+                <p>&copy;特别声明：以上信息均为架空虚构内容，无任何现实映射，不存在真实对应事件与人物，一切仅服务原创解谜故事创作</p>
+                <div class="flex space-x-4 mt-4 md:mt-0">
+                    <a href="#" class="hover:text-white"><i class="fa-brands fa-weixin"></i></a>
+                    <a href="#" class="hover:text-white"><i class="fa-brands fa-linkedin"></i></a>
+                    <a href="#" class="hover:text-white"><i class="fa-brands fa-twitter"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 交互脚本 -->
+    <script>
+        function filterExperts(category) {
+            // 1. 更新按钮状态
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => {
+                if (btn.dataset.filter === category) {
+                    btn.classList.remove('text-slate-600', 'hover:bg-slate-100', 'bg-white');
+                    btn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+                } else {
+                    btn.classList.add('text-slate-600', 'hover:bg-slate-100', 'bg-white');
+                    btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                }
+            });
+
+            // 2. 筛选卡片
+            const cards = document.querySelectorAll('.expert-card');
+            cards.forEach(card => {
+                if (category === 'all' || card.dataset.category === category) {
+                    card.style.display = 'block';
+                    // 添加淡入动画
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 50);
+                } else {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(10px)';
+                    setTimeout(() => {
+                        card.style.display = 'none';
+                    }, 300);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

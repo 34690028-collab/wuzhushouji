@@ -1,0 +1,381 @@
+ <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FASA | 联邦航空与太空管理局</title>
+    <style>
+        /* 硬核科幻荧光暗黑变量 */
+        :root {
+            --fui-cyan: #00ffcc;
+            --fui-blue: #0088ff;
+            --fui-dark-bg: #03080f;
+            --fui-panel-bg: rgba(6, 18, 30, 0.85);
+            --fui-border: rgba(0, 255, 204, 0.3);
+            --fui-warn: #ffcc00;
+            --fui-alert: #ff3333;
+            --fui-text-glow: 0 0 8px rgba(0, 255, 204, 0.6);
+        }
+
+        /* 全局适配层：锁定视口并为底部留出固定的搜索栏空间 */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', monospace, "微软雅黑"; }
+        body { 
+            background-color: var(--fui-dark-bg); color: var(--fui-cyan); 
+            width: 100vw; height: 100vh; overflow: hidden; padding: 10px;
+            display: flex; flex-direction: column;
+            background-image: linear-gradient(rgba(0, 255, 204, 0.02) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 255, 204, 0.02) 1px, transparent 1px);
+            background-size: 20px 20px;
+            padding-bottom: 70px; /* 为底部搜索留空 */
+        }
+
+        /* 顶部总控标头与首页返回键 */
+        .afsa-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid var(--fui-border); background: var(--fui-panel-bg);
+            padding: 8px 15px; margin-bottom: 10px;
+            clip-path: polygon(0 0, 100% 0, 99% 100%, 1% 100%);
+        }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .back-btn { 
+            background: transparent; border: 1px solid var(--fui-cyan); color: var(--fui-cyan);
+            padding: 4px 10px; font-size: 12px; cursor: pointer; font-weight: bold;
+            transition: all 0.2s; box-shadow: inset 0 0 5px rgba(0,255,204,0.2);
+        }
+        .back-btn:hover { background: var(--fui-cyan); color: var(--fui-dark-bg); }
+        .header-title { font-size: 15px; font-weight: bold; letter-spacing: 1px; text-shadow: var(--fui-text-glow); }
+        .header-sub { font-size: 11px; color: var(--fui-blue); text-align: right; }
+
+        /* 主控卡片滚动面板 */
+        .main-dashboard {
+            flex: 1; background: var(--fui-panel-bg); border: 1px solid var(--fui-border);
+            padding: 10px; display: flex; flex-direction: column; overflow: hidden;
+        }
+        .rocket-container { flex: 1; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+        /* 火箭卡片主体：默认紧凑排版，支持点击下拉展开 */
+        .rocket-card {
+            border: 1px solid rgba(0, 255, 204, 0.15);
+            background: rgba(0, 255, 204, 0.01);
+            border-left: 4px solid var(--fui-blue);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .rocket-card:hover { background: rgba(0, 255, 204, 0.04); }
+        
+        /* 顶部基础可见行 */
+        .card-summary {
+            padding: 10px; display: grid; grid-template-columns: 1.5fr 2fr; align-items: center; gap: 10px;
+        }
+        @media (max-width: 600px) { .card-summary { grid-template-columns: 1fr; gap: 4px; } }
+        
+        .rocket-info { display: flex; flex-direction: column; gap: 2px; }
+        .rocket-name { font-size: 13px; font-weight: bold; text-shadow: var(--fui-text-glow); }
+        .rocket-model { font-size: 11px; color: var(--fui-blue); }
+        .rocket-telemetry { font-size: 12px; color: var(--fui-warn); font-family: monospace; }
+
+        /* 核心：默认折叠隐藏的任务备注与控制面板（下拉手风琴效果） */
+        .card-details {
+            max-height: 0; overflow: hidden; background: rgba(3, 8, 15, 0.6);
+            border-top: 1px solid transparent; padding: 0 10px;
+            transition: max-height 0.25s ease-out, padding 0.25s ease-out;
+            display: grid; grid-template-columns: 2fr 1fr; align-items: center; gap: 15px;
+        }
+        @media (max-width: 768px) { .card-details { grid-template-columns: 1fr; gap: 10px; } }
+        
+        /* 当激活下拉状态时的类 */
+        .rocket-card.active .card-details {
+            max-height: 120px; padding: 10px; border-top: 1px dashed rgba(0, 255, 204, 0.2);
+        }
+
+        .rocket-memo { font-size: 11px; color: #8898aa; font-style: italic; line-height: 1.4; }
+        .control-area { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
+        @media (max-width: 768px) { .control-area { justify-content: flex-start; } }
+
+        /* 按钮与原位数字 */
+        .fui-btn {
+            background: transparent; border: 1px solid var(--fui-cyan); color: var(--fui-cyan);
+            padding: 4px 8px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.15s;
+        }
+        .fui-btn:hover { background: var(--fui-cyan); color: var(--fui-dark-bg); }
+        .btn-launch { border-color: var(--fui-cyan); color: var(--fui-cyan); }
+        .btn-cancel { border-color: var(--fui-warn); color: var(--fui-warn); }
+        .btn-cancel:hover { background: var(--fui-warn); color: var(--fui-dark-bg); }
+        .btn-recycle { border-color: var(--fui-blue); color: var(--fui-blue); }
+        .btn-recycle:hover { background: var(--fui-blue); color: var(--fui-dark-bg); }
+        .btn-abort { border-color: var(--fui-alert); color: var(--fui-alert); }
+        .btn-abort:hover { background: var(--fui-alert); color: var(--fui-dark-bg); }
+        .local-timer { font-size: 16px; font-weight: bold; color: var(--fui-alert); margin-right: 5px; }
+
+        /* 底部固定搜索栏 */
+        .footer-search {
+            position: fixed; bottom: 0; left: 0; width: 100vw; height: 60px;
+            background: var(--fui-panel-bg); border-top: 1px solid var(--fui-border);
+            display: flex; align-items: center; justify-content: center; padding: 0 15px; gap: 10px; z-index: 1000;
+        }
+        .search-input {
+            width: 100%; max-width: 400px; padding: 6px 12px; background: rgba(3, 8, 15, 0.8);
+            border: 1px solid var(--fui-border); color: var(--fui-cyan); font-size: 12px;
+        }
+        .search-btn {
+            padding: 6px 15px; background: transparent; border: 1px solid var(--fui-blue);
+            color: var(--fui-blue); font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s;
+        }
+        .search-btn:hover { background: var(--fui-blue); color: white; box-shadow: 0 0 10px var(--fui-blue); }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部中央总控标头与真实返回跳转 -->
+    <div class="fasa-header">
+        <div class="header-left">
+            <!-- 请将 'main_hub.html' 修改为您游戏主剧情或道具桌面的实际文件名 -->
+            <button class="back-btn" onclick="window.location.href='J航天局.html'">⬅ 返</button>
+            <div class="header-title">联邦航空与太空发射管理系统 // FASA</div>
+        </div>
+        <div class="header-sub">
+            <div>联邦航空与太空管理局加密内网</div>
+            <div id="liveClock">SYSTEM TIME: LOADING...</div>
+        </div>
+    </div>
+
+    <!-- 主展示区：手风琴式自适应中控面板 -->
+    <div class="main-dashboard">
+        <div style="font-size: 11px; font-weight: bold; margin-bottom: 8px; color: var(--fui-blue); letter-spacing: 1px;">
+            ▼ 巴布曼特航天发射基地 (MATRIX // 点击可下滑展开任务详情)
+        </div>
+        
+        <!-- 10个火箭手风琴列表容器 -->
+        <div class="rocket-container" id="rocketList">
+            <!-- 由JavaScript动态注入10组高度自适应的航天模型 -->
+        </div>
+    </div>
+
+    <!-- 底部固定多端自适应搜索栏与预留跳转 -->
+    <div class="footer-search">
+        <input type="text" id="searchInput" class="search-input" placeholder="空间站联系指令****" />
+        <button class="search-btn" onclick="handleSearch()">检索</button>
+    </div>
+<script>
+    // 10台火箭序列、剧情任务备注及后台结果概率（1: 进入轨道, 0: 坠毁）
+    const ROCKET_DATA = [
+        { id: 1, name: "阿瑞斯-V 号", model: "ARES-V (EXPLORE)", memo: "火星探测器运输任务", result: 1 },
+        { id: 2, name: "乌洛波洛斯-X39", model: "Ouroboros-X39", memo: "伊特尼塔空间站实验室物资运送", result: 1 },
+        { id: 3, name: "伊特尼塔-69", model: "Aeternitas-69", memo: "伊特尼塔空间站实验室物资运送", result: 1 },  
+        { id: 4, name: "泰坦级货运驳船", model: "TITAN-CARGO", memo: "月地空间站输送下半季度高能燃料补给", result: 1 },
+        { id: 5, name: "复仇者-侦察机", model: "AVENGER-R1", memo: "低轨道未知太空碎片异常辐射源捕获", result: 0 },
+        { id: 6, name: "征服者-11型", model: "CONQUEROR-11", memo: "巴布曼特高轨民用气象卫星更新", result: 0 },
+        { id: 7, name: "曙光号试验机", model: "DAWN-PROTOTYPE", memo: "星链终端替换维护", result: 0 }, // 剧情安排：试验机容易坠毁
+        { id: 8, name: "深空探针-X", model: "DEEP-PROBE", memo: "地址灾害侦查遥感卫星", result: 0 },
+        { id: 9, name: "幽灵号潜行拦截者", model: "GHOST-INTERCEPT", memo: "任务保密需更高权限", result: 0 },
+        { id: 10, name: "联邦领航者", model: "NAVIGATOR-ALPHA", memo: "月球基建设备空投任务", result: 0 }
+    ];
+
+    let activeTimers = {};
+
+    // 初始化加载界面：优先读取浏览器缓存，锁死玩家的发射历史状态
+    function renderRockets() {
+        const container = document.getElementById("rocketList");
+        container.innerHTML = "";
+
+        ROCKET_DATA.forEach(rocket => {
+            // 读取缓存的状态
+            const savedStatus = localStorage.getItem(`afsa_status_${rocket.id}`) || "推进剂加注中 // FUELING IN PROGRESS";
+            const savedColor = localStorage.getItem(`afsa_color_${rocket.id}`) || "var(--fui-warn)";
+            const savedLocked = localStorage.getItem(`afsa_locked_${rocket.id}`) === "true";
+
+            const cardHTML = `
+                <div class="rocket-card" id="card-${rocket.id}" onclick="toggleAccordion(this, event)">
+                    <!-- 顶部始终可见行 -->
+                    <div class="card-summary">
+                        <div class="rocket-info">
+                            <span class="rocket-name">${rocket.name}</span>
+                            <span class="rocket-model">${rocket.model}</span>
+                        </div>
+                        <div class="rocket-telemetry" id="telemetry-${rocket.id}" style="color: ${savedColor}">${savedStatus}</div>
+                    </div>
+                    <!-- 折叠隐藏的任务备注与局部控制区 -->
+                    <div class="card-details">
+                        <div class="rocket-memo">任务简报: ${rocket.memo}</div>
+                        <div class="control-area" id="control-${rocket.id}">
+                            ${savedLocked ? `<span style="font-size:11px;color:${savedColor}">SEQUENCE LOCKED</span>` : `<button class="fui-btn" onclick="openActionMenu(${rocket.id}, event)">控制指令</button>`}
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML("beforeend", cardHTML);
+        });
+    }
+
+    // 经典手风琴下滑展开动作切换
+    function toggleAccordion(cardElement, event) {
+        // 如果点击的是里面的按钮，则不能触发外侧的下拉折叠切换
+        if (event.target.tagName.toLowerCase() === 'button') return;
+
+        const isCurrentlyActive = cardElement.classList.contains("active");
+        
+        // 先将所有卡片都闭合
+        document.querySelectorAll(".rocket-card").forEach(card => card.classList.remove("active"));
+        
+        // 如果原本不是展开的，则让当前卡片展开下滑
+        if (!isCurrentlyActive) {
+            cardElement.classList.add("active");
+        }
+    }
+</script>
+<script>
+    // 呼出动作选择菜单
+    function openActionMenu(id, event) {
+        event.stopPropagation(); // 阻止手风琴关闭
+        const area = document.getElementById(`control-${id}`);
+        area.innerHTML = `
+            <button class="fui-btn btn-launch" onclick="triggerLaunch(${id}, event)">发射</button>
+            <button class="fui-btn btn-cancel" onclick="triggerCancel(${id}, event)">取消</button>
+            <button class="fui-btn btn-recycle" onclick="triggerRecycle(${id}, event)">回收</button>
+        `;
+    }
+
+    // 核心交互：10秒原位倒计时 + 双重延时弹窗 + 缓存锁定
+    function triggerLaunch(id, event) {
+        event.stopPropagation();
+        const area = document.getElementById(`control-${id}`);
+        const telemetry = document.getElementById(`telemetry-${id}`);
+        const rocket = ROCKET_DATA.find(r => r.id === id);
+        
+        telemetry.textContent = "状态: 点火程序启动...";
+        telemetry.style.color = "var(--fui-alert)";
+
+        let countdown = 10;
+        area.innerHTML = `
+            <span class="local-timer" id="timer-${id}">${countdown}S</span>
+            <button class="fui-btn btn-abort" onclick="abortLaunch(${id}, event)">紧急停止</button>
+        `;
+
+        activeTimers[id] = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                document.getElementById(`timer-${id}`).textContent = `${countdown}S`;
+            } else {
+                clearInterval(activeTimers[id]);
+                delete activeTimers[id];
+                
+                // --- 第一重弹窗：发射成功 ---
+                alert(`【FASA 控制中心通告】\n载具: ${rocket.name}\n点火成功！固体火箭助推器已正常分离，载具正在快速爬升。`);
+                
+                // 根据配置结果计算最终剧情：1代表成功，0代表坠毁
+                const isSuccess = rocket.result === 1;
+                const finalStatus = isSuccess ? "▲ 轨道运行 // ORBITAL" : "✖ 载具失联 // DESTROYED";
+                const finalColor = isSuccess ? "var(--fui-cyan)" : "var(--fui-alert)";
+
+                // 强制将状态与锁死缓存写入浏览器，玩家刷新或下次进来均无法篡改
+                localStorage.setItem(`afsa_status_${id}`, finalStatus);
+                localStorage.setItem(`afsa_color_${id}`, finalColor);
+                localStorage.setItem(`afsa_locked_${id}`, "true");
+
+                // 更新前端原位视觉效果
+                telemetry.textContent = `状态: ${finalStatus}`;
+                telemetry.style.color = finalColor;
+                area.innerHTML = `<span style="font-size:11px;color:${finalColor}">SEQUENCE LOCKED</span>`;
+
+                // --- 第二重延时弹窗：5秒后触发最终命运通知 ---
+                setTimeout(() => {
+                    if (isSuccess) {
+                        alert(`【FASA 地面雷達站讯】\n报告：${rocket.name} 已顺利通过远地点航向修正，成功进入预定近地同步轨道。`);
+                    } else {
+                        alert(`【FASA 灾难级警报】\n警告：${rocket.name} 火箭准备不足，强行发射，燃料泄露殉爆，飞行器全体航天员牺牲。地面以展开应急处置。`);
+                    }
+                }, 5000);
+            }
+        }, 1000);
+    }
+
+    // 紧急停止发射
+    function abortLaunch(id, event) {
+        event.stopPropagation();
+        if (activeTimers[id]) clearInterval(activeTimers[id]);
+        delete activeTimers[id];
+
+        const area = document.getElementById(`control-${id}`);
+        const telemetry = document.getElementById(`telemetry-${id}`);
+
+        localStorage.setItem(`fasa_status_${id}`, "⚠️ 紧急中止 // ABORTED");
+        localStorage.setItem(`fasa_color_${id}`, "var(--fui-warn)");
+        localStorage.setItem(`fasa_locked_${id}`, "true");
+
+        telemetry.textContent = "状态: ⚠️ 紧急中止 // ABORTED";
+        telemetry.style.color = "var(--fui-warn)";
+        area.innerHTML = `<span style="font-size:11px;color:var(--fui-warn)">SEQUENCE LOCKED</span>`;
+        alert("【紧急熔断】已下达终止指令，推进器紧急关断，该栏位由于不安全操作已被自动锁死。");
+    }
+
+    // 取消发射操作
+    function triggerCancel(id, event) {
+        event.stopPropagation();
+        localStorage.setItem(`afsa_status_${id}`, "❌ 任务取消 // CANCELED");
+        localStorage.setItem(`afsa_color_${id}`, "#8898aa");
+        localStorage.setItem(`afsa_locked_${id}`, "true");
+        renderRockets();
+        alert("【FASA 归档】发射任务已安全取消，该栏位流程已被锁死归档。");
+    }
+
+    // 回收火箭操作
+    function triggerRecycle(id, event) {
+        event.stopPropagation();
+        localStorage.setItem(`afsa_status_${id}`, "⚙️ 退回机库 // RECYCLED");
+        localStorage.setItem(`afsa_color_${id}`, "var(--fui-blue)");
+        localStorage.setItem(`afsa_locked_${id}`, "true");
+        renderRockets();
+        alert("【FASA 指令】正在执行燃料清空卸载，载具已回滚锁死并退回总装库。");
+    }
+
+    // 底部核心搜索栏与预留特定跳转链接
+    function handleSearch() {
+        const input = document.getElementById("searchInput").value.trim();
+        if (!input) return alert("请输入内网指令代码。");
+
+        // 终极重置解冻彩蛋：开发者还原
+        if (input === "开发者还原") {
+            ROCKET_DATA.forEach(r => {
+                localStorage.removeItem(`afsa_status_${r.id}`);
+                localStorage.removeItem(`afsa_color_${r.id}`);
+                localStorage.removeItem(`afsa_locked_${r.id}`);
+            });
+            renderRockets();
+            document.getElementById("searchInput").value = "";
+            alert("【开发者模式】缓存已全面释放！所有锁死数据已回归初始就绪状态。");
+            return;
+        }
+
+        // 预留链接 A：当玩家得到剧情密码 1047 时，点击回车跳转到指定的另一个剧情网页
+        if (input === "7222") {
+            window.location.href = "J空间站.html"; 
+            return;
+        }
+
+        // 预留链接 B：当玩家得到另一个剧情线索密码 AFSA99 时，跳转到另一个页面
+        if (input === "AFSA99") {
+            window.location.href = "#.html";
+            return;
+        }
+
+        // 错误兜底机制
+        alert(`【FASA 拦截】未查询到加密指令 [${input}]。该操作已被内网防黑客系统记录。`);
+    }
+
+    // 监听输入框的回车键（Enter键）
+    window.addEventListener("DOMContentLoaded", () => {
+        const searchInput = document.getElementById("searchInput");
+        if (searchInput) {
+            searchInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") { e.preventDefault(); handleSearch(); }
+            });
+        }
+        renderRockets();
+        
+        // 顶部时钟
+        setInterval(() => {
+            document.getElementById("liveClock").textContent = `SYSTEM TIME: ${new Date().toISOString().replace("T", " ").substring(0, 19)} UTC`;
+        }, 1000);
+    });
+</script>
+</body>
+</html>

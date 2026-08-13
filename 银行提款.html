@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEDERAL VAULT SYSTEM | 安全认证中心</title>
+    <style>
+        /* 银行系统高端黑金与安全钛白配色 */
+        :root {
+            --bank-black: #0B0E14;      /* 深邃量子金库黑 */
+            --bank-gold: #D4AF37;       /* 皇家尊贵拉丝金 */
+            --bank-dark-gray: #161B26;  /* 钛合金面板灰 */
+            --bank-green: #00E676;      /* 安全加密通路绿 */
+            --text-light: #E2E8F0;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bank-black);
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        /* 1. 银行系统高级极简导航栏（支持Logo更换与静默不跳转） */
+        .bank-nav {
+            background-color: rgba(11, 14, 20, 0.95);
+            border-bottom: 2px solid var(--bank-gold);
+            position: sticky; top: 0; z-index: 1000;
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        }
+        .nav-container {
+            max-width: 1200px; margin: 0 auto;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px;
+        }
+        .nav-brand {
+            display: flex; align-items: center;
+            text-decoration: none; color: #FFF;
+        }
+        /* 预留高度，您可随时在下方HTML中更换src为本地银行徽标 */
+        .nav-brand img {
+            height: 95px; width: auto; margin-right: 14px;
+            filter: drop-shadow(0 0 4px rgba(212,175,55,0.3));
+        }
+        .brand-text h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: 1.5px; color: #FFF; }
+        .brand-text p { font-size: 0.7rem; color: var(--bank-gold); letter-spacing: 2px; text-transform: uppercase; }
+        
+        .nav-links { display: flex; list-style: none; gap: 24px; }
+        .nav-links a {
+            color: #A0AEC0; text-decoration: none; font-size: 0.9rem;
+            font-weight: 500; letter-spacing: 1px; transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--bank-gold); }
+
+        /* 2. 高大上矩阵式动态磨砂背景标头 */
+        .vault-hero {
+            position: relative; width: 100%; min-height: 480px;
+            display: flex; align-items: center; justify-content: center;
+            /* 采用高动态几何质感底图，营造高级离岸金库氛围 */
+            background: linear-gradient(180deg, rgba(11,14,20,0.4), rgba(11,14,20,0.9)), 
+                        url('https://unsplash.com') no-repeat center/cover;
+            padding: 40px 20px; text-align: center;
+        }
+        /* 重工业风重度磨砂玻璃认证舱 */
+        .vault-glass-panel {
+            background: rgba(22, 27, 38, 0.65);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(214, 175, 87, 0.15);
+            border-radius: 16px; padding: 45px 35px;
+            max-width: 700px; width: 100%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255,255,255,0.02);
+        }
+        .vault-glass-panel h2 { font-size: 2rem; font-weight: 700; margin-bottom: 10px; color: #FFF; letter-spacing: 1px; }
+        .security-badge { display: inline-block; padding: 4px 12px; background: rgba(0,230,118,0.1); border: 1px solid var(--bank-green); color: var(--bank-green); font-size: 0.75rem; font-weight: 700; border-radius: 4px; margin-bottom: 20px; letter-spacing: 1px; }
+        .vault-glass-panel p { font-size: 0.95rem; color: #A0AEC0; margin-bottom: 30px; }
+
+        /* 3. 豪华双重安全检索/密钥提取栏（支持回车） */
+        .vault-search-box {
+            display: flex; max-width: 520px; margin: 0 auto;
+            background: rgba(11, 14, 20, 0.8); padding: 6px; border-radius: 8px;
+            border: 1px solid rgba(214, 175, 87, 0.3);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .vault-search-box input {
+            flex: 1; border: none; padding: 14px 18px; font-size: 1rem;
+            outline: none; color: #FFF; background: transparent;
+            font-family: 'Courier New', Courier, monospace; letter-spacing: 1.5px;
+        }
+        .vault-search-box input::placeholder { color: #4A5568; font-family: sans-serif; letter-spacing: 0px; }
+        .vault-search-box button {
+            background: linear-gradient(135deg, var(--bank-gold), #B8860B); color: var(--bank-black); border: none;
+            padding: 0 28px; font-weight: 700; font-size: 0.95rem; letter-spacing: 1px;
+            cursor: pointer; border-radius: 6px; transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(214,175,55,0.2);
+        }
+        .vault-search-box button:hover { 
+            background: linear-gradient(135deg, #FFF, var(--bank-gold));
+            box-shadow: 0 0 15px var(--bank-gold);
+        }
+
+        /* 手机与平板等移动屏幕完美兼容 */
+        @media (max-width: 768px) {
+            .nav-container { flex-direction: column; gap: 15px; text-align: center; }
+            .nav-links { width: 100%; justify-content: center; font-size: 0.8rem; }
+            .vault-glass-panel { padding: 30px 20px; }
+            .vault-glass-panel h2 { font-size: 1.5rem; }
+            .vault-search-box { flex-direction: column; background: rgba(11, 14, 20, 0.9); box-shadow: none; gap: 12px; border: none; padding: 0; }
+            .vault-search-box input { border: 1px solid rgba(214, 175, 87, 0.3); border-radius: 6px; background: var(--bank-black); }
+            .vault-search-box button { padding: 14px; border-radius: 6px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. 顶部高端黑金导航栏 -->
+    <nav class="bank-nav">
+        <div class="nav-container">
+            <!-- 预留不跳转代码 javascript:void(0); 保证点击任何地方都不会穿帮 -->
+            <a href="javascript:void(0);" class="nav-brand">
+                <!-- 随时替换此处src为您真实的银行系统徽标路径 -->
+                <img src="银行LOGO.png" alt="BANK LOGO">
+                <div class="brand-text">
+                    <h1>巴布曼特联信商业银行</h1>
+                    <p>您的金融安全管家</p>
+                </div>
+            </a>
+            <ul class="nav-links">
+                <li><a href="mail.html">返回</a></li>
+                <li><a href="javascript:void(0);">加密解核</a></li>
+                <li><a href="javascript:void(0);">安全审计</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 2. 动态密钥提取大厅标头 -->
+    <header class="vault-hero">
+        <div class="vault-glass-panel">
+            <span class="security-badge">✦ AES-256 QUANTUM ENCRYPTED</span>
+            <h2>数字安全凭证提取终端</h2>
+            <p>请在下方输入您的尊享结算密钥，系统将通过内置密匙完成极速安全核验并导向提款窗口。</p>
+            
+            <!-- 3. 加强型密钥输入栏 -->
+            <div class="vault-search-box">
+                <input type="text" id="vaultSecretKey" placeholder="请输入密钥代码（如: ***-****-****-****-****-****）...">
+                <button onclick="executeVaultExtraction()">验证提取</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 预留下一部分拼接槽位 -->
+    <main id="bank-vault-body">
+        <!-- 7. 核心跳转引擎：解决 executeVaultExtraction 未定义问题 -->
+    <script>
+        // 核心字典库
+        const VAULT_DICTIONARY = {
+            "大额提款": "#block-withdrawal",         
+            "凭证托管": "#block-keys",               
+            "TBU-AUTH-7492-NVTH-8361-NVTH": "withdraw.html", 
+            "UTB-AUTH-8361-NVTH-8361-K9XZ": "withdraw.html", 
+            "BTU-AUTH-NVTH-NVTH-8361-K9XZ": "withdraw.html", 
+            "UTB-AUTH-7492-8361-8361-K9XZ": "withdraw.html", 
+            "ATB-8361-7492-NVTH-8361-NVTH": "withdraw.html",  
+            "UTB-AUTH-7492-NVTH-8361-K9XZ": "口令提款.html",                          
+        };
+
+        // 浏览器执行的跳转核心功能
+        function executeVaultExtraction() {
+            // 获取输入框的内容
+            const rawInput = document.getElementById('vaultSecretKey').value;
+            const parsedKey = rawInput ? rawInput.trim() : "";
+            
+            if (!parsedKey) {
+                alert('【系统安全拦截】安全提取凭证不能为空，请输入您的结算密匙或授权口令。');
+                return;
+            }
+            
+            // 匹配字典库并跳转
+            if (VAULT_DICTIONARY.hasOwnProperty(parsedKey)) {
+                window.location.href = VAULT_DICTIONARY[parsedKey];
+            } else {
+                alert('【量子风控提示】未检索到有效密匙："' + parsedKey + '"。\n该口令或字典编码未激活，或已被转移。请核对后重新核验。');
+            }
+        }
+
+        // 绑定回车键快捷触发
+        document.getElementById('vaultSecretKey').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                executeVaultExtraction();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>秋野烧烤店 - 官方网站</title>
+        <style>
+        /* ==========================================================================
+           1. 全局变量与深夜暗黑底色重置
+           ========================================================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-color: #0b0d13;       /* 深夜质感黑 */
+            --card-bg: #141722;        /* 烤店卡片深灰 */
+            --theme-color: #ff5722;    /* 炭火烈焰橙红 */
+            --gold-color: #ffb300;     /* 酥脆烤串金黄 */
+            --text-main: #ffffff;      /* 纯白主字 */
+            --text-muted: #8a92a6;     /* 烟雾灰副字 */
+            --border-color: #232838;   /* 铁丝烤网深灰边框 */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* ==========================================================================
+           2. 顶部控制栏与局方标头横向排版
+           ========================================================================== */
+        .top-bar {
+            background-color: rgba(20, 23, 34, 0.95);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 6px 14px;
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            flex-shrink: 0; /* 防止被挤压 */
+        }
+
+        .back-btn:hover {
+            color: var(--theme-color);
+            border-color: var(--theme-color);
+            background-color: rgba(255, 87, 34, 0.1);
+        }
+
+        .top-header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .agency-tag {
+            color: var(--gold-color);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .divider {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .system-tag {
+            color: var(--text-muted);
+        }
+
+        /* ==========================================================================
+           3. 主体响应式自适应容器布局
+           ========================================================================== */
+        .main-content {
+            flex: 1;
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        /* ==========================================================================
+           4. 首页大图宣传板块（锁定 16:9 比例）
+           ========================================================================== */
+        .promo-section {
+            width: 100%;
+        }
+
+        .promo-banner {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9; /* 🛠️ 精确锁定 16:9 画面比例 */
+            background-color: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .promo-banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .promo-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(11, 13, 19, 0.95) 15%, rgba(11, 13, 19, 0.4) 60%, transparent 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 24px;
+        }
+
+        .promo-overlay h2 {
+            font-size: 26px;
+            color: var(--gold-color);
+            margin-bottom: 6px;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .promo-overlay p {
+            font-size: 14px;
+            color: var(--text-main);
+            opacity: 0.9;
+        }
+
+        /* ==========================================================================
+           5. 纯文字抽屉面板排版样式
+           ========================================================================== */
+        .dropdown-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .dropdown-item {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .dropdown-trigger {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-main);
+            padding: 16px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-trigger:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+            color: var(--gold-color);
+        }
+
+        .chevron-icon {
+            color: var(--text-muted);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+        }
+
+        /* 展开激活状态：小箭头逆时针旋转 180 度 */
+        .dropdown-item.active .chevron-icon {
+            transform: rotate(-180deg);
+            color: var(--theme-color);
+        }
+
+        .dropdown-content {
+            border-top: 1px solid var(--border-color);
+            padding: 16px 20px;
+            background-color: rgba(0, 0, 0, 0.15);
+            animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 纯文字条目：左右对齐结构 */
+        .list-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 12px 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+            font-size: 14px;
+            gap: 20px;
+        }
+        .list-row:last-child { 
+            border-bottom: none; 
+        }
+        
+        .list-left-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .list-label { 
+            color: var(--text-main); 
+            font-weight: 500;
+        }
+        .list-desc { 
+            color: var(--text-muted); 
+            font-size: 12px; 
+            line-height: 1.4;
+        }
+        .list-value { 
+            color: var(--gold-color); 
+            font-weight: bold;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        /* ==========================================================================
+           6. 页脚角标全局完美居中与多端流式适配
+           ========================================================================== */
+        .footer-area {
+            border-top: 1px solid var(--border-color);
+            padding: 24px 16px;
+            text-align: center; /* 🛠️ 确保长文字折行后每行依然居中 */
+            font-size: 12px;
+            color: var(--text-muted);
+            width: 100%;
+            display: flex;
+            justify-content: center; /* 🛠️ 彻底水平居中 */
+        }
+
+        @media (max-width: 768px) {
+            .top-bar { padding: 12px 16px; gap: 12px; }
+            .top-header-title { font-size: 13px; }
+            .back-btn span { display: none; } /* 移动端隐藏按钮多余文案 */
+            .promo-banner { aspect-ratio: auto; min-height: 160px; } /* 手机端防过扁锁定最低高度 */
+            .promo-overlay h2 { font-size: 20px; }
+            .dropdown-trigger { padding: 14px 16px; font-size: 14px; }
+            .dropdown-content { padding: 12px 16px; }
+            .list-row { flex-direction: column; gap: 6px; } /* 手机上转为上下排列防文字溢出 */
+            .list-value { align-self: flex-start; margin-top: 2px; }
+        }
+    </style>
+
+</head>
+<body>
+
+    <!-- 顶部控制栏：返回按钮与系统标头 -->
+    <header class="top-bar">
+        <a href="浏览器.html" class="back-btn" title="返回上一页">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>返回门户</span>
+        </a>
+        <div class="top-header-title">
+            <span class="agency-tag">一天一顿小烧烤</span>
+            <span class="divider">/</span>
+            <span class="agency-tag">秋野烧烤忘不了</span>
+        </div>
+    </header>
+
+    <!-- 主体自适应容器 -->
+    <main class="main-content">
+        
+        <!-- 首页大图宣传板块（固定 16:9 比例） -->
+        <section class="promo-section">
+<div class="promo-banner">
+    <!-- 🛠️ 关键修改：直接在 src 里面写上你的图片名字（确保没有错别字） -->
+    <img id="promoImg" src="3秋野烧烤.jpg" alt="秋野烧烤店宣传大图">
+    <div class="promo-overlay">
+        <h2>炭火慢烤 · 匠心传承</h2>
+        <p>精选羔羊肉，每一串都是深夜的慰藉</p>
+    </div>
+</div>
+        </section>
+
+        <!-- 下方：三大并列下拉抽屉式板块（不含任何图片） -->
+        <section class="dropdown-section">
+            
+            <!-- 1. 菜单抽屉 -->
+            <div class="dropdown-item">
+                <button class="dropdown-trigger" id="menuTrigger">
+                    <span>🔥 招牌核心烤串清单</span>
+                    <svg class="chevron-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="dropdown-content" id="menuContent" style="display: none;">
+                    <!-- 动态注入纯文字列表 -->
+                </div>
+            </div>
+
+            <!-- 2. 酒水抽屉 -->
+            <div class="dropdown-item">
+                <button class="dropdown-trigger" id="drinksTrigger">
+                    <span>🍺 特色精酿与冰镇酒水</span>
+                    <svg class="chevron-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="dropdown-content" id="drinksContent" style="display: none;">
+                    <!-- 动态注入纯文字列表 -->
+                </div>
+            </div>
+
+            <!-- 3. 联系订餐方式抽屉 -->
+            <div class="dropdown-item">
+                <button class="dropdown-trigger" id="contactTrigger">
+                    <span>📞 营业时间与联络方式</span>
+                    <svg class="chevron-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="dropdown-content" id="contactContent" style="display: none;">
+                    <!-- 动态注入纯文字列表 -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- 页脚特别声明角标 -->
+    <footer class="footer-area">
+        <p>© 特别声明：以上信息均为架空虚构内容，无任何现实映射，不存在真实对应事件与人物，一切仅服务原创解谜故事创作</p>
+    </footer>
+
+        <script>
+        /**
+         * ==========================================================================
+         * 1. 纯文字核心数据字典配置区（去图片依赖）
+         * ==========================================================================
+         */
+
+        // 🛠️ 首页大图路径：请确保将您生成的秋野烧烤店宣传图命名为 qiu野_banner.png 放在同级目录下
+        const PROMO_IMAGE_SRC = '3秋野烧烤.jpg';
+        // 1. 菜单抽屉：纯文字招牌烤串数据
+        const DROPDOWN_MENU = [
+            { name: '🔥 招牌西旗羔羊肉串', value: '￥7.00 / 串', desc: '精选苏尼特6个月羔羊肉，肥瘦相间，外酥里嫩，滋滋冒油。' },
+            { name: '🥩 炭烤厚切牛五花', value: '￥8.50 / 串', desc: '秘制酱汁微浸，强火瞬间锁肉汁，搭配淡淡的果木香气。' },
+            { name: '🌶️ 爆汁烈焰烤大虾', value: '￥12.00 / 串', desc: '大个海捕明虾，壳酥肉弹，表面撒满手捣红辣椒碎与海盐。' },
+            { name: '🧅 黄金锡纸烤脑花', value: '￥18.00 / 份', desc: '绵密如云朵般口感，浸入红油重辣汤汁中，深夜解馋必备。' }
+        ];
+
+        // 2. 酒水抽屉：特色酒水数据
+        const DROPDOWN_DRINKS = [
+            { name: '🍺 秋野手作小麦原浆精酿 (500ml)', value: '￥15.00 / 杯', desc: '果香浓郁，泡沫绵密，烤羊肉金牌搭档。' },
+            { name: '🍊 冰镇老北京北冰洋汽水', value: '￥5.00 / 瓶', desc: '传统橘子味，沙口气足，解腻冰爽。' },
+            { name: '🧉 古法酸梅汤 (扎)', value: '￥22.00 / 扎', desc: '乌梅、山楂、甘草纯手工熬制，清热去火。' }
+        ];
+
+        // 3. 联系订餐方式抽屉：营业与联络数据
+        const DROPDOWN_CONTACT = [
+            { name: '⏰ 营业时间', value: '17:30 - 次日 03:00', desc: '深夜食堂，风雨无阻为您亮灯。' },
+            { name: '📍 店铺地址', value: '巴布曼特街区联邦警察局东侧100米', desc: '秋野烧烤店（旗舰店）' },
+            { name: '📱 <strong>微讯电话同步</strong>/外卖热线', value: '597099', desc: '高峰期建议提早拨打预留桌位。' }
+        ];
+        /**
+         * ==========================================================================
+         * 2. 纯文字内容动态流式渲染逻辑
+         * ==========================================================================
+         */
+        window.addEventListener('DOMContentLoaded', () => {
+            // 1. 自动注入 16:9 首页大尺寸宣传图
+            const promoImg = document.getElementById('promoImg');
+            if (promoImg) {
+                promoImg.src = PROMO_IMAGE_SRC;
+            }
+
+            // 2. 动态注入：招牌核心烤串清单（纯文字）
+            const menuContent = document.getElementById('menuContent');
+            menuContent.innerHTML = generateListHtml(DROPDOWN_MENU);
+
+            // 3. 动态注入：特色精酿与冰镇酒水（纯文字）
+            const drinksContent = document.getElementById('drinksContent');
+            drinksContent.innerHTML = generateListHtml(DROPDOWN_DRINKS);
+
+            // 4. 动态注入：营业时间与联络方式（纯文字）
+            const contactContent = document.getElementById('contactContent');
+            contactContent.innerHTML = generateListHtml(DROPDOWN_CONTACT);
+
+            // 5. 🛠️ 核心交互绑定：为三大抽屉板块绑定点击展开与小箭头逆时针旋转180度事件
+            initDropdownDrawer('menuTrigger', 'menuContent');
+            initDropdownDrawer('drinksTrigger', 'drinksContent');
+            initDropdownDrawer('contactTrigger', 'contactContent');
+        });
+
+        /**
+         * ==========================================================================
+         * 3. 辅助复用函数：纯文字列表 HTML 构建器
+         * ==========================================================================
+         */
+        function generateListHtml(dataSource) {
+            let htmlResult = '';
+            dataSource.forEach(item => {
+                htmlResult += `
+                    <div class="list-row">
+                        <div class="list-left-box">
+                            <div class="list-label">${item.name}</div>
+                            <div class="list-desc">${item.desc}</div>
+                        </div>
+                        <div class="list-value">${item.value}</div>
+                    </div>
+                `;
+            });
+            return htmlResult;
+        }
+
+        /**
+         * ==========================================================================
+         * 4. 抽屉式下拉菜单独立控制逻辑
+         * ==========================================================================
+         */
+        function initDropdownDrawer(triggerId, contentId) {
+            const triggerBtn = document.getElementById(triggerId);
+            const contentPanel = document.getElementById(contentId);
+            const outerWrapper = triggerBtn.closest('.dropdown-item'); // 锁定外部大盒子
+
+            triggerBtn.addEventListener('click', () => {
+                // 检查当前面板是隐藏还是展开
+                const isCurrentlyHidden = contentPanel.style.display === 'none';
+
+                if (isCurrentlyHidden) {
+                    contentPanel.style.display = 'block';           // 瞬间展现内容
+                    outerWrapper.classList.add('active');          // 赋予激活类名，使CSS控制小箭头产生翻转动画
+                } else {
+                    contentPanel.style.display = 'none';            // 隐藏内容
+                    outerWrapper.classList.remove('active');       // 移除类名，小箭头动画回正
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hummingbird OS - Smart Dialer Subsystem</title>
+    
+    <!-- ⚠️ 注意：全站已 100% 彻底连根拔除任何外部 CSS 字体或图标链接，实现完美无网秒开 ⚠️ -->
+    
+    <style>
+        /* ==========================================================================
+           【第 1 部分】全站基础色彩、极致全面屏手机外壳与自适应 A 面样式表
+           ========================================================================== */
+        :root {
+            --os-bg: #090B15;           /* 手机系统沉浸式星空黑底色 */
+            --ios-gray: #1C1C1E;        /* 九宫格按键经典高档灰 */
+            --phone-green: #34C759;     /* 标志性通话拨出绿色 */
+            --phone-red: #FF3B30;       /* 挂断与警示紧急红 */
+            --text-light: #FFFFFF;
+            --text-muted: #8E8E93;      /* 严谨的辅助文本灰 */
+            --border-line: rgba(255,255,255,0.08);
+            --font-global: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        /* 强力多端视口自平衡对齐，确保在任何尺寸的电脑和笔记本屏幕下都居中不缩水 */
+        body {
+            font-family: var(--font-global);
+            background-color: #030406;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 极致开阔全面屏虚拟手机硬件外壳（纯净全面屏，剔除灵动岛） */
+        .lapd-phone-hardware-shell {
+            position: relative;
+            width: 100vw;
+            max-width: 380px;           /* 电脑端最大卡在黄金手机宽度 */
+            height: 100vh;
+            max-height: 820px;          /* 电脑端最大卡在黄金手机高度 */
+            background: #000000;
+            border-radius: 40px;        /* 极致全面屏流线圆角 */
+            padding: 12px;              /* 机身极窄金属外框厚度 */
+            box-shadow: 0 30px 70px rgba(0,0,0,0.7), 
+                        inset 0 0 0 2px rgba(255,255,255,0.15);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 侧边高仿真凸起物理按键 */
+        .phone-side-key { position: absolute; background: #1a1b1d; width: 3px; border-radius: 2px; }
+        .vol-up { top: 150px; left: -3px; height: 45px; }
+        .vol-down { top: 205px; left: -3px; height: 45px; }
+        .power { top: 175px; right: -3px; height: 70px; }
+
+        /* 手机内屏液晶外壳 */
+        .virtual-phone-screen {
+            position: relative;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: var(--os-bg);
+            border-radius: 32px;
+            overflow: hidden;           /* 强制封锁边缘防止任何内容撑破变形 */
+            display: flex;
+            flex-direction: column;
+            z-index: 5;
+        }
+        /* ==========================================================================
+           【第 2 部分】中联移动高仿真状态栏与九宫格输入框基础样式表
+           ========================================================================== */
+        /* 高仿真全面屏状态栏：左侧锁定中联移动 5G，右侧保留系统时间 */
+        .phone-top-status-bar {
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            height: 44px;
+            padding: 14px 24px 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 99999;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-light);
+            background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 100%);
+        }
+
+        .status-bar-left { display: flex; align-items: center; gap: 5px; }
+        .operator-brand { font-size: 11px; letter-spacing: 0.5px; font-weight: 900; color: #ffffff; margin-right: 2px; }
+        .network-type-badge { font-size: 8px; font-weight: 900; background: rgba(255,255,255,0.18); padding: 0 3px; border-radius: 2px; margin-right: 1px; }
+        .status-bar-right { display: flex; align-items: center; gap: 5px; }
+        #os-live-clock-ticker { font-size: 12px; font-family: sans-serif; font-weight: 700; }
+
+        /* 全离线状态栏内联 SVG 图标大小控制 */
+        .svg-status-icon { width: 12px; height: 12px; fill: currentColor; display: inline-block; vertical-align: middle; opacity: 0.9; }
+
+        /* 拨号器主应用容器（预留头部 44px 避开状态栏） */
+        .dialer-app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 44px 0 0 0;
+            color: var(--text-light);
+            justify-content: space-between;
+        }
+
+        /* 顶部数字实时回显输入框 */
+        .dialer-screen-display-panel {
+            width: 100%;
+            height: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0 20px;
+            text-align: center;
+        }
+        .dialer-live-number-input {
+            font-size: 34px;
+            font-weight: 400;
+            letter-spacing: -0.5px;
+            color: var(--text-light);
+            overflow: hidden;
+            white-space: nowrap;
+            max-width: 100%;
+            font-family: sans-serif;
+        }
+        .dialer-contact-name-match {
+            font-size: 13px;
+            color: var(--phone-green);
+            font-weight: 700;
+            margin-top: 4px;
+            min-height: 18px;
+        }
+
+        /* 底部原生底座导航栏（用于切替拨号、最近通话、通讯录） */
+        .phone-bottom-tab-bar {
+            height: 64px;
+            background-color: #12131a;
+            border-top: 1px solid var(--border-line);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .tab-item-btn {
+            background: none; border: none; color: var(--text-muted);
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            font-size: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .tab-item-btn.active-tab { color: var(--phone-green); }
+        .tab-item-btn svg { width: 20px; height: 20px; fill: currentColor; }
+        /* ==========================================================================
+           【第 3 部分】九宫格键盘网格、各功能卡片控制与多端自适应响应式样式表
+           ========================================================================== */
+        /* 中间各页面主视口切换（控制三个板块的隐形与呈现） */
+        .phone-view-stage-viewport { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        .view-content-pane { display: none; height: 100%; width: 100%; }
+        .view-content-pane.active-view { display: flex; flex-direction: column; }
+
+        /* 仿真九宫格电话按键网格布局 */
+        .keypad-grid-matrix {
+            display: grid;
+            grid-template-columns: repeat(3, 75px);
+            gap: 16px 22px;
+            justify-content: center;
+            align-content: center;
+            margin-bottom: 12px;
+        }
+
+        /* 物理纯圆形高质感数字纽扣 */
+        .keypad-circle-btn {
+            width: 75px; height: 75px; border-radius: 50%;
+            background-color: var(--ios-gray); color: var(--text-light);
+            border: none; cursor: pointer; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; transition: background-color 0.15s;
+        }
+        .keypad-circle-btn:active { background-color: #3A3A3C; }
+        .keypad-circle-btn .num-big { font-size: 28px; font-weight: 400; line-height: 1; }
+        .keypad-circle-btn .letters-small { font-size: 9px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; margin-top: 1px; text-transform: uppercase; }
+
+        /* 绿色拨号主按钮及删除方向盘样式 */
+        .keypad-action-row { display: flex; justify-content: center; align-items: center; gap: 22px; margin-top: 4px; padding: 0 45px; position: relative; }
+        .btn-call-trigger { width: 75px; height: 75px; border-radius: 50%; background-color: var(--phone-green); border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; color: #ffffff; }
+        .btn-call-trigger:active { background-color: #2baf4e; }
+        .btn-call-trigger svg { width: 28px; height: 28px; fill: currentColor; }
+        .btn-backspace-del { background: none; border: none; color: var(--text-muted); cursor: pointer; position: absolute; right: 55px; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .btn-backspace-del.show-del { opacity: 1; pointer-events: auto; }
+        .btn-backspace-del svg { width: 24px; height: 24px; fill: currentColor; }
+
+        /* 最近通话及通讯录长条样式 */
+        .list-section-header { font-size: 24px; font-weight: 900; padding: 20px 24px 10px 24px; letter-spacing: -0.5px; }
+        .records-scroll-box { flex: 1; overflow-y: auto; padding: 0 4px; }
+        .contact-row-card, .recent-row-card { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border-line); }
+        .row-left-info { display: flex; flex-direction: column; gap: 2px; }
+        .row-name-text { font-size: 16px; font-weight: 600; }
+        .row-sub-text { font-size: 12px; color: var(--text-muted); }
+        .row-right-meta { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+        .row-right-meta svg { width: 14px; height: 14px; fill: currentColor; }
+        
+        /* 呼叫状态悬浮全屏大遮罩层 */
+        .calling-state-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(9,11,21,0.98); z-index: 999999; display: none; flex-direction: column; justify-content: space-between; padding: 100px 30px 60px 30px; text-align: center; }
+        .calling-state-overlay.active-calling { display: flex; animation: fadeIn 0.3s ease; }
+        .calling-avatar-circle { width: 110px; height: 110px; border-radius: 50%; background-color: var(--ios-gray); margin: 0 auto 20px auto; display: flex; justify-content: center; align-items: center; font-size: 32px; font-weight: 700; color: var(--phone-green); border: 2px solid var(--border-line); overflow: hidden; }
+        .calling-avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .btn-hangup-trigger { width: 72px; height: 72px; border-radius: 50%; background-color: var(--phone-red); border: none; cursor: pointer; margin: 0 auto; display: flex; justify-content: center; align-items: center; color: #ffffff; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* 极致多端真手机自适应全屏降级死命令 */
+        @media (max-width: 450px), (max-height: 850px) {
+            body { padding: 0 !important; background-color: var(--os-bg) !important; }
+            .lapd-phone-hardware-shell { width: 100vw !important; max-width: 100vw !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0 !important; padding: 0 !important; box-shadow: none !important; }
+            .virtual-phone-screen { border-radius: 0 !important; }
+            .phone-side-key { display: none !important; }
+            .phone-top-status-bar { padding-top: 10px !important; }
+            .dialer-app-container { padding-top: 40px !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================================================
+       【第 4 部分】全离线隐藏音频挂载器与高仿真九宫格拨号内屏 HTML
+       ========================================================================== -->
+    <!-- 💡 【按键音效预留】：后期您可以直接将 src="#" 改为您本地电脑里的钢琴按键或标准双音多频 DTMF 音频路径 -->
+    <audio id="native-touch-sound-core" src="手机按键音.AAC" preload="auto"></audio>
+    <!-- 💡 【5个专属通话音频驱动槽】：默认配置 5 个播放槽位，后期直接把 src="#" 换为您做好的 5 个特定声音文件路径 -->
+    <audio id="preset-audio-track-0" src="05接警员大表姐.MP3" preload="auto"></audio>
+    <audio id="preset-audio-track-1" src="#" preload="auto"></audio>
+    <audio id="preset-audio-track-2" src="05忙音.MP3" preload="auto"></audio>
+    <audio id="preset-audio-track-3" src="#" preload="auto"></audio>
+    <audio id="preset-audio-track-4" src="#" preload="auto"></audio>
+
+    <div class="lapd-phone-hardware-shell">
+        <!-- 侧边高仿真凸起物理实体按键 -->
+        <div class="phone-side-key vol-up"></div>
+        <div class="phone-side-key vol-down"></div>
+        <div class="phone-side-key power"></div>
+        
+        <!-- 手机液晶视网膜内屏（纯净全面屏，无灵动岛） -->
+        <div class="virtual-phone-screen">
+            
+            <!-- 【中联移动 5G 状态栏】：全内联矢量 SVG 绘制 -->
+            <div class="phone-top-status-bar">
+                <div class="status-bar-left">
+                    <span class="operator-brand">中联移动</span>
+                    <svg class="svg-status-icon" viewBox="0 0 24 24"><path d="M2 22h20V2z"/></svg>
+                    <span class="network-type-badge">5G</span>
+                    <svg class="svg-status-icon" viewBox="0 0 24 24"><path d="M12 21l-12-12c4.5-4.5 12-4.5 16.5 0l-4.5 4.5zm0-16.5c-3.5 0-6.5 1.5-8.5 4l2.5 2.5c1.5-1.5 3.5-2.5 6-2.5s4.5 1 6 2.5l2.5-2.5c-2-2.5-5-4-8.5-4z"/></svg>
+                </div>
+                <div class="status-bar-right">
+                    <span id="os-live-clock-ticker">12:00</span>
+                    <svg class="svg-status-icon" viewBox="0 0 24 24"><path d="M17 5H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm1 11h2v-4h-2V7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-2z"/></svg>
+                </div>
+            </div>
+
+            <!-- 拨号器主应用视口层 -->
+            <div class="dialer-app-container">
+                <div class="phone-view-stage-viewport">
+                    
+                    <!-- ==========================================================
+                       【面板 1】九宫格数字拨号盘主视图（初始激活默认显现）
+                       ========================================================== -->
+                    <div class="view-content-pane active-view" id="view-pane-keypad">
+                        <!-- 顶回显输入框 -->
+                        <div class="dialer-screen-display-panel">
+                            <div class="dialer-live-number-input" id="ui-live-input-display"></div>
+                            <div class="dialer-contact-name-match" id="ui-contact-match-text"></div>
+                        </div>
+                        
+                        <!-- 物理严整九宫格键盘网格 -->
+                        <div class="keypad-grid-matrix">
+                            <button class="keypad-circle-btn" onclick="executeKeyPress('1', '')"><span class="num-big">1</span><span class="letters-small"> </span></button>
+                            <button class="keypad-circle-btn" onclick="executeKeyPress('2', 'abc')"><span class="num-big">2</span><span class="letters-small">abc</span></button>
+                            <button class="keypad-circle-btn" onclick="executeKeyPress('3', 'def')"><span class="num-big">3</span><span class="letters-small">def</span></button>
+                            <button class="keypad-circle-btn" onclick="executeKeyPress('4', 'ghi')"><span class="num-big">4</span><span class="letters-small">ghi</span></button>
+                            <button class="keypad-circle-btn" onclick="executeKeyPress('5', 'jkl')"><span class="num-big">5</span><span class="letters-small">jkl</span></button>
+                            <button class="keypad-circle-btn" onclick="executeKeyPress('6', 'mno')"><span class="num-big">6</span><span class="letters-small">mno</span></button>
+                            <button class="keypad-circle-btn" onclick="executeKeyPress('7', 'pqrs')"><span class="num-big">7</span><span class="letters-small">pqrs</span></button>
+                            <button class="keypad-circle-btn" onclick="executeKeyPress('8', 'tuv')"><span class="num-big">8</span><span class="letters-small">tuv</span></button>
+                            <button class="keypad-circle-btn" onclick="executeKeyPress('9', 'wxyz')"><span class="num-big">9</span><span class="letters-small">wxyz</span></button>
+                            <button class="keypad-circle-btn" onclick="executeKeyPress('*', '')"><span class="num-big">*</span><span class="letters-small"> </span></button>
+                            <button class="keypad-circle-btn" onclick="executeKeyPress('0', '+')"><span class="num-big">0</span><span class="letters-small">+</span></button>
+                            <button class="keypad-circle-btn" onclick="executeKeyPress('#', '')"><span class="num-big">#</span><span class="letters-small"> </span></button>
+                        </div>
+                        
+                        <!-- 通话拨出与退格清除方向盘 -->
+                        <div class="keypad-action-row">
+                            <button class="btn-call-trigger" onclick="triggerOutgoingCall()" title="拨出电话">
+                                <svg viewBox="0 0 24 24"><path d="M6.62 10.79a15.15 15.15 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.11-.27c1.12.45 2.33.69 3.58.69a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.24 2.46.69 3.58a1 1 0 0 1-.27 1.11l-2.2 2.2z"/></svg>
+                            </button>
+                            <button class="btn-backspace-del" id="ui-backspace-btn" onclick="executeBackspace()" title="删除">
+                                <svg viewBox="0 0 24 24"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- ==========================================================
+                       【面板 2】最近通话历史记录面板（预设5个历史记录，无需修改）
+                       ========================================================== -->
+                    <div class="view-content-pane" id="view-pane-recents">
+                        <div class="list-section-header">最近通话</div>
+                        <div class="records-scroll-box" id="ui-recents-list-slot">
+                            <!-- 💡 由底层 JS 引擎一开机自动离线批量生成 5 个高保真历史通话数据 -->
+                        </div>
+                    </div>
+
+                    <!-- ==========================================================
+                       【面板 3】5动态官方通讯录面板（预设5个联系人，支持后续无限扩充）
+                       ========================================================== -->
+                    <div class="view-content-pane" id="view-pane-contacts">
+                        <div class="list-section-header">通讯录</div>
+                        <div class="records-scroll-box" id="ui-contacts-list-slot">
+                            <!-- 💡 5个联系人卡槽位置：后期可以直接在第 6 部分的数据大库里随意更正或批量复制加行 -->
+                        </div>
+                    </div>
+
+                </div> <!-- 关闭 .phone-view-stage-viewport 视口层 -->
+
+                <!-- ==========================================================
+                   【全屏高仿真呼叫通话状态大遮罩层组件】
+                   ========================================================== -->
+                <div class="calling-state-overlay" id="ui-calling-overlay-mask">
+                    <div>
+                        <!-- 动态显示当前拨打的名字或未知号码 -->
+                        <h1 id="ui-calling-target-name" style="font-size:28px; font-weight:700; margin-bottom:8px;">未知号码</h1>
+                        <!-- 动态显示呼叫中状态或自定义温馨提示语 -->
+                        <p id="ui-calling-status-text" style="font-size:14px; color:var(--text-muted); font-weight:600; letter-spacing:0.5px;">中联移动 5G 正在呼叫...</p>
+                    </div>
+                    
+                    <!-- 中央头像/局徽规范槽位 -->
+                    <div class="calling-avatar-circle">
+                        <!-- 💡 初始默认使用SVG电话图标占位，5个特定快捷号播通时会自动更换为您在后台配好的头像 -->
+                        <span id="ui-calling-avatar-fallback"><svg viewBox="0 0 24 24" style="width:45px;height:45px;fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5-4-8-4z"/></svg></span>
+                        <img src="" alt="联系人头像" id="ui-calling-avatar-img" style="display:none;">
+                    </div>
+                    
+                    <!-- 底部红色挂断实体大圆形按钮 -->
+                    <div>
+                        <button class="btn-hangup-trigger" onclick="closeLiveCallSession()" title="挂断">
+                            <svg viewBox="0 0 24 24" style="width:30px;height:30px;fill:currentColor;"><path d="M12 9c-2.2 0-4.3.4-6.2 1.1-.5.2-.9.7-.9 1.2v3.2c0 .6.4 1.1 1 1.1 1.9-.6 4-1 6.1-1s4.2.4 6.1 1c.6 0 1-.5 1-1.1v-3.2c0-.5-.4-1-.9-1.2C16.3 9.4 14.2 9 12 9z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ==========================================================
+                   【手机端三大功能原生底座导航栏】
+                   ========================================================== -->
+                <nav class="phone-bottom-tab-bar">
+                    <!-- 最近通话页签键 -->
+                    <button class="tab-item-btn" onclick="switchPhoneAppView('recents', this)">
+                        <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 13.53l-4.53-2.73V7h1.5v5.15l3.78 2.27-.75 1.11z"/></svg>
+                        <span>最近通话</span>
+                    </button>
+                    <!-- 通讯录页签键 -->
+                    <button class="tab-item-btn" onclick="switchPhoneAppView('contacts', this)">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5-4-8-4z"/></svg>
+                        <span>通讯录</span>
+                    </button>
+                    <!-- 拨号键盘主页签键（初始高亮激活） -->
+                    <button class="tab-item-btn active-tab" onclick="switchPhoneAppView('keypad', this)">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-4 4h2v2H8V6zm0 4h2v2H8v-2zm0 4h2v2H8v-2zm6 2h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V6h2v2zm4 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V6h2v2z"/></svg>
+                        <span>拨号键盘</span>
+                    </button>
+                </nav>
+
+            </div> <!-- 关闭 .dialer-app-container 应用层 -->
+        </div> <!-- 关闭 .virtual-phone-screen 液晶屏 -->
+    </div> <!-- 关闭 .lapd-phone-hardware-shell 外壳 -->
+    <!-- ==========================================================================
+       【第 6 部分 - A 部分】快捷号音频调度与通讯录数据配置大库
+       ========================================================================== -->
+    <script>
+        // ==========================================================================
+        // 💎 1. 【系统状态栏 24 小时制高仿真时钟同步引擎】（让右上角时间跟随电脑系统真实走字）
+        // ==========================================================================
+                // ==========================================================================
+        // 【全新升级】中联移动 5G 状态栏右上角：时钟左侧精准加装跨文件直跳返回键
+        // ==========================================================================
+        function updateStatusLiveClock() {
+            const clockEl = document.getElementById('os-live-clock-ticker');
+            if (clockEl) {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const timeString = hours + ":" + minutes;
+
+                // 🚀 【核心合龙点】：在时钟的左边，强行嵌入一个不占空间、与电量信号严整并排的 SVG 物理返回超链接
+                // 💡 后台插链接提示：href="index.html" 可以直接改成您任何要跳回的新闻主页相对或绝对文件名
+                clockEl.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <a href="主页.html" title="返回桌面" style="display: flex; align-items: center; gap: 2px; text-decoration: none; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.1); padding: 2px 7px; border-radius: 10px; color: #ffffff; transition: all 0.2s; cursor: pointer; scale: 0.95; transform-origin: right center;">
+                            <svg viewBox="0 0 24 24" style="width: 11px; height: 11px; fill: currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                            <span style="font-size: 9px; font-weight: 900; letter-spacing: 0.3px;">返回门户</span>
+                        </a>
+                        <span style="font-family: sans-serif; font-weight: 700;">${timeString}</span>
+                    </div>
+                `;
+            }
+        }
+        setInterval(updateStatusLiveClock, 1000); // 开启一秒一走底层驱动
+        updateStatusLiveClock(); // 开机秒显时间，拒绝穿帮空白帮
+
+        // ==========================================================================
+        // 💎 2. 【核心特定匹配快捷号与 5 个专属通话音频大库 — 后台精细配置区】
+
+        const PRESET_HOTLINES_DATABASE = {
+            "911": {
+                name: "BFPD 紧急调度台(911)",
+                statusText: "巴布曼特联邦PSAP911调度中心音频连线中...",
+                avatar: "巴布曼特警察局LOGO.png",         
+                audioDriverId: "preset-audio-track-0" // 👈 必须保持原有暗号对齐，代表调用第0号隐藏驱动槽！
+            },
+
+            "813123": {
+                name: "老妈",
+                statusText: "接通中...",
+                avatar: "S12.png",        // 👈 【后台配置】：第二首快捷号对应本地头像路径
+                audioDriverId: "preset-audio-track-2" // 联动对应第2个预留音频播放槽
+            },
+            "813144": {
+                name: "艾琳·索恩",
+                statusText: "接通中...",
+                avatar: "S8.png",     // 👈 【后台配置】：第三首快捷号对应本地头像路径
+                audioDriverId: "preset-audio-track-2" // 联动对应第3个预留音频播放槽
+            },
+            "813999": {
+                name: "主编老顾",
+                statusText: "接通中...",
+                avatar: "X顾珩.png",            // 👈 【后台配置】：第四首快捷号对应本地头像路径
+                audioDriverId: "preset-audio-track-2" // 联动对应第4个预留音频播放槽
+            },
+            "813655": {
+                name: "承哥",
+                statusText: "接通中...",
+                avatar: "S51.png",           // 👈 【后台配置】：第五首快捷号对应本地头像路径
+                audioDriverId: "preset-audio-track-2" // 联动对应第5个预留音频播放槽
+            }
+        };
+
+        // 💡 【未预设号码的全局温馨提示语】：当用户乱打一串不在这5个范围内的号码时，呼叫面板呈现以下提示文本：
+        const GLOBAL_UNKNOWN_NUMBER_ALERT = "\n\n该号码未在巴布曼特联邦授权，无法呼叫！";
+
+        // ==========================================================================
+        // 💎 3. 【5大核心名动态通讯录大库 — 支持后续无限扩充】
+        // ==========================================================================
+        // 这里负责一开机将 5 个联系人直接灌注到通讯录面板中。您后期如果想要加人，
+        // 只需要学着底下的格式，在大括号后面打个逗号“,”然后无限追加新的人名、电话卡片即可！
+        const CONTACTS_DATABASE = [
+            { name: "艾琳·索恩", phone: "813144", department: "蜂鸟新闻网" },
+            { name: "紧急调度台(911)", phone: "911", department: "BFPD 联邦警察总局" },
+            { name: "老妈", phone: "813123", department: "家人" },
+            { name: "主编老顾", phone: "813999", department: "蜂鸟新闻网" },
+            { name: "承哥", phone: "813655", department: "蜂鸟新闻网" }
+            // 💡 扩展提示：在上方大括号屁股后加个逗号，即可无限追加第6、第7个甚至上百个本地联系人！
+        ];
+        // ==========================================================================
+        // 【第 6 部分 - B 部分】九宫格智能控键、提示语拦截与多视图切替引擎
+        // ==========================================================================
+        let liveTypedNumber = "";
+        let activePlayingAudioDriver = null; // 追踪当前正在发声的音频槽
+
+        // 数字按键、星号井号轻触交互函数（联动触摸声音）
+        function executeKeyPress(char, subLetters) {
+            // 🚀 【触控声音预留】：轻触任意按键时，无缝调度底层的隐藏音频驱动发声
+            const touchSound = document.getElementById('native-touch-sound-core');
+            if (touchSound && touchSound.src !== window.location.href && touchSound.src !== "#") {
+                touchSound.currentTime = 0; // 音频回位
+                touchSound.play().catch(e => console.log(e));
+            }
+
+            // 限制最大输入长度为 15 位，防止数字撑破屏幕
+            if (liveTypedNumber.length >= 15) return;
+
+            liveTypedNumber += char;
+            refreshDialerScreenUI();
+        }
+
+        // 刷新屏幕上的号码、高亮匹配名字及退格删除纽扣的显示
+        function refreshDialerScreenUI() {
+            const inputDisplay = document.getElementById('ui-live-input-display');
+            const matchText = document.getElementById('ui-contact-match-text');
+            const backspaceBtn = document.getElementById('ui-backspace-btn');
+
+            inputDisplay.innerText = liveTypedNumber;
+
+            // 如果打字框里有数，平滑亮出右下角的退格删除小方向盘
+            if (liveTypedNumber.length > 0) {
+                backspaceBtn.classList.add('show-del');
+            } else {
+                backspaceBtn.classList.remove('show-del');
+            }
+
+            // 智能检索匹配：当输入的号码刚好命中通讯录中某个人的电话时，在正下方绿字提示高亮名字！
+             let foundMatchName = "";
+            for (let i = 0; i < CONTACTS_DATABASE.length; i++) {
+                if (CONTACTS_DATABASE[i].phone === liveTypedNumber) {
+                    
+                    // 👇 👇 👇 就是这里！把原先多余的 “🔍 匹配联系人:” 删干净，只保留名字和部门！ 👇 👇 👇
+                    foundMatchName = `${CONTACTS_DATABASE[i].name} (${CONTACTS_DATABASE[i].department})`;
+                    
+                    break;
+                }
+            }
+            matchText.innerText = foundMatchName;
+        }
+
+        // 退格单字删除函数
+        function executeBackspace() {
+            if (liveTypedNumber.length > 0) {
+                liveTypedNumber = liveTypedNumber.substring(0, liveTypedNumber.length - 1);
+                refreshDialerScreenUI();
+            }
+        }
+
+        // ==========================================================================
+        // 💎 【核心特定快捷号通话触发与提示语拦截引擎】
+        // ==========================================================================
+        function triggerOutgoingCall() {
+            if (!liveTypedNumber) return; // 没打字，不拨号
+
+            const overlayMask = document.getElementById('ui-calling-overlay-mask');
+            const targetNameText = document.getElementById('ui-calling-target-name');
+            const statusText = document.getElementById('ui-calling-status-text');
+            const avatarImg = document.getElementById('ui-calling-avatar-img');
+            const avatarFallback = document.getElementById('ui-calling-avatar-fallback');
+
+            // 100% 核心动作：先判定输入的号码是否精准命中了预设的 5 个热线之一
+            if (PRESET_HOTLINES_DATABASE[liveTypedNumber]) {
+                const hotline = PRESET_HOTLINES_DATABASE[liveTypedNumber];
+                
+                // 将数据精准、毫无冲突地注入到全屏高仿真通话大遮罩面板中
+                targetNameText.innerText = hotline.name;
+                statusText.innerText = hotline.statusText;
+                
+                // 智能更换彩色肖像头像图层：如果本地填了图路径，就露显彩色大图，否则用默认SVG
+                if (hotline.avatar && hotline.avatar !== "#") {
+                    avatarImg.src = hotline.avatar;
+                    avatarImg.style.display = "block";
+                    avatarFallback.style.display = "none";
+                } else {
+                    avatarImg.style.display = "none";
+                    avatarFallback.style.display = "flex";
+                }
+
+                // 唤醒独立音频流媒体硬件驱动：让对应的 audio 播放出声音
+                const targetAudio = document.getElementById(hotline.audioDriverId);
+                if (targetAudio && targetAudio.src !== window.location.href && targetAudio.src !== "#") {
+                    targetAudio.currentTime = 0;
+                    targetAudio.play().then(() => {
+                        activePlayingAudioDriver = targetAudio; // 锁定当前正在发声的音轨
+                    }).catch(e => console.log("Audio Play Blocked: ", e));
+                }
+
+                // 激活大遮罩：淡入全屏通话大背景
+                overlayMask.classList.add('active-calling');
+
+            } else {
+                // 🚀 【不在预设范围内的全局拦截】：就地弹窗阻断，弹出预留的温馨防错通告提示语！
+                alert(GLOBAL_UNKNOWN_NUMBER_ALERT);
+            }
+        }
+
+        // 红色实体大纽扣——挂断电话与音频切断控制器
+        function closeLiveCallSession() {
+            const overlayMask = document.getElementById('ui-calling-overlay-mask');
+            overlayMask.classList.remove('active-calling');
+
+            // 彻底切断当前发声的音轨，清空声音内存，让环境重归寂静
+            if (activePlayingAudioDriver) {
+                activePlayingAudioDriver.pause();
+                activePlayingAudioDriver.currentTime = 0;
+                activePlayingAudioDriver = null;
+            }
+        }
+
+        // ==========================================================================
+        // 💎 三大应用功能面板（拨号、记录、联系人）丝滑切替与动态批量灌注引擎
+        // ==========================================================================
+        function switchPhoneAppView(paneId, tabButtonElement) {
+            // 1. 隐藏隐藏全站所有功能面板
+            const allPanes = document.querySelectorAll('.view-content-pane');
+            allPanes.forEach(pane => pane.classList.remove('active-view'));
+
+            // 2. 将选中的功能面板激活呈现出来
+            const targetPane = document.getElementById(`view-pane-${paneId}`);
+            if (targetPane) targetPane.classList.add('active-view');
+
+            // 3. 将底部原生底座的所有页签全部褪色、让选中的单个页签高亮激活绿色
+            const allTabs = document.querySelectorAll('.tab-item-btn');
+            allTabs.forEach(tab => tab.classList.remove('active-tab'));
+            if (tabButtonElement) tabButtonElement.classList.add('active-tab');
+        }
+
+        // 开机自动批量注入灌注联系人与最近记录列表组件
+        function bootstrapMobileSystemData() {
+            // 💡 自动化灌注通讯录：将大库里的 5 个联系人循环渲染成严整的长条行卡片
+            const contactsSlot = document.getElementById('ui-contacts-list-slot');
+            if (contactsSlot) {
+                contactsSlot.innerHTML = "";
+                // 将数据根据姓名首字母进行联邦排序排队
+                const sortedDb = [...CONTACTS_DATABASE].sort((a,b) => a.name.localeCompare(b.name, 'zh'));
+                
+                sortedDb.forEach(c => {
+                    contactsSlot.innerHTML += `
+                        <div class="contact-row-card" onclick="liveTypedNumber='${c.phone}'; refreshDialerScreenUI(); switchPhoneAppView('keypad', document.querySelectorAll('.tab-item-btn'));">
+                            <div class="row-left-info">
+                                <span class="row-name-text">${c.name}</span>
+                                <span class="row-sub-text">${c.department}</span>
+                            </div>
+                            <div class="row-right-meta" style="color:var(--text-muted); font-size:14px; font-weight:600;">
+                                <span>${c.phone}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // 💡 自动化灌注最近通话记录（无需修改，预设 5 个权威政务呼入协查高仿真记录）
+            const recentsSlot = document.getElementById('ui-recents-list-slot');
+            if (recentsSlot) {
+                recentsSlot.innerHTML = "";
+                const recentsFakeData = [
+                    { name: "小杰", type: "呼出", time: "上午 10:42", icon: '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:var(--phone-green);"><path d="M9 5v2h6.59L4 18.59 5.41 20 17 8.41V15h2V5H9z"/></svg>' },
+                    { name: "艾琳·索恩 (未接通)", type: "未接来电",time: "10分钟前",icon: '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:var(--phone-red);"><path d="M5 4v2h11.59L4 18.59 5.41 20 18 8.41V15h2V4H5z"/></svg>'},
+                    { name: "艾琳·索恩 (未接通)", type: "未接来电",time: "10分钟前",icon: '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:var(--phone-red);"><path d="M5 4v2h11.59L4 18.59 5.41 20 18 8.41V15h2V4H5z"/></svg>'},
+                    { name: "艾琳·索恩 (未接通)", type: "未接来电",time: "10分钟前",icon: '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:var(--phone-red);"><path d="M5 4v2h11.59L4 18.59 5.41 20 18 8.41V15h2V4H5z"/></svg>'},
+                    { name: "艾琳·索恩 (未接通)", type: "未接来电",time: "10分钟前",icon: '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:var(--phone-red);"><path d="M5 4v2h11.59L4 18.59 5.41 20 18 8.41V15h2V4H5z"/></svg>'},
+                    { name: "未知号码 (114)", type: "未接来电", time: "星期三", icon: '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:var(--phone-red);"><path d="M20 5.41L18.59 4 7 15.59V9H5v10h10v-2H8.41L20 5.41z"/></svg>' },
+                    { name: "承哥", type: "呼出", time: "星期一", icon: '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:var(--phone-green);"><path d="M9 5v2h6.59L4 18.59 5.41 20 17 8.41V15h2V5H9z"/></svg>' },
+                    { name: "艾琳·索恩", type: "已接来电", time: "08月04日", icon: '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:var(--phone-green);"><path d="M20 5.41L18.59 4 7 15.59V9H5v10h10v-2H8.41L20 5.41z"/></svg>' }
+                ];
+                recentsFakeData.forEach(r => {
+                    recentsSlot.innerHTML += `
+                        <div class="recent-row-card">
+                            <div class="row-left-info">
+                                <span class="row-name-text" style="${r.type==='未接来电'?'color:var(--phone-red);':''}">${r.name}</span>
+                                <span class="row-sub-text" style="display:flex; align-items:center; gap:3px;">${r.icon} ${r.type}</span>
+                            </div>
+                            <div class="row-right-meta"><span>${r.time}</span></div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // 开机全面初始化
+        bootstrapMobileSystemData();
+    </script>
+</body>
+</html>

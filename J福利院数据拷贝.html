@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>macOS Finder - 福利院核心数据</title>
+    <style>
+        /* CSS 变量：全局主题与颜色控制 */
+        :root {
+            --bg-color: #e2e2e2;
+            --window-bg: rgba(255, 255, 255, 0.95);
+            --sidebar-bg: rgba(240, 240, 240, 0.85);
+            --text-color: #333333;
+            --text-muted: #7f7f7f;
+            --accent-color: #007aff;
+            --border-color: #d1d1d6;
+        }
+
+        /* 基础样式与多端自适应根基 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #74abe2 0%, #5563c1 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        /* macOS 窗口容器：响应式核心 */
+        .finder-window {
+            width: 100%;
+            max-width: 1000px;
+            height: 100%;
+            max-height: 650px;
+            background-color: var(--window-bg);
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+        }
+
+        /* 顶部工具栏 */
+        .toolbar {
+            height: 52px;
+            background-color: var(--sidebar-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        /* macOS 红黄绿红绿灯按钮 */
+        .window-controls {
+            display: flex;
+            gap: 8px;
+            position: absolute;
+            left: 16px;
+        }
+        .control-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .dot-red { background-color: #ff5f56; }
+        .dot-yellow { background-color: #ffbd2e; }
+        .dot-green { background-color: #27c93f; }
+
+        /* 导航与标题区域 */
+        .nav-group {
+            display: flex;
+            align-items: center;
+            margin-left: 70px; /* 避开红绿灯 */
+            gap: 12px;
+        }
+
+        /* 返回键样式 */
+        .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+            transition: background 0.2s;
+        }
+        .back-btn:hover { background-color: rgba(0,0,0,0.08); }
+        .back-btn:active { background-color: rgba(0,0,0,0.15); }
+
+        /* Logo 名头位 */
+        .logo-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        .logo-icon {
+            width: 18px;
+            height: 18px;
+            fill: var(--accent-color);
+        }
+
+        /* 备份按钮 */
+        .backup-btn {
+            margin-left: auto;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            transition: opacity 0.2s;
+        }
+        .backup-btn:hover { opacity: 0.9; }
+        .backup-btn:active { opacity: 0.8; }
+        /* 主体布局（侧边栏 + 内容区） */
+        .window-body {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 180px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 12px 8px;
+            flex-shrink: 0;
+        }
+        .sidebar-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            padding-left: 8px;
+            margin-bottom: 6px;
+        }
+        .sidebar-item {
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-item.active {
+            background-color: rgba(0,0,0,0.08);
+            font-weight: 500;
+        }
+
+        /* 文件内容展示区：自适应网格 */
+        .content-view {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            grid-gap: 24px;
+            align-content: flex-start;
+        }
+
+        /* 单个文件图标样式 */
+        .file-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 6px;
+            padding: 8px 4px;
+            transition: background 0.15s;
+        }
+        .file-item:hover { background-color: rgba(0,0,0,0.05); }
+        .file-item:focus-within { background-color: rgba(0, 122, 255, 0.15); }
+
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .file-name {
+            font-size: 12px;
+            color: var(--text-color);
+            word-break: break-all;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.3;
+            max-width: 85px;
+        }
+
+        /* 遮罩层基类 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* 弹窗卡片 */
+        .modal-card {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-overlay.active .modal-card { transform: scale(1); }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-color);
+        }
+
+        /* 进度条样式 */
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: #e5e5ea;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 16px 0 8px 0;
+        }
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background-color: var(--accent-color);
+            transition: width 0.1s linear;
+        }
+
+        .progress-stats {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* 密钥样式 */
+        .secret-key-display {
+            background-color: #f2f2f7;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #ff3b30;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin: 16px 0;
+            border: 1px dashed var(--border-color);
+            word-break: break-all;
+        }
+
+        .close-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* ===== 多端核心自适应断点 ===== */
+        @media (max-width: 768px) {
+            .finder-window { height: 90vh; max-height: none; }
+            .sidebar { width: 140px; }
+        }
+
+        @media (max-width: 550px) {
+            body { padding: 0; }
+            .finder-window { height: 100%; border-radius: 0; border: none; }
+            .sidebar { display: none; } /* 手机端自动收起侧边栏 */
+            .nav-group { margin-left: 55px; gap: 6px; }
+            .logo-title span { display: none; } /* 隐藏文字，保留图标 */
+            .content-view {
+                grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+                grid-gap: 16px;
+                padding: 16px;
+            }
+            .file-icon { width: 40px; height: 40px; }
+            .file-name { font-size: 11px; max-width: 70px; }
+        }
+    </style>
+</head>
+<body>
+<body>
+    <!-- macOS Finder 核心视窗 -->
+    <div class="finder-window">
+        
+        <!-- 1. 顶部工具栏（含红绿灯、带中文标的返回键、Logo名头位、备份按钮） -->
+        <header class="toolbar">
+            <div class="window-controls">
+                <div class="control-dot dot-red"></div>
+                <div class="control-dot dot-yellow"></div>
+                <div class="control-dot dot-green"></div>
+            </div>
+            
+            <div class="nav-group">
+                <!-- 返回键（已添加中文返回标） -->
+                    <button class="back-btn" onclick="alert('已返回上一级'); window.location.href='J黑水.html';" title="返回" style="gap: 4px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+                    <span style="font-size: 13px; font-weight: 500;">返回</span>
+                </button>
+                <!-- Logo 名头位 -->
+                <div class="logo-title">
+                    <svg class="logo-icon" viewBox="0 0 24 24"><path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z"/></svg>
+                    <span>福利院核心数据库</span>
+                </div>
+            </div>
+
+            <!-- 一键备份按钮 -->
+            <button class="backup-btn" id="startBackup">云端数据备份</button>
+        </header>
+
+        <!-- 2. 下方主体 -->
+        <div class="window-body">
+            <!-- 左侧侧边栏 -->
+            <aside class="sidebar">
+                <div class="sidebar-title">个人收藏</div>
+                <div class="sidebar-item active">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color:var(--accent-color); margin-right:6px;"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+                    福利院核心数据
+                </div>
+                <div class="sidebar-item">💾 最近使用</div>
+                <div class="sidebar-item">🌐 共享网络</div>
+            </aside>
+
+            <!-- 右侧内容展示区（全部更改为 macOS 经典蓝色文件夹格式） -->
+            <main class="content-view">
+                
+                <!-- 文件夹 1：文档数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">诺凡泰克集团捐赠记录</div>
+                </div>
+
+                <!-- 文件夹 2：视频数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">诺凡泰克制药捐赠记录</div>
+                </div>
+
+                <!-- 文件夹 3：Word数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">伊特尼塔实验人员名单A500名</div>
+                </div>
+
+                <!-- 文件夹 4：Excel数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">伊特尼塔实验人员名单B500名</div>
+                </div>
+
+                <!-- 文件夹 5：高能粒子数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">伊特尼塔实验人员名单C500名</div>
+                </div>
+
+                <!-- 文件夹 6：诱变日志数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">伊特尼塔实验人员名单D500名</div>
+                </div>
+                <!-- 文件夹 6：诱变日志数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">伊特尼塔实验人员名单E500名</div>
+                </div>
+                <!-- 文件夹 6：诱变日志数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">福利院账目A</div>
+                </div>
+                <!-- 文件夹 6：诱变日志数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">福利院账目B</div>
+                </div>
+                <!-- 文件夹 6：诱变日志数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name"> 福利院账目C</div>
+                </div>
+                <!-- 文件夹 6：诱变日志数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">李总个人捐赠记录</div>
+                </div>
+                <!-- 文件夹 6：诱变日志数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">伊特尼塔实验后续补录人员名单G50名</div>
+                </div>  
+                <!-- 文件夹 6：诱变日志数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">伊特尼塔实验后续补录人员名单G86名</div>
+                </div>
+                <!-- 文件夹 6：诱变日志数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">伊特尼塔实验后续补录人员名单G12名</div>
+                </div>
+                <!-- 文件夹 6：诱变日志数据 -->
+                <div class="file-item" tabindex="0">
+                    <div class="file-icon">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%"><path d="M6 10c0-1.1.9-2 2-2h12l3 4h19c1.1 0 2 .9 2 2v24c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V10z" fill="#7fc1ff" stroke="#4ba3ff" stroke-width="1.5"/><path d="M6 16h36v22c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V16z" fill="#99d1ff"/></svg>
+                    </div>
+                    <div class="file-name">伊特尼塔实验后续补录人员名单G10名</div>
+                </div>                                                                                                                              
+            </main>
+        </div>
+    </div>
+
+    <!-- ==================== 弹窗图层 ==================== -->
+    
+    <!-- 下载进度弹窗 -->
+    <div class="modal-overlay" id="downloadOverlay">
+        <div class="modal-card">
+            <div class="modal-title">正在同步福利院核心数据...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progressBar"></div>
+            </div>
+            <div class="progress-stats">
+                已安全下载：<span id="downloadCount">0</span> / 523 MB
+            </div>
+        </div>
+    </div>
+
+    <!-- 成功与密钥弹窗 -->
+    <div class="modal-overlay" id="keyOverlay">
+        <div class="modal-card" style="max-width: 350px;">
+            <div class="modal-title" style="color: #27c93f;">✓ 数据备份成功</div>
+            <p style="font-size: 13px; color: var(--text-muted);">云端加密包已生成，请妥善保管<strong>物证</strong>密钥：</p>
+            <div class="secret-key-display" id="secretKey">EPT789</div>
+            <button class="close-btn" onclick="closeKeyModal()">确定并关闭</button>
+        </div>
+    </div>
+
+    <!-- ==================== 核心逻辑脚本 ==================== -->
+    <script>
+        const startBackupBtn = document.getElementById('startBackup');
+        const downloadOverlay = document.getElementById('downloadOverlay');
+        const keyOverlay = document.getElementById('keyOverlay');
+        const progressBar = document.getElementById('progressBar');
+        const downloadCountEl = document.getElementById('downloadCount');
+        const secretKeyEl = document.getElementById('secretKey');
+
+        const TARGET_COUNT = 523; // 最终下载总条数
+        const DURATION = 5000;      // 严格10秒动画 (10000毫秒)
+        const INTERVAL_TIME = 5;    // 每30毫秒高频刷新一次，保证数字滚动丝滑
+
+// 改为固定密钥函数
+function generateRandomKey() {
+    // 在下方双引号内输入你想要固定的任何密钥内容
+    return "EPT789"; 
+}
+
+
+        // 点击备份按钮触发事件
+        startBackupBtn.addEventListener('click', () => {
+            // 初始化动画状态
+            progressBar.style.width = '0%';
+            downloadCountEl.textContent = '0';
+            downloadOverlay.classList.add('active');
+
+            const startTime = Date.now();
+
+            // 动态定时器：实时计算已过去的时间，确保严格在10秒完工
+            const timer = setInterval(() => {
+                const elapsedTime = Date.now() - startTime;
+                let progress = elapsedTime / DURATION;
+
+                if (progress >= 1) {
+                    progress = 1;
+                    clearInterval(timer);
+                    
+                    // 10秒时间到，精准定格最终数据
+                    downloadCountEl.textContent = TARGET_COUNT.toLocaleString();
+                    progressBar.style.width = '100%';
+                    
+                    // 稍作停顿后切换弹窗，提升视觉体验
+                    setTimeout(() => {
+                        downloadOverlay.classList.remove('active'); // 隐藏下载条
+                        secretKeyEl.textContent = generateRandomKey(); // 载入新生成的密钥
+                        keyOverlay.classList.add('active'); // 弹出密钥窗口
+                    }, 500);
+                } else {
+                    // 缓动算法：模拟真实网络下载时“前快后慢”的拟真质感
+                    const easeProgress = 1 - Math.pow(1 - progress, 3); 
+                    
+                    // 更新进度条长度
+                    progressBar.style.width = `${(progress * 100).toFixed(1)}%`;
+                    
+                    // 动态递增显示已下载条数
+                    const currentCount = Math.floor(easeProgress * TARGET_COUNT);
+                    downloadCountEl.textContent = currentCount.toLocaleString();
+                }
+            }, INTERVAL_TIME);
+        });
+
+        // 关闭密钥弹窗函数
+        function closeKeyModal() {
+            keyOverlay.classList.remove('active');
+        }
+    </script>
+</body>
+</html>

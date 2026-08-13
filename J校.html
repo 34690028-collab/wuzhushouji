@@ -1,0 +1,570 @@
+ <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- 1. 这里是网标图标（网站小 ICON）的贴图位置 -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    
+    <!-- 2. 这里是网页标题文字（标签页上显示的文本） -->
+    <title>00</title>
+
+    <style>
+        /* CSS 变量：定义哈佛经典的深绯红与学院风色彩体系 */
+        :root {
+            --primary-color: #A51C30;   /* 哈佛绯红 */
+            --primary-dark: #7F1223;    /* 暗绯红 */
+            --text-dark: #222222;       /* 主要文字 */
+            --text-light: #555555;      /* 次要文字 */
+            --bg-gray: #F8F9FA;         /* 浅灰背景 */
+            --border-color: #E5E5E5;    /* 边框颜色 */
+        }
+
+        /* 基础样式重置 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            color: var(--text-dark);
+            background-color: #ffffff;
+            line-height: 1.6;
+        }
+
+        /* 版心容器（自适应宽度） */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* ================= Header 导航区 ================= */
+        header {
+            border-bottom: 3px solid var(--primary-color);
+            background: #fff;
+            padding: 15px 0;
+        }
+
+        .header-wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        /* LOGO 预留区 */
+        .logo-placeholder {
+            width: 180px;
+            height: 50px;
+            background-color: var(--primary-color);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-radius: 2px;
+        }
+
+        /* 搜索交互区 */
+        .search-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+        }
+
+        .search-box {
+            display: flex;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .search-box input {
+            padding: 8px 12px;
+            border: none;
+            outline: none;
+            width: 200px;
+            font-size: 14px;
+        }
+
+        .search-box button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-box button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        /* 模糊搜索跳转链接 */
+        .fuzzy-links {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .fuzzy-links a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-left: 8px;
+        }
+
+        .fuzzy-links a:hover {
+            text-decoration: underline;
+        }
+        /* ================= 新闻板块 (带折叠详情) ================= */
+        .news-section {
+            padding: 40px 0;
+            background-color: #fff;
+        }
+
+        .section-title {
+            font-size: 24px;
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+            font-weight: 700;
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        /* 通用可点击手风琴组件样式 */
+        .accordion-item {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: #fff;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            padding: 15px 20px;
+            background: var(--bg-gray);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+            user-select: none;
+        }
+
+        .accordion-header:hover {
+            background: #f0f1f2;
+        }
+
+        .accordion-header h3 {
+            font-size: 16px;
+            color: var(--text-dark);
+        }
+
+        .accordion-icon {
+            font-style: normal;
+            font-weight: bold;
+            color: var(--primary-color);
+            transition: transform 0.3s;
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: #fff;
+        }
+
+        .accordion-inner {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        /* 1. 带图片的主校内新闻 */
+        .main-news .accordion-header h3 {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* 图片锁定比例容器 (16:9) */
+        .image-ratio-box {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 比例锁定 */
+            background-color: #e0e0e0;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .image-placeholder-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* 2. 无图简短新闻列表 */
+        .side-news {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 激活状态的折叠样式 */
+        .accordion-item.active .accordion-icon {
+            transform: rotate(45deg); /* 加号变叉 */
+        }
+
+        /* ================= 4个校内板块 (四宫格) ================= */
+        .campus-sectors {
+            padding: 40px 0 60px 0;
+            background-color: var(--bg-gray);
+        }
+
+        .four-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 严格每行2个并排 */
+            gap: 25px;
+        }
+
+        .sector-card {
+            background: #ffffff;
+            border-top: 4px solid var(--primary-color);
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .sector-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .sector-card h4 {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .sector-card p {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        /* ================= Footer 脚部样式 ================= */
+        footer {
+            background-color: #111111;
+            color: #aaaaaa;
+            padding: 30px 0;
+            font-size: 13px;
+            text-align: center;
+            border-top: 5px solid var(--primary-dark);
+        }
+
+        /* ================= 媒体查询：完美适配自适应断点 ================= */
+        @media (max-width: 992px) {
+            /* 平板端：新闻板块由左右两栏改为上下单栏铺满 */
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            /* 手机端：Header区域标志与搜索框居中对齐 */
+            .header-wrap {
+                flex-direction: column;
+                text-align: center;
+            }
+            .search-container {
+                align-items: center;
+            }
+            /* 手机端：自适应降级为单列布局保证可读性 */
+            .four-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航区 -->
+    <header>
+        <div class="container header-wrap">
+            
+            <!-- 网站标头：左侧校徽图标 + 右侧网站大标题文字 -->
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <!-- 1. 校徽盾牌图标（高度已根据您的配置调整为 90px） -->
+                <img src="大学LOGO.png" alt="校徽" style="height: 90px; width: auto; display: block;">
+                
+                <!-- 2. 网站大标题文字分割线 -->
+                <div style="width: 1px; height: 30px; background-color: #ccc;"></div>
+                
+                <!-- 3. 核心网站标题文字 -->
+                <span style="font-size: 22px; font-weight: 700; color: var(--primary-color); letter-spacing: 0.5px; font-family: Georgia, serif;">
+                    巴布曼特联邦大学
+                </span>
+            </div>
+            
+            <!-- 搜索交互区（下方已成功加入返回首页链接） -->
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="输入关键字搜索...">
+                    <button type="button" id="searchBtn">搜索</button>
+                </div>
+                <!-- 【新增加】返回链接：采用学院风小字，垂直对齐搜索框右侧 -->
+                <div style="font-size: 13px; margin-top: 4px;">
+                    <a href="浏览器.html" style="color: var(--primary-color); text-decoration: none; font-weight: 600; transition: color 0.2s;">
+                        ← 返回主页
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+
+    <!-- 新闻动态板块 -->
+    <main class="news-section">
+        <div class="container">
+            <h2 class="section-title">求真，探源 VERITAS ET INVESTIGATIO</h2>
+            <div class="news-grid">
+                
+                <!-- 左侧：1个带图校内新闻（固定常开，无法折叠收起） -->
+                <div class="main-news">
+                    <div class="accordion-item" style="border-color: var(--border-color);">
+                        <!-- 移除了原有的点击事件与鼠标指针手势，保持静态平铺 -->
+                        <div class="accordion-header" style="cursor: default; background: var(--bg-gray);">
+                            <h3>百年学府发展沿革</h3>
+                        </div>
+                        <!-- 取消了隐藏属性，直接展示内容 -->
+                        <div style="background: #fff;">
+                            <div class="accordion-inner">
+                                <!-- 图片锁定 16:9 比例预留区 -->
+                                <div class="image-ratio-box">
+                                <img src="3大学.jpg" alt="新闻主图" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block;">                                </div>
+                                <p>本校始建于1892年，建校之初便以自然科学与工程学科为核心办学方向，百年间坚守严谨治学理念。初期仅设理化、生物基础研究院，历经数次扩建，逐步增设航空工程、基因生物等前沿院系。依托厚重学术积淀，校内建成多座标准化科研实验室，长期联动行业科研机构开展跨学科课题。百余年来，院校深耕基础理论与实地试验结合的育人模式，培育大批科研人才。如今仍持续推进校企协同科研项目，传承百年治学传统，深耕太空生物、生命科学前沿领域探索。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧：6个无图简短新闻板块（保留点击下拉详情） -->
+                <div class="side-news">
+                    
+                    <!-- 新闻 1 -->
+                    <div class="accordion-item">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <h3>📌 秋季学期开学典礼日程安排</h3>
+                            <span class="accordion-icon">+</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-inner">
+                                <p>各位新同学请注意，本年度秋季开学典礼将于9月1日上午9:00在中央大礼堂举行，请全校新生提前15分钟入场完毕。各院系分会场具体安排请关注后续通知。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 新闻 2 -->
+                    <div class="accordion-item">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <h3>📢 校园图书馆国际文献数据库升级启事</h3>
+                            <span class="accordion-icon">+</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-inner">
+                                <p>为了提供更优质的科研支持，图书馆即日起正式上线全新一代全球全文本科数据库。全体师生可在校园网IP段内直接免密登录下载，或通过VPN远程访问。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 新闻 3（新增加） -->
+                    <div class="accordion-item">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <h3>🎓 国际交流处发布全球名校交换生选拔简章</h3>
+                            <span class="accordion-icon">+</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-inner">
+                                <p>本年度春季学期海外名校学术交流及双学位项目选拔工作正式启动。涵盖学分互认、免学费交换等名额，详情请前往国际交流处官网下载申请表格并于本月内提交。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 新闻 4（新增加） -->
+                    <div class="accordion-item">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <h3>🏆 我校在国际大学生数学建模竞赛中斩获特等奖</h3>
+                            <span class="accordion-icon">+</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-inner">
+                                <p>在刚刚落幕的国际联合数学建模竞赛中，由我院三名本科生组成的参赛队伍凭借创新的算法模型与出色的论文答辩，从全球数万支队伍中脱颖而出，荣获最高荣誉特等奖。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 新闻 5（新增加） -->
+                    <div class="accordion-item">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <h3>🧪 初创科研团队开拓空间生物研究新边界</h3>
+                            <span class="accordion-icon">+</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-inner">
+                                <p>数年前我校组建的一支独立科研小队（<strong>伊特尼塔计划</strong>）迎来重大研发进展，其长期在轨生物实验设备稳定运行，产出大量经过核验的成套科研数据，引发行业广泛关注。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 新闻 6（新增加） -->
+                    <div class="accordion-item">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <h3>🎨 校园金秋国际艺术节及交响音乐会即将启幕</h3>
+                            <span class="accordion-icon">+</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-inner">
+                                <p>本届校园文化艺术节将于下周五晚在多功能文体中心正式拉开帷幕。届时将由校交响乐团带来多首经典名曲演奏，同时举办露天艺术展和戏剧展演，欢迎全校师生共襄盛举。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+
+    <!-- 4个校内板块 (自适应四宫格) -->
+    <section class="campus-sectors">
+        <div class="container">
+            <h2 class="section-title">核心校内板块</h2>
+            <div class="four-grid">
+                
+                <!-- 板块 1 -->
+                <a href="javascript:void(0);" class="sector-card">
+                    <h4>🏫 教学与院系设置 (Academics)</h4>
+                    <p>探索大学的本科学部、研究生院以及终身教育特色项目，查看预留链接。</p>
+                </a>
+
+                <!-- 板块 2 -->
+                <a href="javascript:void(0);" class="sector-card">
+                    <h4>🔬 科学研究中心 (Research)</h4>
+                    <p>汇聚全球顶尖实验室、创新研究中心及最新跨学科科研攻关成果，链接预留。</p>
+                </a>
+
+                <!-- 板块 3 -->
+                <a href="javascript:void(0);" class="sector-card">
+                    <h4>🤝 招生与资助体系 (Admissions)</h4>
+                    <p>了解如何申请加入我们，包含奖学金评定标准与助学贷款申请指南，链接预留。</p>
+                </a>
+
+                <!-- 板块 4 -->
+                <a href="javascript:void(0);" class="sector-card">
+                    <h4>🌿 校园生活与社团 (Campus Life)</h4>
+                    <p>体验丰富多彩的住宿制学院文化、体育赛事以及百佳学生社团活动，链接预留。</p>
+                </a>
+
+            </div>
+        </div>
+    </section>
+    <!-- 网页脚部区 -->
+    <footer>
+        <div class="container">
+            <p>©特别声明：以上信息均为架空虚构内容，无任何现实映射，不存在真实对应事件与人物，一切仅服务原创解谜故事创作</p>
+        </div>
+    </footer>
+
+    <!-- 核心动态交互控制脚本 -->
+     <!-- 核心动态交互与解禁后的实时搜索跳转脚本 -->
+    <script>
+        /* 
+         * ==========================================
+         * 🔒 预留的模糊搜索词汇与跳转链接配置 (不显示在首页)
+         * ==========================================
+         */
+        const FUZZY_LINKS_CONFIG = [
+            {
+                keyword: "伊特尼塔计划",
+                redirectUrl: "X伊特尼塔计划.html" // 匹配成功后将直接在本地寻找并跳转至 404.html
+            },
+            {
+                keyword: "沈秋",
+                redirectUrl: "404.html" // 预留链接2
+            }
+        ];
+
+        // 统一的搜索触发与核心跳转执行函数
+        function executeSearchAction() {
+            const inputValue = document.getElementById('searchInput').value.trim();
+            if (!inputValue) {
+                alert("请输入搜索关键词！");
+                return;
+            }
+
+            // 模糊匹配算法
+            const matchedLink = FUZZY_LINKS_CONFIG.find(item => 
+                item.keyword.includes(inputValue) || inputValue.includes(item.keyword)
+            );
+            
+            if (matchedLink) {
+                console.log(`成功匹配到预留模糊词: ${matchedLink.keyword}，正在跳转至: ${matchedLink.redirectUrl}`);
+                
+                // 【核心解除锁定】：取消了前面的斜杠注释，使其现在具有实时本地/网络跳转能力
+                window.location.href = matchedLink.redirectUrl; 
+            } else {
+                // 如果输入的不是预留词汇，弹窗提示
+                alert(`未找到与 "${inputValue}" 相关的匹配内容。`);
+            }
+        }
+
+        // 监听1：鼠标点击右侧“搜索”按钮时执行跳转
+        document.getElementById('searchBtn').addEventListener('click', executeSearchAction);
+
+        // 监听2：在输入框内敲击“回车键 (Enter)”时同样无缝执行跳转，更符合主流习惯
+        document.getElementById('searchInput').addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                executeSearchAction();
+            }
+        });
+
+        // 控制右侧无图新闻折叠手风琴展开与收起的函数
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const content = item.querySelector('.accordion-content');
+            const isActive = item.classList.contains('active');
+            
+            if (isActive) {
+                item.classList.remove('active');
+                content.style.maxHeight = null;
+            } else {
+                item.classList.add('active');
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        }
+    </script>
+</body>
+</html>

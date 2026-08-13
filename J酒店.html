@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红枫酒店官网 - 管理系统</title>
+    <style>
+        /* --- 核心响应式全局变量与样式 --- */
+        :root {
+            --primary-color: #8b1e1e;
+            --accent-color: #d1a153;
+            --bg-dark: #121212;
+            --card-bg: #1e1e1e;
+            --text-light: #ffffff;
+            --text-gray: #aaaaaa;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <!-- 标头区域 -->
+    <header style="background-color: #1a1a1a; border-bottom: 2px solid var(--primary-color); padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <!-- LOGO 贴图路径 -->
+            <img src="红叶酒店LOGO.png" alt="LOGO" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+            <span style="font-size: 1.5rem; font-weight: bold; letter-spacing: 1px; color: var(--text-light);">RED MAPLE HOTEL</span>
+        </div>
+        <!-- 返回跳转链接 -->
+        <a href="浏览器.html" style="background: transparent; color: var(--text-gray); border: 1px solid var(--text-gray); padding: 0.5rem 1.2rem; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 0.9rem; transition: all 0.3s;">返回</a>
+    </header>
+
+    <!-- 酒店简介 -->
+    <div style="text-align: center; padding: 3rem 1rem; max-width: 800px; margin: 0 auto;">
+        <h1 style="color: var(--accent-color); margin-bottom: 1rem; font-size: 2.2rem;">红枫酒店官网管理系统</h1>
+        <p style="color: var(--text-gray);">美观轻量、全平台自适应的多端内网面板。可安全调取客房分级记录与街区监控影像。</p>
+    </div>
+
+    <!-- 4个功能小板块 -->
+    <div id="grid-box">
+        <!-- 内部样式交由第三部分媒体查询进行多端自适应 -->
+        <div class="card-dept" onclick="accessDepartment('room')">
+            <span class="badge-lock">🔒 需密码</span>
+            <h3>客房部</h3>
+            <p>客房分级状况与入住空置率记录（共20条登记）</p>
+        </div>
+
+        <div class="card-dept" onclick="accessDepartment('security')">
+            <span class="badge-lock">🔒 需密码</span>
+            <h3>安保部</h3>
+            <p>楼层及街区实时监控闭路电视数据查询系统</p>
+        </div>
+
+        <div class="card-dept" onclick="accessDepartment('catering')">
+            <h3>餐饮部</h3>
+            <p>24小时行政酒廊、法式西餐厅食材供应状态</p>
+        </div>
+
+        <div class="card-dept" onclick="accessDepartment('logistics')">
+            <h3>后勤部</h3>
+            <p>酒店日常水电消杀维护及前台物资仓储报告</p>
+        </div>
+    </div>
+    <style>
+        /* --- 4大板块全响应式栅格布局 --- */
+        #grid-box {
+            max-width: 1200px;
+            margin: 0 auto 3rem auto;
+            padding: 0 1.5rem;
+            display: grid;
+            gap: 2rem;
+            /* 默认台式机和笔记本电脑：展示为 4 列 */
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        /* 基础板块卡片样式 */
+        .card-dept {
+            background-color: var(--card-bg);
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s, border-color 0.3s;
+            position: relative;
+        }
+
+        .card-dept:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+        }
+
+        .card-dept h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .card-dept p {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+        }
+
+        .badge-lock {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #cd3d3d;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        /* --- 响应式断点控制 --- */
+        /* 平板电脑（宽度在 1024px 以下）：切换为 2 列排版 */
+        @media (max-width: 1024px) {
+            #grid-box {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* 智能手机（宽度在 600px 以下）：切换为 1 列纵向排版，并缩减间距 */
+        @media (max-width: 600px) {
+            #grid-box {
+                grid-template-columns: 1fr;
+                gap: 1.2rem;
+            }
+            .card-dept {
+                padding: 1.8rem 1rem;
+            }
+        }
+    </style>
+    <!-- 动态功能内容展示区（默认隐藏，密码正确后通过 JS 显示） -->
+    <div id="display-container" style="max-width: 1200px; margin: 0 auto 4rem auto; padding: 0 1.5rem; display: none;">
+        
+        <!-- 客房部数据面板 -->
+        <div id="panel-room" style="background-color: var(--card-bg); border: 1px solid var(--accent-color); border-radius: 8px; padding: 2rem; display: none;">
+            <div style="font-size: 1.4rem; color: var(--accent-color); margin-bottom: 1.5rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem;">客房部 - 前20条客房记录清单</div>
+            <!-- 支持手机端横向滚动的响应式包裹层 -->
+            <div style="width: 100%; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 500px;">
+<thead>
+    <tr style="color: var(--accent-color); border-bottom: 2px solid #333;">
+        <th style="padding: 0.8rem;">姓名</th>
+        <th style="padding: 0.8rem;">房间</th>
+        <th style="padding: 0.8rem;">（月/日-月/日）小时数</th>
+    </tr>
+</thead>
+
+                    <tbody id="room-table-body">
+                        <!-- 由第五部分的 JS 动态渲染生成 20 条记录 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 安保部监控面板 -->
+        <div id="panel-security" style="background-color: var(--card-bg); border: 1px solid var(--accent-color); border-radius: 8px; padding: 2rem; display: none; margin-top: 1rem;">
+            <div style="font-size: 1.4rem; color: var(--accent-color); margin-bottom: 1.5rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem;">安保部 - 闭路监控数据调取终端</div>
+            <div style="display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <label for="monitor-select" style="align-self: center; color: var(--text-gray);">选择查询区域：</label>
+                <select id="monitor-select" style="background: #2a2a2a; border: 1px solid #444; color: white; padding: 0.6rem 1rem; border-radius: 4px; font-size: 1rem;">
+                    <option value="cam1">2楼 客房走廊监控</option>
+                    <option value="cam2">3楼 西式餐厅</option>
+                    <option value="cam3">5楼 顶层行政套房后梯</option>
+                    <option value="cam4">地下车库 停车场</option>
+                </select>
+                <button onclick="loadMonitorImage()" style="background: var(--primary-color); border: none; color: white; padding: 0.6rem 1.2rem; border-radius: 4px; font-size: 1rem; cursor: pointer;">点击调取画面</button>
+            </div>
+            <!-- 监控贴图展示区 -->
+            <div id="monitor-screen-box" style="width: 100%; max-width: 800px; margin: 1.5rem auto 0 auto; border: 3px solid #333; border-radius: 4px; display: none;">
+                <img src="" id="current-monitor-img" style="width: 100%; height: auto; display: block;" alt="监控画面加载中...">
+            </div>
+        </div>
+
+        <!-- 餐饮部 & 后勤部普通面板 -->
+        <div id="panel-general" style="background-color: var(--card-bg); border: 1px solid #333; border-radius: 8px; padding: 2rem; display: none;">
+            <div id="general-title" style="font-size: 1.4rem; color: var(--accent-color); margin-bottom: 1rem;"></div>
+            <p style="color: #2baf5c;">🟢 权限开放：当前部门数据运转正常，无异常警报。</p>
+            <p id="general-desc" style="margin-top: 1rem; color: var(--text-gray);"></p>
+        </div>
+
+    </div>
+    <!-- 动态功能内容展示区（默认隐藏，密码正确后通过 JS 显示） -->
+    <div id="display-container" style="max-width: 1200px; margin: 0 auto 4rem auto; padding: 0 1.5rem; display: none;">
+        
+        <!-- 客房部数据面板 -->
+        <div id="panel-room" style="background-color: var(--card-bg); border: 1px solid var(--accent-color); border-radius: 8px; padding: 2rem; display: none;">
+            <div style="font-size: 1.4rem; color: var(--accent-color); margin-bottom: 1.5rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem;">客房部 - 20条客房分级实时记录清单</div>
+            <!-- 支持手机端横向滚动的响应式包裹层 -->
+            <div style="width: 100%; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 500px;">
+<thead>
+    <tr style="color: var(--accent-color); border-bottom: 2px solid #333;">
+        <th style="padding: 0.8rem;">姓名</th>
+        <th style="padding: 0.8rem;">房间</th>
+        <th style="padding: 0.8rem;">（月/日-月/日）小时数</th>
+    </tr>
+</thead>
+
+                    <tbody id="room-table-body">
+                        <!-- 由第五部分的 JS 动态渲染生成 20 条记录 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 安保部监控面板 -->
+        <div id="panel-security" style="background-color: var(--card-bg); border: 1px solid var(--accent-color); border-radius: 8px; padding: 2rem; display: none; margin-top: 1rem;">
+            <div style="font-size: 1.4rem; color: var(--accent-color); margin-bottom: 1.5rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem;">安保部 - 闭路监控数据调取终端</div>
+            <div style="display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <label for="monitor-select" style="align-self: center; color: var(--text-gray);">选择查询区域：</label>
+                <select id="monitor-select" style="background: #2a2a2a; border: 1px solid #444; color: white; padding: 0.6rem 1rem; border-radius: 4px; font-size: 1rem;">
+                    <option value="cam1">2楼 客房走廊监控</option>
+                    <option value="cam2">3楼 西式餐厅</option>
+                    <option value="cam3">5楼 顶层行政套房后梯</option>
+                    <option value="cam4">地下车库 停车场</option>
+                </select>
+                <button onclick="loadMonitorImage()" style="background: var(--primary-color); border: none; color: white; padding: 0.6rem 1.2rem; border-radius: 4px; font-size: 1rem; cursor: pointer;">点击调取画面</button>
+            </div>
+            <!-- 监控贴图展示区 -->
+            <div id="monitor-screen-box" style="width: 100%; max-width: 800px; margin: 1.5rem auto 0 auto; border: 3px solid #333; border-radius: 4px; display: none;">
+                <img src="" id="current-monitor-img" style="width: 100%; height: auto; display: block;" alt="监控画面加载中...">
+            </div>
+        </div>
+
+        <!-- 餐饮部 & 后勤部普通面板 -->
+        <div id="panel-general" style="background-color: var(--card-bg); border: 1px solid #333; border-radius: 8px; padding: 2rem; display: none;">
+            <div id="general-title" style="font-size: 1.4rem; color: var(--accent-color); margin-bottom: 1rem;"></div>
+            <p style="color: #2baf5c;">🟢 权限开放：当前部门数据运转正常，无异常警报。</p>
+            <p id="general-desc" style="margin-top: 1rem; color: var(--text-gray);"></p>
+        </div>
+
+    </div>
+    <script>
+        // 预设两个涉密部门的访问密码
+        const PASSWORDS = {
+            room: "012340",      // 客房部密码
+            security: "012340"  // 安保部密码
+        };
+
+        // 统一隐藏所有数据展示面板
+        function hideAllPanels() {
+            document.getElementById('display-container').style.display = 'block';
+            document.getElementById('panel-room').style.display = 'none';
+            document.getElementById('panel-security').style.display = 'none';
+            document.getElementById('panel-general').style.display = 'none';
+        }
+
+        // 点击板块触发的核心逻辑
+        function accessDepartment(dept) {
+            hideAllPanels();
+
+            // 如果点击的是客房部或安保部，进行密码鉴权拦截
+            if (dept === 'room' || dept === 'security') {
+                let passwordInput = prompt("【安全阻断】请输入该部门的管理授权访问密码：");
+                if (passwordInput !== PASSWORDS[dept]) {
+                    alert("❌ 密码错误，鉴权失败，无法调取涉密文件！");
+                    document.getElementById('display-container').style.display = 'none';
+                    return;
+                }
+            }
+
+            // 密码正确或无需密码，渲染对应的板块内容
+            if (dept === 'room') {
+                document.getElementById('panel-room').style.display = 'block';
+                generateRoomData(); // 触发动态生成20条客房记录
+            } else if (dept === 'security') {
+                document.getElementById('panel-security').style.display = 'block';
+            } else if (dept === 'catering') {
+                document.getElementById('panel-general').style.display = 'block';
+                document.getElementById('general-title').innerText = "餐饮部状态报告";
+                document.getElementById('general-desc').innerText = "今日行政酒廊、西餐厅正常营业，食材及红酒供应链运转正常，暂无积压。";
+            } else if (dept === 'logistics') {
+                document.getElementById('panel-general').style.display = 'block';
+                document.getElementById('general-title').innerText = "后勤部状态报告";
+                document.getElementById('general-desc').innerText = "中央空调防尘系统完成深度清洁，前台防疫物资及基础客耗品仓储储备充沛。";
+            }
+
+            // 视窗平滑滚动到下方展示区
+            document.getElementById('display-container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+// 动态生成 20 条入住记录（已完美修复房号与密码阻断问题）
+function generateRoomData() {
+    const tbody = document.getElementById('room-table-body');
+    tbody.innerHTML = ""; // 渲染前清空旧数据
+    
+    // 基础姓名池（用于填充其余 15 条普通随机数据）
+    const normalNames = [
+        "凯恩", "伦德", "李娜", "刘洋", "陈静", 
+        "杨杰", "赵敏", "黄超", "周周", "里昂", 
+        "徐丽", "孙强", "马军", "维恩", "郭栋"
+    ];
+
+    /* 
+       【核心修复 1】：把包含 507、515、518 在内的 20 个房间号名单彻底写死写全！
+       绝无漏字，不给脚本任何报错卡死密码的机会。
+    */
+    const roomList = [
+        201, 202, 203, 204, 205, 
+        206, 507, 208, 209, 210, 
+        211, 212, 213, 214, 515, 
+        216, 217, 518, 219, 220
+    ];
+
+    for (let i = 1; i <= 20; i++) {
+        // 从写死的名单中依次抓取房号，这样 507、515、518 就能被正常抓取判定了
+        let roomNum = roomList[i - 1]; 
+        let guestName = "";
+        let timeFormatStr = "";
+
+        // --- 【核心修复 2】：精准匹配写死的故事数据 ---
+        if (roomNum === 204) {
+            guestName = "艾琳·索恩";
+            timeFormatStr = "（08/01-08/03）1小时";
+        } 
+        else if (roomNum === 507) {
+            guestName = "顾珩/艾拉拉";
+            timeFormatStr = "（08/04-08/05）2小时";
+        } 
+        else if (roomNum === 212) {
+            guestName = "林知许/凯丽";
+            timeFormatStr = "（08/02-08/02）3小时";
+        } 
+        else if (roomNum === 515) {
+            guestName = "霍特/林晓晓";
+            timeFormatStr = "（08/07-08/08）15小时";
+        } 
+        else if (roomNum === 518) {
+            guestName = "苏婉/李先生";
+            timeFormatStr = "（08/01-08/05）12小时";
+        } 
+        // --- 其余 15 条普通数据自动计算填充 ---
+        else {
+            guestName = normalNames[i % normalNames.length];
+            
+            let startDay = 1 + Math.floor(i / 2);
+            let endDay = startDay + (i % 2 + 1);
+            let hours = (endDay - startDay) * 24 - (i % 3);
+            
+            let mm = "08/";
+            let startStr = `${startDay < 10 ? '0' + startDay : startDay}`;
+            let endStr = `${endDay < 10 ? '0' + endDay : endDay}`;
+            timeFormatStr = `（${mm}${startStr}-${mm}${endStr}）${hours}小时`;
+        }
+
+        // 将数据动态呈现在表格行中
+        let tr = document.createElement('tr');
+        tr.style.borderBottom = "1px solid #2a2a2a";
+        tr.innerHTML = `
+            <td style="padding: 0.8rem;">${guestName}</td>
+            <td style="padding: 0.8rem;">${roomNum}</td>
+            <td style="padding: 0.8rem; color: #aaaaaa; font-size: 0.9rem;">${timeFormatStr}</td>
+        `;
+        tbody.appendChild(tr);
+    }
+}
+
+// 安保部：根据选择的监控节点加载对应的图片贴图路径（已为您剔除无效的在线占位符地址）
+function loadMonitorImage() {
+    const selectValue = document.getElementById('monitor-select').value;
+    const imgElement = document.getElementById('current-monitor-img');
+    const screenBox = document.getElementById('monitor-screen-box');
+
+    const monitorImages = {
+        cam1: "CCTV9.png",    
+        cam2: "CCTV11.png",       
+        cam3: "CCTV10.png",
+        cam4: "images/parking.jpg"
+    };
+
+    imgElement.src = monitorImages[selectValue];
+    
+    // 剔除了 placeholder 垃圾失效链接，改用标准的纯 CSS 样式框防护
+    imgElement.onerror = function() {
+        this.src = "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' width='800' height='450' style='background:%231a1a1a;'><text x='50%' y='50%' font-size='20' fill='%23aaa' text-anchor='middle'>[本地未检测到图片文件 - 预留路径: " + monitorImages[selectValue] + "]</text></svg>";
+    };
+
+    screenBox.style.display = 'block';
+}
+
+    </script>
+</body>
+</html>

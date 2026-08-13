@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>虚拟手机操作界面</title>
+    <style>
+               /* ==================== 全局清除与手机外壳 ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #0d0d0d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .phone-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 430px;   
+            max-height: 932px;  
+            background: #000000;
+            border-radius: 45px;
+            border: 12px solid #2c2c2e; 
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+        }
+
+        /* 🔴 壁纸层：完全锁定尺寸与位置，绝不参与颤抖 */
+        .phone-wallpaper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            /* 🔗 手机壁纸链接预留，无毛玻璃效果 */
+            background-image: url('锁屏游戏开端壁纸.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* 🔴 UI内容层：独立承载所有控件 */
+        .phone-ui-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px 24px 40px 24px;
+        }
+
+        /* 🔴 密码错误时单独让UI层颤抖，背景壁纸绝无尺寸拉伸或位移变动 */
+        @keyframes uiLayerShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        .error-shake {
+            animation: uiLayerShake 0.4s ease-in-out;
+        }
+
+        /* ==================== 顶部状态栏（无胶囊摄像头） ==================== */
+        .status-bar {
+            height: 34px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 0 8px;
+        }
+
+        .status-left, .status-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .signal-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 2.5px;
+            height: 11px;
+        }
+
+        .bar {
+            width: 3px;
+            background-color: rgba(255, 255, 255, 0.4);
+            border-radius: 1px;
+        }
+
+        .bar:nth-child(1) { height: 30%; background-color: #fff; }
+        .bar:nth-child(2) { height: 50%; background-color: #fff; }
+        .bar:nth-child(3) { height: 75%; background-color: #fff; }
+        .bar:nth-child(4) { height: 100%; background-color: #fff; }
+
+        .battery-outer {
+            width: 24px;
+            height: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 3.5px;
+            padding: 1px;
+            position: relative;
+        }
+
+        .battery-outer::after {
+            content: '';
+            position: absolute;
+            right: -3.5px;
+            top: 3.5px;
+            width: 1.5px;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 0 1px 1px 0;
+        }
+
+        .battery-core {
+            height: 100%;
+            background-color: #fff;
+            border-radius: 1.5px;
+            width: 85%;
+        }
+        /* ==================== 屏幕时钟与密码点 ==================== */
+        .clock-display {
+            text-align: center;
+            color: #ffffff;
+            margin-top: 40px;
+        }
+
+        .clock-display h1 {
+            font-size: 72px;
+            font-weight: 200;
+            letter-spacing: -1.5px;
+            line-height: 1;
+        }
+
+        .clock-display p {
+            font-size: 18px;
+            font-weight: 400;
+            margin-top: 8px;
+        }
+
+        .password-feedback {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .input-tip {
+            color: #ffffff;
+            font-size: 15px;
+            margin-bottom: 16px;
+        }
+
+        .dots-box {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+        }
+
+        .dot {
+            width: 13px;
+            height: 13px;
+            border: 1.5px solid #ffffff;
+            border-radius: 50%;
+            transition: background-color 0.1s ease;
+        }
+
+        .dot.filled {
+            background-color: #ffffff;
+        }
+
+        /* ==================== 数字键盘布局 ==================== */
+        .phone-keyboard {
+            width: 100%;
+            max-width: 290px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .key-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .num-key {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            border: none;
+            background-color: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            font-size: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.1s ease;
+        }
+
+        .num-key:active {
+            background-color: rgba(255, 255, 255, 0.45);
+        }
+
+        .text-key {
+            width: 74px;
+            height: 74px;
+            border: none;
+            background: none;
+            color: #ffffff;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .text-key:active {
+            opacity: 0.5;
+        }
+
+        /* ==================== 自定义紧急呼叫弹窗 ==================== */
+        .custom-alert {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.55);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .custom-alert.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .alert-box {
+            background-color: rgba(255, 255, 255, 0.94);
+            width: 275px;
+            border-radius: 14px;
+            text-align: center;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .alert-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #000000;
+            padding: 18px 16px 4px 16px;
+        }
+
+        .alert-content {
+            font-size: 13px;
+            color: #000000;
+            padding: 0 16px 18px 16px;
+            line-height: 1.4;
+            border-bottom: 0.5px solid rgba(0, 0, 0, 0.15);
+        }
+
+        .alert-close-btn {
+            width: 100%;
+            padding: 12px;
+            background: none;
+            border: none;
+            color: #007aff;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .alert-close-btn:active {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        /* 移动端铺满 */
+        @media (max-width: 450px) {
+            body { background-color: #000000; }
+            .phone-wrapper {
+                width: 100vw;
+                height: 100vh;
+                max-width: 100vw;
+                max-height: 100vh;
+                border: none;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone-wrapper">
+        <div class="phone-wallpaper"></div>
+        <div class="phone-ui-content" id="uiContent">
+            
+            <!-- 状态栏 -->
+            <div class="status-bar">
+                <div class="status-left">
+                    <span class="carrier">中联移动</span>
+                    <div class="signal-bars">
+                        <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+                    </div>
+                </div>
+                <div class="status-center"></div>
+                <div class="status-right">
+                    <span id="statusBarTime">00:00</span>
+                    <div class="battery-outer"><div class="battery-core"></div></div>
+                </div>
+            </div>
+
+            <!-- 时钟 -->
+            <div class="clock-display">
+                <h1 id="screenTime">00:00</h1>
+                <p id="screenDate">1月1日 星期一</p>
+            </div>
+
+            <!-- 密码反馈点 -->
+            <div class="password-feedback">
+                <p class="input-tip">请输入密码</p>
+                <div class="dots-box">
+                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                </div>
+            </div>
+
+            <!-- 键盘 -->
+            <div class="phone-keyboard">
+                <div class="key-row">
+                    <button class="num-key" data-value="1">1</button>
+                    <button class="num-key" data-value="2">2</button>
+                    <button class="num-key" data-value="3">3</button>
+                </div>
+                <div class="key-row">
+                    <button class="num-key" data-value="4">4</button>
+                    <button class="num-key" data-value="5">5</button>
+                    <button class="num-key" data-value="6">6</button>
+                </div>
+                <div class="key-row">
+                    <button class="num-key" data-value="7">7</button>
+                    <button class="num-key" data-value="8">8</button>
+                    <button class="num-key" data-value="9">9</button>
+                </div>
+                <div class="key-row">
+                    <button class="text-key" id="emergencyBtn">紧急呼叫</button>
+                    <button class="num-key" data-value="0">0</button>
+                    <button class="text-key" id="deleteBtn">删除</button>
+                </div>
+            </div>
+
+            <!-- 紧急呼叫自定义移动框 -->
+            <div class="custom-alert" id="customAlert">
+                <div class="alert-box">
+                    <h3 class="alert-title">移动</h3>
+                    <!-- 💡 移动内容在这里修改 -->
+                    <p class="alert-content">亲爱的玩家，这里是解密小游戏，开动你的智慧，解锁这部手机开启你的解密探险吧</p>
+                    <button class="alert-close-btn" id="closeAlertBtn">确定</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <script>
+        // ==================== 1. 自定义配置项 ====================
+        const TARGET_PASSWORD = "000618"; // 🔓 设定6位数字密码
+        const REDIRECT_URL = "主页.html"; // 🔗 密码成功跳转链接
+        const CLICK_SOUND_URL = "手机按键音.AAC"; // 🎵 按键反馈音效
+
+        // ==================== 2. 全局变量与节点获取 ====================
+        let inputPassword = ""; 
+        const audioPlayer = new Audio(CLICK_SOUND_URL);
+        audioPlayer.preload = "auto"; 
+
+        const uiContent = document.getElementById('uiContent');
+        const statusBarTime = document.getElementById('statusBarTime');
+        const screenTime = document.getElementById('screenTime');
+        const screenDate = document.getElementById('screenDate');
+        const dots = document.querySelectorAll('.dot');
+        const numKeys = document.querySelectorAll('.num-key');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const emergencyBtn = document.getElementById('emergencyBtn');
+        const customAlert = document.getElementById('customAlert');
+        const closeAlertBtn = document.getElementById('closeAlertBtn');
+
+        // ==================== 3. 同步系统时间与日期 ====================
+        function syncTime() {
+            const now = new Date();
+            let hrs = now.getHours().toString().padStart(2, '0');
+            let mins = now.getMinutes().toString().padStart(2, '0');
+            statusBarTime.textContent = hrs + ":" + mins;
+            screenTime.textContent = hrs + ":" + mins;
+            
+            const monthList = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+            const weekList = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+            screenDate.textContent = monthList[now.getMonth()] + now.getDate() + "日 " + weekList[now.getDay()];
+        }
+        syncTime();
+        setInterval(syncTime, 1000);
+
+        // ==================== 4. 交互核心控制逻辑 ====================
+        function triggerAudio() {
+            const soundInstance = audioPlayer.cloneNode();
+            soundInstance.volume = 0.4; 
+            soundInstance.play().catch(e => console.log("等待交互激活音频"));
+        }
+
+        function refreshDots() {
+            dots.forEach((dot, idx) => {
+                if (idx < inputPassword.length) dot.classList.add('filled');
+                else dot.classList.remove('filled');
+            });
+        }
+
+        numKeys.forEach(button => {
+            button.addEventListener('click', () => {
+                if (inputPassword.length >= 6) return; 
+                triggerAudio(); 
+                inputPassword += button.getAttribute('data-value');
+                refreshDots();
+                if (inputPassword.length === 6) setTimeout(checkPassword, 150); 
+            });
+        });
+
+        deleteBtn.addEventListener('click', () => {
+            if (inputPassword.length > 0) {
+                triggerAudio();
+                inputPassword = inputPassword.slice(0, -1);
+                refreshDots();
+            }
+        });
+
+        // 密码验证及独立层颤抖
+        function checkPassword() {
+            if (inputPassword === TARGET_PASSWORD) {
+                window.location.href = REDIRECT_URL;
+            } else {
+                uiContent.classList.add('error-shake');
+                setTimeout(function() {
+                    uiContent.classList.remove('error-shake');
+                    inputPassword = "";
+                    refreshDots();
+                }, 400); 
+            }
+        }
+
+        // 紧急呼叫控制
+        emergencyBtn.addEventListener('click', () => { triggerAudio(); customAlert.classList.add('active'); });
+        closeAlertBtn.addEventListener('click', () => { customAlert.classList.remove('active'); });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>蜂鸟计算机中心</title>
+    <style>
+                /* 全局高平滑自适应基础重置 */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden; /* 杜绝横向滚动条Bug */
+            background: #ffffff;
+            color: #202124;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 顶部导航：使用标准无错位流式布局 */
+        .top-nav {
+            width: 100%;
+            min-height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 13px;
+            flex-shrink: 0; /* 画面缩放时防止顶栏被压扁 */
+        }
+        .nav-left, .nav-right { display: flex; align-items: center; gap: 15px; }
+        .nav-link { color: rgba(0,0,0,0.87); text-decoration: none; white-space: nowrap; }
+        .nav-link:hover { text-decoration: underline; }
+        
+        .apps-icon {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; fill: #5f6368; flex-shrink: 0;
+        }
+        .apps-icon:hover { background: #f1f3f4; }
+        .apps-icon svg { width: 24px; height: 24px; }
+
+        /* 右上角账户区域：增强版流式包裹防换行错位 */
+        .user-control-group {
+            display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+        }
+        .user-avatar {
+            min-width: 34px; height: 34px; padding: 0 12px;
+            background: #e8eaed; border-radius: 17px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 13px; font-weight: bold; color: #5f6368;
+            cursor: pointer; user-select: none; transition: all 0.2s;
+            border: 1px solid transparent; white-space: nowrap;
+        }
+        .user-avatar:hover { background: #d2d6dc; color: #1a73e8; }
+        
+        /* 独立注销按钮样式（修正了触摸点Bug） */
+        .logout-icon {
+            display: none; width: 34px; height: 34px; border-radius: 50%;
+            justify-content: center; align-items: center;
+            cursor: pointer; fill: #da362d; transition: background 0.2s; flex-shrink: 0;
+        }
+        .logout-icon:hover { background: #fce8e6; }
+        .logout-icon svg { width: 20px; height: 20px; pointer-events: none; } /* 确保精确捕获点击 */
+        /* 主体布局：采用流式弹性高度，自适应任何屏幕尺寸 */
+        .main-container {
+            flex: 1; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center;
+            width: 100%; 
+            max-width: 584px; 
+            padding: 0 20px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        /* 复合式一体化 Logo 盒子：比例锁定，杜绝形变 */
+        .logo-box {
+            position: relative;
+            height: 110px; 
+            margin-bottom: 24px;
+            display: flex; justify-content: center; align-items: flex-end;
+            padding-left: 24px; 
+            flex-shrink: 0;
+        }
+
+        /* 左上角贴图：采用绝对定位锁定在浮动的Logo父容器内部，实现永不脱轨的平移 */
+        .logo-icon-badge {
+            position: absolute;
+            top: 4px; 
+            left: -12px;
+            width: 72px;
+            height: 72px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0.85;
+        }
+        .logo-icon-badge img {
+            width: 100%; height: 100%; object-fit: contain;
+        }
+
+        /* 彩色文本 */
+        .logo-text { font-size: 46px; font-weight: bold; letter-spacing: -1.5px; user-select: none; white-space: nowrap; }
+        .logo-text .g1 { color: #4285F4; }
+        .logo-text .o1 { color: #EA4335; }
+        .logo-text .o2 { color: #FBBC05; }
+        .logo-text .g2 { color: #4285F4; }
+        .logo-text .l  { color: #34A853; }
+        .logo-text .e  { color: #EA4335; }
+
+
+        /* 搜索框：自适应宽度且自带防横向溢出 */
+        .search-wrapper { width: 100%; max-width: 100%; margin-bottom: 18px; box-sizing: border-box; }
+        .search-box {
+            width: 100%; height: 46px; background: #fff;
+            border: 1px solid #dfe1e5; border-radius: 24px;
+            display: flex; align-items: center; padding: 0 14px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+        .search-box:hover, .search-box:focus-within {
+            box-shadow: 0 1px 6px rgba(32,33,36,0.28);
+            border-color: rgba(223,225,229,0);
+        }
+        .search-input {
+            flex: 1; height: 100%; border: none; outline: none;
+            padding: 0 10px; font-size: 16px; color: #202124; min-width: 0; /* 核心修复：防止input在弹性盒内撑开容器 */
+        }
+        .icon-search, .icon-mic, .icon-lens { width: 20px; height: 20px; flex-shrink: 0; }
+        .icon-search { fill: #9aa0a6; }
+        .search-tools { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
+        .icon-mic, .icon-lens { fill: #4285f4; cursor: pointer; }
+
+        /* 搜索按钮 */
+        .btn-group { margin-top: 18px; display: flex; gap: 12px; flex-shrink: 0; }
+        .google-btn {
+            background-color: #f8f9fa; border: 1px solid #f8f9fa;
+            border-radius: 4px; color: #3c4043; font-size: 14px;
+            padding: 0 16px; line-height: 36px; min-width: 96px;
+            text-align: center; cursor: pointer; outline: none;
+        }
+        .google-btn:hover { border: 1px solid #dadce0; color: #202124; background: #f1f3f4; }
+
+        /* 全体复合一键呼吸动效 */
+        .logo-box { animation: floatUpDown 4.5s ease-in-out infinite; }
+        @keyframes floatUpDown {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-7px); } 
+            100% { transform: translateY(0px); }
+        }
+
+        /* 修复：将固定定位（Fixed）的弹窗层级调至最高，确保任何尺寸都能居中且可以有效抓取点击 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.4);
+            justify-content: center; align-items: center; z-index: 99999;
+            padding: 16px; box-sizing: border-box;
+        }
+        .modal-box {
+            background: white; padding: 24px; border-radius: 8px;
+            width: 100%; max-width: 440px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-sizing: border-box; overflow: hidden;
+        }
+        .modal-title { font-size: 16px; font-weight: bold; margin-bottom: 16px; color: #202124; }
+        
+        .modal-footer-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 20px; flex-wrap: wrap; gap: 12px; width: 100%;
+        }
+        .login-left-brand { font-size: 12px; color: #9aa0a6; font-family: monospace; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-btn { padding: 8px 16px; border-radius: 4px; border: none; font-size: 14px; cursor: pointer; }
+        .modal-btn.confirm { background: #1a73e8; color: white; }
+        .modal-btn.cancel { background: transparent; color: #5f6368; }
+        .login-form { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .login-input { width: 100%; padding: 10px; border: 1px solid #dadce0; border-radius: 4px; outline: none; font-size: 14px; }
+
+        /* 响应式多端无缝纠错断点 */
+        .footer { width: 100%; background: #f2f2f2; font-size: 14px; color: #70757a; flex-shrink: 0; }
+        .footer-top { padding: 15px 30px; border-bottom: 1px solid #e4e4e4; }
+        .footer-bottom { padding: 15px 30px; display: flex; justify-content: space-between; }
+        .footer-left, .footer-right { display: flex; gap: 27px; }
+        .footer-bottom a { color: #70757a; text-decoration: none; }
+
+        @media (max-width: 600px) {
+            .top-nav { padding: 0 16px; min-height: 50px; }
+            .nav-left, .apps-icon { display: none !important; } /* 移动端屏蔽非必要干扰元素 */
+            .main-container { justify-content: center; padding: 0 16px; margin-top: -20px; }
+            .logo-box { height: 70px; margin-bottom: 16px; padding-left: 15px; }
+            .logo-text { font-size: 34px; }
+            .logo-icon-badge { width: 24px; height: 24px; top: 2px; left: -10px; }
+            .btn-group { display: none !important; } /* 移动端完全隐藏中间宽按钮 */
+            .modal-box { padding: 20px; }
+            .modal-footer-row { flex-direction: column-reverse; align-items: flex-start; gap: 16px; }
+            .modal-buttons { width: 100%; justify-content: flex-end; }
+            .footer-bottom { flex-direction: column; align-items: center; gap: 12px; padding: 16px; }
+            .footer-left, .footer-right { gap: 16px; font-size: 12px; justify-content: center; flex-wrap: wrap; }
+        }
+    </style>
+ 
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航栏：高仿真谷歌右上角布局（采用非绝对定位，杜绝缩放移位） -->
+    <header class="top-nav">
+        <div class="nav-left">
+            <a href="#" class="nav-link">关于蜂鸟</a>
+            <a href="#" class="nav-link">蜂鸟商店</a>
+        </div>
+        <div class="nav-right">
+            <a href="主页.html" class="nav-link">返回</a>
+            <a href="#" class="nav-link">Gmail</a>
+            <a href="#" class="nav-link">图片</a>
+            <a href="#.html" class="nav-link">新闻</a>
+            <a href="#.html" class="nav-link">地图</a>
+            <a href="#" class="nav-link">YouTude</a>
+            <!-- 仿真应用九宫格 -->
+            <div class="apps-icon" title="蜂鸟应用">
+                <svg viewBox="0 0 24 24"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6-12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            </div>
+            
+            <!-- 复合式用户控制区 -->
+            <div class="user-control-group">
+                <div class="user-avatar" id="userBtn" onclick="openLoginModal()" title="点击切换账户">登录</div>
+                <div class="logout-icon" id="logoutBtn" onclick="executeLogout()" title="退出当前账户">
+                    <svg viewBox="0 0 24 24"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体核心区域：自适应弹性容器 -->
+    <main class="main-container">
+        
+        <!-- 1. 复合式 LOGO 区域（含左上角贴图预留位） -->
+        <div class="logo-box">
+            <div class="logo-icon-badge">
+    <!-- 换成你自己的本地图片文件名 -->
+    <img src="蜂鸟浏览器LOGO.png" alt="Logo Icon" id="logoIconImg">
+             </div>
+
+            <div class="logo-text">
+                    <span class="g1">H</span><span class="o1">y</span><span class="o2">m</span><span class="g2">m</span><span class="l">i</span><span class="e">n</span><span class="o2">g</span><span class="g2">b</span><span class="l">i</span><span class="e">r</span><span class="o2">d</span>            </div>
+        </div>
+
+        <!-- 2. 防溢出高仿真搜索输入框 -->
+        <div class="search-wrapper">
+            <div class="search-box">
+                <svg class="icon-search" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+                <input type="text" id="searchInput" class="search-input" autocomplete="off" autofocus placeholder="">
+                <div class="search-tools">
+                    <svg class="icon-mic" viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+                    <svg class="icon-lens" viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 响应式仿真搜索按钮 -->
+        <div class="btn-group">
+            <button class="google-btn" onclick="executeSearch()">搜索</button>
+        </div>
+
+    </main>
+
+    <!-- 弹性防顶边页脚 -->
+    <footer class="footer">
+        <div class="footer-top">巴布曼特联邦</div>
+        <div class="footer-bottom">
+            <div class="footer-left">
+                <a href="#">关于</a><a href="#">广告</a><a href="#">商务</a><a href="#">搜索服务</a>
+            </div>
+            <div class="footer-right">
+                <a href="#">隐私权</a><a href="#">条款</a><a href="#">设置</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 全局防点击错位提示框弹窗 -->
+    <div class="modal-overlay" id="alertModal">
+        <div class="modal-box">
+            <div class="modal-title" id="alertTitle">提示</div>
+            <div class="modal-text" id="alertText">没有找到相关搜索结果。</div>
+            <div class="modal-buttons"><button class="modal-btn confirm" onclick="closeAlert()">确定</button></div>
+        </div>
+    </div>
+
+    <!-- 居中防溢出账户登录弹窗 -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-box">
+            <div class="modal-title">登录HYMMINGBIRD账户</div>
+            <div class="login-form">
+                <input type="text" id="username" class="login-input" placeholder="请输入蜂鸟账户">
+                <input type="password" id="password" class="login-input" placeholder="请输入密码（注意大小写）">
+            </div>
+            <div class="modal-footer-row">
+                <div class="login-left-brand">HYMMINGBIRD (蜂鸟) 核心网络</div>
+                <div class="modal-buttons">
+                    <button class="modal-btn cancel" onclick="closeLoginModal()">取消</button>
+                    <button class="modal-btn confirm" onclick="submitLogin()">登录</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 游戏核心内部配置区（不浮于表面）
+        // ==========================================
+        const VALID_SEARCHES = {
+            "蜂鸟": "新闻.html",
+            "蜂鸟新闻": "新闻.html",
+            "巴布曼特联邦警察局": "巴布曼特联邦警察局.html",
+            "巴布曼特警察局": "巴布曼特联邦警察局.html",
+            "联邦警察局": "巴布曼特联邦警察局.html",
+            "警察局": "巴布曼特联邦警察局.html",
+            "诺凡泰克制药": "药.html",
+            "生物制药": "药.html",
+            "诺凡泰克生物制药": "药.html",
+            "开发者局长": "J航天局长家画面.html",
+            "开发者股票": "G赖小花详情股票.html",
+            "联邦航空与太空管理局": "J航天局.html",
+            "太空管理局": "J航天局.html",
+            "航天局": "J航天局.html",
+            "巴布曼特联邦大学": "J校.html",
+            "FASA": "J航天局.html",
+            "联邦大学": "J校.html",
+            "巴布曼特大学": "J校.html#",
+            "秋野烧烤": "J烧烤.html",
+            "红叶酒店": "J酒店.html",
+            "黑水镇福利院": "J黑水.html",
+            "黑客入侵": "#",
+            "黑客入侵": "#",
+            "开发者地图": "J监控地图.html"
+        
+        };
+
+        const ERROR_TIP = "没有找到相关搜索结果。。";
+
+        const ADMIN_ACCOUNTS = {
+    // 1. 第一个账号（把 "MY_USER_1" 改成你想输入的登录账号，建议大写字母）
+    "yueliang2000": {
+        password: "Yueliang000618",    // 自定义密码（严格区分大小写）
+        targetUrl: "G赖小花详情.html",      // 自定义登录成功后跳转的网页文件名
+        nickName: "赖小花"               // 自定义登录后显示的昵称
+    },
+    
+    // 2. 第二个账号
+    "MY_USER_2": {
+        password: "SuperPassword666", // 自定义密码
+        targetUrl: "dashboard.html",  // 自定义跳转页面
+        nickName: "李四"               // 自定义昵称
+    }
+    
+    // 如果需要更多账号，仿照上面的格式在后面用逗号 , 隔开继续添加即可
+};
+
+
+
+        // ==========================================
+        // 🔒 状态防刷新持久锁与退出机制（修正重绘）
+        // ==========================================
+        window.onload = function() {
+            checkLoginState();
+        };
+
+        function checkLoginState() {
+            const savedUser = localStorage.getItem('Hymmingbird_Logged_In_User');
+            const userBtn = document.getElementById('userBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            if (savedUser && ADMIN_ACCOUNTS.hasOwnProperty(savedUser)) {
+                userBtn.innerText = ADMIN_ACCOUNTS[savedUser].nickName;
+                userBtn.style.color = '#1a73e8';
+                userBtn.style.borderColor = '#1a73e8';
+                userBtn.style.background = '#e8f0fe';
+                userBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    window.location.href = ADMIN_ACCOUNTS[savedUser].targetUrl;
+                };
+                logoutBtn.style.display = 'flex';
+            } else {
+                userBtn.innerText = "登录";
+                userBtn.style.color = '#5f6368';
+                userBtn.style.borderColor = 'transparent';
+                userBtn.style.background = '#e8eaed';
+                userBtn.onclick = function(e) { e.stopPropagation(); openLoginModal(); };
+                logoutBtn.style.display = 'none';
+            }
+        }
+
+        function executeLogout() {
+            if (confirm("确定要终止当前账户会话，安全退出吗？")) {
+                localStorage.removeItem('Hymmingbird_Logged_In_User');
+                alert("已安全已退回至 登录 匿名模式。");
+                checkLoginState();
+            }
+        }
+
+
+        // ==========================================
+        // 🛡️ 开发者还原与硬核黑客风Console审计
+        // ==========================================
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || (e.ctrlKey && e.key === 'u')) {
+                e.preventDefault(); return false;
+            }
+        });
+
+        (function() {
+            setInterval(function() {
+                console.clear();
+                console.log("%c[!] HYMMINGBIRD SECURE NETWORK - DEVELOPMENT AUDIT", "color: #ff3333; font-size: 15px; font-weight: bold; background: #000; padding: 4px 8px;");
+                console.log("%c监测到终端探针调试行为（开发者控制台已重构还原）。", "color: #34A853; font-size: 13px; font-weight: bold;");
+                console.log("%c========================================================", "color: #5f6368;");
+                console.log("%c【系统日志】: 本地策略已加载。当前支持 3 组内部高级通信密钥鉴权。", "color: #FBBC05; font-size: 12px;");
+                console.log("%c【开发者提示】: 代码层无明文可绕过。请回到前端执行推理解密。", "color: #4285F4; font-size: 12px; line-height: 1.5;");
+                console.log("%c========================================================", "color: #5f6368;");
+            }, 1000);
+        })();
+
+
+        // ==========================================
+        // 基础交互控制器（增加事件防御）
+        // ==========================================
+        document.getElementById('searchInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { executeSearch(); }
+        });
+
+        function executeSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            if (VALID_SEARCHES.hasOwnProperty(query)) {
+                window.location.href = VALID_SEARCHES[query];
+            } else {
+                showAlert("系统提醒", ERROR_TIP);
+            }
+        }
+
+        function showAlert(title, text) {
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertText').innerText = text;
+            document.getElementById('alertModal').style.display = 'flex';
+        }
+        function closeAlert() { document.getElementById('alertModal').style.display = 'none'; }
+
+        function openLoginModal() {
+            document.getElementById('loginModal').style.display = 'flex';
+            document.getElementById('username').focus();
+        }
+        function closeLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('username').value = "";
+            document.getElementById('password').value = "";
+        }
+
+        function submitLogin() {
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
+
+            if (ADMIN_ACCOUNTS.hasOwnProperty(u) && ADMIN_ACCOUNTS[u].password === p) {
+                localStorage.setItem('Hymmingbird_Logged_In_User', u);
+                closeLoginModal();
+                checkLoginState();
+                window.location.href = ADMIN_ACCOUNTS[u].targetUrl;
+            } else {
+                alert("账号或密码错误，请重新尝试。");
+                closeLoginModal();
+            }
+        }
+    </script>
+</body>
+</html>
+

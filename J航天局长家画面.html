@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MATRIX-矩阵四路监控综合云台</title>
+    <style>
+        /* 全局样式与系统主题自适应 */
+        :root {
+            --bg-color: #f0f3f6;
+            --panel-bg: #ffffff;
+            --text-main: #2c3e50;
+            --border-color: #dcdde1;
+            --overlay-bg: rgba(0, 0, 0, 0.4);
+            --timestamp-color: #ffffff;
+            --glow-color: rgba(46, 204, 113, 1);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #0b0f17;
+                --panel-bg: #141a24;
+                --text-main: #eaedf3;
+                --border-color: #232d3f;
+                --overlay-bg: rgba(0, 0, 0, 0.6);
+                --timestamp-color: #00ffcc; /* 暗黑模式下时间戳呈现荧光青色 */
+            }
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            width: 100vw; 
+            height: 100vh; 
+            overflow: hidden; 
+            padding: 8px; 
+            display: flex; 
+            flex-direction: column; 
+            transition: all 0.3s ease; 
+        }
+
+        /* 顶部控制导航栏 */
+        .header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 6px 12px; 
+            background: var(--panel-bg); 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            margin-bottom: 8px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+            flex-shrink: 0; 
+        }
+        .back-btn { 
+            padding: 5px 12px; 
+            background: transparent; 
+            border: 1px solid var(--border-color); 
+            border-radius: 4px; 
+            color: var(--text-main); 
+            cursor: pointer; 
+            font-size: 13px; 
+            font-weight: bold; 
+            transition: all 0.2s; 
+        }
+        .back-btn:hover { background: var(--text-main); color: var(--bg-color); }
+        .panel-title { font-size: 13px; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 6px; }
+        
+        /* 录制中闪烁绿点提示 */
+        .live-dot { width: 8px; height: 8px; background-color: #2ecc71; border-radius: 50%; box-shadow: 0 0 8px var(--glow-color); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
+
+        /* 默认电脑端布局：横向纵向100%全屏吃满剩余空间 */
+        .cctv-grid {
+            flex: 1;                 
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 8px;
+            width: 100%;
+            height: 100%;            
+        }
+
+        /* 手机端自适应对齐：强制在手机屏幕除去导航栏后的垂直几何中心绝对正居中，且锁定16:9比例 */
+        @media (max-width: 768px) {
+            .cctv-grid {
+                flex: none;          
+                width: 100%;
+                height: auto;
+                aspect-ratio: 16 / 9; 
+                margin: auto 0 !important; 
+            }
+        }
+        /* 单个监控画面卡片 */
+        .cctv-channel {
+            background: #11141a;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 1;
+            width: 100%;
+            height: 100%;            
+        }
+
+        @media (max-width: 768px) {
+            .cctv-channel {
+                aspect-ratio: 16 / 9; 
+            }
+        }
+
+        /* 监控底图：无损等比裁切填充 */
+        .cctv-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;       
+            opacity: 0.9;
+            pointer-events: none; 
+        }
+
+        /* 监控数据信息叠加层（已修正：在电脑端底部增加安全间距，防止时间戳被压到屏幕外） */
+        .feed-overlay {
+            position: absolute;
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            padding: 8px; 
+            display: flex; 
+            flex-direction: column;
+            justify-content: space-between; 
+            pointer-events: none; /* 允许点击穿透，直接点中下方的热点或大格子 */
+            box-shadow: inset 0 0 35px rgba(0,0,0,0.6);
+            z-index: 5;
+            
+            /* 🚀 新增这行：强制为底部文字预留 8 像素的向上升起空间，确保电脑端能完整看清毫秒跳动 */
+            bottom: 8px; 
+        }
+       .channel-name {
+            font-size: 11px; font-weight: bold; color: var(--timestamp-color);
+            text-shadow: 1px 1px 2px #000000; font-family: monospace;
+        }
+
+        /* 强化的等宽像素时间戳字体 */
+        .live-timestamp {
+            align-self: flex-end; font-size: 11px; font-weight: bold;
+            color: var(--timestamp-color); text-shadow: 1px 1px 2px #000000;
+            font-family: 'Courier New', monospace; letter-spacing: 0.5px;
+        }
+
+        /* 【核心重构】：全幅画面右侧 50% 完美盲操触摸区（去除圆形个体微调） */
+        .cctv-hotspot {
+            position: absolute;
+            top: 0;
+            right: 0;          /* 紧贴画面右侧边缘 */
+            width: 50%;        /* 霸占横向 50% 的画面宽度 */
+            height: 100%;      /* 纵向 100% 垂直吃满 */
+            z-index: 20;       /* 置顶于所有图层之上，最灵敏地接收触摸和点击 */
+            cursor: pointer;
+            
+            
+        }
+
+        /* 核心安全互锁：只有当监控画面被玩家点击全屏放大（.expanded）后，右侧 50% 搜证选区才被唤醒，小图时禁止触发 */
+        .cctv-channel:not(.expanded) .cctv-hotspot { 
+            display: none; 
+        }
+
+        /* 单个画面点击放大时的全屏置顶样式 */
+        .cctv-channel.expanded {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            margin: auto; 
+            width: 100vw;
+            height: 100vh;           
+            z-index: 9999;
+            border-color: #2ecc71;
+            box-shadow: 0 0 50px rgba(0,0,0,0.9);
+            border-radius: 0;        
+        }
+        
+        @media (max-width: 768px) {
+            .cctv-channel.expanded {
+                width: 100vw;
+                height: auto;
+                aspect-ratio: 16 / 9;
+            }
+        }
+        
+        .cctv-channel.expanded .channel-name { font-size: 14px; padding: 5px; }
+        .cctv-channel.expanded .live-timestamp { font-size: 14px; padding: 5px; }
+
+        /* 5秒黑客数据下载进度条科幻布局 */
+        .download-container {
+            position: absolute;
+            bottom: 40px; left: 5%; width: 90%;
+            height: 24px; background: rgba(3, 8, 15, 0.9);
+            border: 1px solid #00ffcc;
+            border-radius: 4px; display: none; 
+            align-items: center; padding: 2px; z-index: 100;
+            box-shadow: 0 0 15px rgba(0,255,204,0.3);
+        }
+        .download-bar {
+            width: 0%; height: 100%;
+            background: linear-gradient(90deg, #0088ff, #00ffcc);
+            box-shadow: 0 0 10px #00ffcc;
+            transition: width 5s linear; 
+        }
+        .download-text {
+            position: absolute; width: 100%; text-align: center;
+            font-size: 11px; color: #ffffff; font-weight: bold;
+            font-family: monospace; letter-spacing: 1px;
+            text-shadow: 1px 1px 2px #000000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部综合控制导航栏 -->
+    <div class="header">
+        <!-- 真实返回按键：请将 'game_desktop.html' 修改为您推理游戏主网页的文件名或网址 -->
+        <button class="back-btn" onclick="window.location.href='404.html'">⬅ 返回</button>
+        <div class="panel-title">
+            <div class="live-dot"></div>
+            <span>蜂鸟科技高清多维监控云台</span>
+        </div>
+    </div>
+
+    <!-- 自适应四宫格矩阵（右侧 50% 全幅盲操优化版） -->
+    <div class="cctv-grid">
+        
+        <!-- 通道 01：别墅门前 -->
+        <div class="cctv-channel">
+            <img class="cctv-feed" src="CCTV1.jpg" alt="CH-01">
+            <!-- 全幅画面右侧 50% 完美盲操盲点选区：触发解锁汽车 -->
+            <div class="cctv-hotspot" onclick="clickCar(event)"></div>
+            <div class="feed-overlay">
+                <div class="channel-name">CAM-01 // 别墅正门前庭</div>
+                <div class="live-timestamp" id="time-ch1">0000/00/00 00:00:00.000</div>
+            </div>
+        </div>
+
+        <!-- 通道 02：别墅客厅 (第2路未埋设线索，点击只有标准的放大缩小) -->
+        <div class="cctv-channel">
+            <img class="cctv-feed" src="CCTV2.jpg" alt="CH-02">
+            <div class="feed-overlay">
+                <div class="channel-name">CAM-02 // 别墅一层大厅</div>
+                <div class="live-timestamp" id="time-ch2">0000/00/00 00:00:00.000</div>
+            </div>
+        </div>
+
+        <!-- 通道 03：主卧私密 -->
+        <div class="cctv-channel">
+            <img class="cctv-feed" src="CCTV3.jpg" alt="CH-03">
+            <!-- 全幅画面右侧 50% 完美盲操盲点选区：触发解锁保险柜 -->
+            <div class="cctv-hotspot" onclick="clickSafe(event)"></div>
+            <div class="feed-overlay">
+                <div class="channel-name">CAM-03 // 别墅二层主卧</div>
+                <div class="live-timestamp" id="time-ch3">0000/00/00 00:00:00.000</div>
+            </div>
+        </div>
+
+        <!-- 通道 04：核心书房 -->
+        <div class="cctv-channel">
+            <img class="cctv-feed" src="CCTV4.jpg" alt="CH-04">
+            <!-- 全幅画面右侧 50% 完美盲操盲点选区：触发解锁电脑 -->
+            <div class="cctv-hotspot" onclick="clickPC(event)"></div>
+            <!-- 5秒脱机数据下载进度条 -->
+            <div class="download-container" id="pcDownloadBox">
+                <div class="download-bar" id="pcDownloadBar"></div>
+                <div class="download-text" id="pcDownloadText">DOWNLOADING DATA: 0%</div>
+            </div>
+            <div class="feed-overlay">
+                <div class="channel-name">CAM-04 // 别墅二层书房</div>
+                <div class="live-timestamp" id="time-ch4">0000/00/00 00:00:00.000</div>
+            </div>
+        </div>
+
+    </div>
+<script>
+    // 1. 【高精密时钟】：驱动4路监控表面的年/月/日 时:分:秒.毫秒(MS)飞速狂飙
+    function startCctvClock() {
+        const channels = ["time-ch1", "time-ch2", "time-ch3", "time-ch4"];
+        
+        // 40毫秒超高频刷新率，确保3位毫秒跳动丝滑流畅，绝不重影与闪屏
+        setInterval(() => {
+            const now = new Date();
+            
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+            
+            const timestampString = `${year}/${month}/${date} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+            
+            channels.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = timestampString;
+            });
+        }, 40); 
+    }
+
+    // 2. 核心互锁全屏放大缩小引擎（结合全幅右侧50%触控板修正）
+    function toggleExpand(channelElement, event) {
+        // 关键逻辑：如果点击的是右侧50%剧情触发器，且正处于全屏状态，直接由剧情函数拦截，不在此执行缩小
+        if (event && event.target.classList.contains("cctv-hotspot") && channelElement.classList.contains("expanded")) return;
+
+        const isExpanded = channelElement.classList.contains("expanded");
+        if (isExpanded) {
+            channelElement.classList.remove("expanded");
+        } else {
+            document.querySelectorAll(".cctv-channel").forEach(el => el.classList.remove("expanded"));
+            channelElement.classList.add("expanded");
+        }
+    }
+
+// 3. 【剧情一】：监控 1 画面解锁汽车（手机友好版，不再触发系统“关闭网页”提示）
+function clickCar(event) {
+    event.stopPropagation(); // 强行切断信号扩散
+    
+    // 1. 创建一个完全由前端控制的漂亮对话框，绕过手机浏览器底层的 confirm
+    const mask = document.createElement('div');
+    mask.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:monospace;";
+    
+    const dialog = document.createElement('div');
+    dialog.style = "background:#222;color:#fff;border:1px solid #ff3333;padding:20px;border-radius:8px;width:80%;max-width:320px;text-align:center;box-shadow:0 0 15px rgba(255,51,51,0.5);";
+    dialog.innerHTML = `
+        <p style="margin-bottom:20px;line-height:1.6;font-size:14px;color:#ff3333;">【智能驾驶系统】<br>发现车辆无线中控信号。<br>是否尝试强行解锁车载系统？</p>
+        <button id="btn-yes" style="background:#ff3333;color:#fff;border:none;padding:8px 20px;margin:5px;border-radius:4px;cursor:pointer;font-weight:bold;">是</button>
+        <button id="btn-no" style="background:#444;color:#fff;border:none;padding:8px 20px;margin:5px;border-radius:4px;cursor:pointer;">否</button>
+    `;
+    
+    mask.appendChild(dialog);
+    document.body.appendChild(mask);
+    
+    // 用户点【是】的逻辑
+    dialog.querySelector('#btn-yes').onclick = function() {
+        document.body.removeChild(mask); // 移除弹窗
+        
+        // 手机端建议把 alert 也换掉，这里暂时用原生 alert 演示
+        alert("【🚨 警报：解锁失败！】\n\n警告：强行破译触发了车载防盗系统！车辆发生高分贝剧烈报警！\n安全中心已远程切断当前路视频流，信号已被强行终止！");
+        
+        // 局部画面黑屏信号中断
+        const parent = event.target.parentElement;
+        parent.querySelector(".cctv-feed").style.display = "none";
+        parent.querySelector(".feed-overlay").innerHTML = `<div style="color:#ff3333;font-weight:bold;margin:auto;font-family:monospace;letter-spacing:1px;">✖ CAM-01 SIGNAL LOST // 报警断开</div>`;
+        
+        // 延时 1.5 秒后跳转到特定链接
+        setTimeout(() => {
+            window.location.href = '404.html'; // 可自行替换为您要求的特定URL路径
+        }, 1000);
+    };
+    
+    // 用户点【否】的逻辑
+    dialog.querySelector('#btn-no').onclick = function() {
+        document.body.removeChild(mask); // 移除弹窗
+        toggleExpand(event.target.parentElement); // 还原四宫格
+    };
+}
+
+</script>
+<script>
+// 4. 【剧情二】：监控 3 画面解锁保险柜（手机友好版，不再触发系统“关闭网页”提示）
+function clickSafe(event) {
+    event.stopPropagation(); // 阻止事件冒泡
+    
+    // 1. 创建自定义解密游戏模态框，避开手机浏览器底层的 confirm
+    const mask = document.createElement('div');
+    mask.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:monospace;";
+    
+    const dialog = document.createElement('div');
+    dialog.style = "background:#222;color:#fff;border:1px solid #ff3333;padding:20px;border-radius:8px;width:80%;max-width:320px;text-align:center;box-shadow:0 0 15px rgba(255,51,51,0.5);";
+    dialog.innerHTML = `
+        <p style="margin-bottom:20px;line-height:1.6;font-size:14px;color:#ff3333;">【侦查到电子保险柜】<br>是否尝试强行破译生物指纹锁并打开保险柜？</p>
+        <button id="btn-safe-yes" style="background:#ff3333;color:#fff;border:none;padding:8px 20px;margin:5px;border-radius:4px;cursor:pointer;font-weight:bold;">是</button>
+        <button id="btn-safe-no" style="background:#444;color:#fff;border:none;padding:8px 20px;margin:5px;border-radius:4px;cursor:pointer;">否</button>
+    `;
+    
+    mask.appendChild(dialog);
+    document.body.appendChild(mask);
+    
+    // 用户点【是】的逻辑
+    dialog.querySelector('#btn-safe-yes').onclick = function() {
+        document.body.removeChild(mask); // 移除弹窗
+        
+        // 手机端建议把 alert 也换掉，这里暂时保留你原有的 alert 提示
+        alert("【🚨 致命错误：触发防御陷阱】\n\n警告：指纹破译失败！已触发别墅三级防御系统！\n警报主机正在强行切断当前主控电源，监视数据已被彻底销毁！");
+        
+        // 局部画面黑屏信号中断
+        const parent = event.target.parentElement;
+        parent.querySelector(".cctv-feed").style.display = "none";
+        parent.querySelector(".feed-overlay").innerHTML = `<div style="color:#ff3333;font-weight:bold;margin:auto;font-family:monospace;letter-spacing:1px;">✖ CAM-03 SIGNAL LOST // 信号中断</div>`;
+        
+        // 延时 1.5 秒后跳转到特定链接
+        setTimeout(() => {
+            window.location.href = '404.html'; // 可自行替换为您要求的特定URL路径
+        }, 1500);
+    };
+    
+    // 用户点【否】的逻辑（或关闭弹窗）
+    dialog.querySelector('#btn-safe-no').onclick = function() {
+        document.body.removeChild(mask); // 移除弹窗
+        // 遵循点击画面任何地方都可以将画面缩回还原到监控四宫格画面
+        toggleExpand(event.target.parentElement);
+    };
+}
+
+
+// 5. 【剧情三】：监控 4 画面解锁电脑（手机友好版，不再触发系统“关闭网页”提示）
+function clickPC(event) {
+    event.stopPropagation(); // 阻止事件冒泡
+    
+    // 1. 创建自定义解密游戏模态框，避开手机浏览器底层的 confirm
+    const mask = document.createElement('div');
+    mask.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:monospace;";
+    
+    const dialog = document.createElement('div');
+    dialog.style = "background:#222;color:#fff;border:1px solid #ff3333;padding:20px;border-radius:8px;width:80%;max-width:320px;text-align:center;box-shadow:0 0 15px rgba(255,51,51,0.5);";
+    dialog.innerHTML = `
+        <p style="margin-bottom:20px;line-height:1.6;font-size:14px;color:#ff3333;">【高级别加密计算机】<br>检测到加密的核心机密数据库。<br>是否立刻开始下载敏感数据？</p>
+        <button id="btn-pc-yes" style="background:#ff3333;color:#fff;border:none;padding:8px 20px;margin:5px;border-radius:4px;cursor:pointer;font-weight:bold;">是</button>
+        <button id="btn-pc-no" style="background:#444;color:#fff;border:none;padding:8px 20px;margin:5px;border-radius:4px;cursor:pointer;">否</button>
+    `;
+    
+    mask.appendChild(dialog);
+    document.body.appendChild(mask);
+    
+    // 用户点【是】的逻辑
+    dialog.querySelector('#btn-pc-yes').onclick = function() {
+        document.body.removeChild(mask); // 移除弹窗
+        
+        const box = document.getElementById("pcDownloadBox");
+        const bar = document.getElementById("pcDownloadBar");
+        const text = document.getElementById("pcDownloadText");
+        
+        box.style.display = "flex"; // 展现进度条容器
+        setTimeout(() => { bar.style.width = "100%"; }, 50); // 启动进度条平滑延伸动画
+
+        let progress = 0;
+        let countInterval = setInterval(() => {
+            progress += 10;
+            if (progress <= 100) {
+                text.textContent = `DOWNLOADING DATA: ${progress}%`;
+            }
+            if (progress >= 100) {
+                clearInterval(countInterval);
+                // 刚好5秒时间结束，跳出最终通关密钥
+                setTimeout(() => {
+                    // 手机端暂时保留你原有的 alert 提示
+                    alert(
+                        "【📥 数据下载成功】\n" +
+                        "核心日志已完整脱机导出至您的云端存储设备。\n\n" +
+                        "经过系统协议解密，获得（联邦航空与太空管理局）密钥：\n" +
+                        "🔑 [9947]\n\n" +
+                        "提示：请牢记此密钥，可进入联邦航空与太空管理局系统。"
+                    );
+                    box.style.display = "none"; 
+                    bar.style.width = "0%";     // 复位进度条便于下次排练测试
+                }, 200);
+            }
+        }, 500);
+    };
+    
+    // 用户点【否】的逻辑（或关闭弹窗）
+    dialog.querySelector('#btn-pc-no').onclick = function() {
+        document.body.removeChild(mask); // 移除弹窗
+        // 玩家点否或取消关闭选择：同样恢复普通的点击画面还原四宫格属性
+        toggleExpand(event.target.parentElement);
+    };
+}
+
+// 6. 系统自动化加载与跨端解耦监听器
+window.addEventListener("DOMContentLoaded", () => {
+    // 唤醒小时分秒毫秒超高频微秒狂飙时钟
+    startCctvClock();
+    
+    // 动态校正：为所有大卡片注入防冲突的事件指针，彻底支持“不触发剧情任意处点击还原”
+    document.querySelectorAll(".cctv-channel").forEach(channel => {
+        channel.addEventListener("click", (e) => {
+            toggleExpand(channel, e); 
+        });
+    });
+});
+
+</script>
+</body>
+</html>

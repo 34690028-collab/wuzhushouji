@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hummingbird OS - Complete Offline Player</title>
+    
+    <!-- ⚠️ 注意：全站已 100% 彻底连根拔除任何外部 CSS 字体或图标链接，实现完美无网秒开 ⚠️ -->
+    
+    <style>
+        /* ==========================================================================
+           【第 1 部分】全站大牌美学基础色彩与自适应手机外壳变量（A面样式）
+           ========================================================================== */
+        :root {
+            --os-bg: #0c0e16;           /* 沉浸式微光全宽暗色底色 */
+            --player-tint: #ff2d55;     /* 活力红主调（对标大牌核心视觉） */
+            --text-light: #ffffff;
+            --text-muted: #8e8e93;      /* 元数据与信息严谨辅助灰 */
+            --border-phone: #252629;    /* 物理机身高精金属拉丝线 */
+            --font-global: 'Inter', 'Noto Sans SC', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        /* 全平台多端视口绝对均衡居中，完美契合笔记本、电脑和桌面大屏 */
+        body {
+            font-family: var(--font-global);
+            background-color: #050608;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 【全新升级】100% 视网膜级自适应全屏外壳控制（电脑上是手机，真手机自动100%全屏满铺） */
+        .lapd-phone-hardware-shell {
+            position: relative;
+            width: 100vw;
+            max-width: 380px;           /* 电脑端最大卡在黄金手机宽度 */
+            height: 100vh;
+            max-height: 820px;          /* 电脑端最大卡在黄金手机高度 */
+            background: #000000;
+            border-radius: 40px;        /* 极致全面屏流线圆角 */
+            padding: 12px;              /* 机身极窄金属外框厚度 */
+            box-shadow: 0 30px 70px rgba(0,0,0,0.7), 
+                        inset 0 0 0 2px rgba(255,255,255,0.15);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 侧边高仿真凸起物理按键 */
+        .phone-side-key { position: absolute; background: #1a1b1d; width: 3px; border-radius: 2px; }
+        .vol-up { top: 150px; left: -3px; height: 45px; }
+        .vol-down { top: 205px; left: -3px; height: 45px; }
+        .power { top: 175px; right: -3px; height: 70px; }
+
+        /* 手机液晶内屏主壳：强制锁死边缘杜绝变形 */
+        .virtual-phone-screen {
+            position: relative;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: var(--os-bg);
+            border-radius: 32px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 5;
+        }
+        /* ==========================================================================
+           【第 2 部分】中联移动高仿真状态栏与全离线内联 SVG 图标尺寸规范
+           ========================================================================== */
+        /* 高仿真全面屏状态栏：集成中联移动、系统时间与电量指标 */
+        .phone-top-status-bar {
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            height: 44px;
+            padding: 14px 24px 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 99999;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-light);
+            background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 100%);
+        }
+
+        /* 左侧信号、Wi-Fi 与运营商名对齐集群 */
+        .status-bar-left { display: flex; align-items: center; gap: 5px; }
+        .operator-brand { font-size: 11px; letter-spacing: 0.5px; font-weight: 900; color: #ffffff; margin-right: 2px; }
+        .network-type-badge { font-size: 8px; font-weight: 900; background: rgba(255,255,255,0.18); padding: 0 3px; border-radius: 2px; margin-right: 1px; }
+
+        /* 右侧系统时间与电池电量集群 */
+        .status-bar-right { display: flex; align-items: center; gap: 5px; }
+        #os-live-clock-ticker { font-size: 12px; font-family: sans-serif; font-weight: 700; }
+
+        /* 全离线内联 SVG 状态栏图标统一大小参数控制 */
+        .svg-status-icon {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
+            display: inline-block;
+            vertical-align: middle;
+            opacity: 0.9;
+        }
+        /* ==========================================================================
+           【第 3 部分】黑胶唱片旋转、中间播放/暂停徽标与极简下拉选择面板样式表
+           ========================================================================== */
+        /* 播放器一体化内屏控制面板主外壳 */
+        .music-app-main-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 55px 20px 24px 20px; /* 顶部留出 55px 完美避开中联移动状态栏 */
+            justify-content: space-between;
+            color: var(--text-light);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* 顶部歌曲所属元数据基本展示 */
+        .playback-header-meta { text-align: center; }
+        .playback-header-meta h2 { font-size: 11px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
+        .playback-header-meta p { font-size: 12px; color: var(--player-tint); font-weight: 700; margin-top: 3px; letter-spacing: 0.5px; }
+
+        /* 【唱片机硬件样式控制】：包含黑胶大圆盘底座与无限循环顺时针旋转动效 */
+        .turntable-hardware-deck {
+            position: relative;
+            width: 100%;
+            height: 315px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .vinyl-record-disk {
+            position: relative;
+            width: 310px;
+            height: 310px;
+            background: radial-gradient(circle, #2a2b2e 0%, #141517 40%, #000000 80%);
+            border-radius: 50%;
+            box-shadow: 0 16px 35px rgba(0,0,0,0.55), 
+                        inset 0 0 0 10px #161719,
+                        inset 0 0 0 11px #262729;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .vinyl-record-disk::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%;
+            background: radial-gradient(circle, transparent 35%, rgba(255,255,255,0.02) 45%, transparent 55%, rgba(255,255,255,0.02) 65%, transparent 75%);
+            pointer-events: none;
+        }
+
+        /* 唱片正中心随点选和切歌自动变幻的【歌曲封面纯圆形卡盘】 */
+        .vinyl-center-cover {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 5px solid #000000;
+            box-shadow: 0 0 0 3px var(--player-tint);
+            overflow: hidden;
+            background-color: #252629;
+            z-index: 10;
+        }
+        .vinyl-center-cover img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 33转匀速无限顺时针旋转动画控制（激活时开启） */
+        .music-app-main-panel.playing .vinyl-record-disk {
+            animation: vinylInfiniteRotate 12s linear infinite;
+        }
+        @keyframes vinylInfiniteRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 下半部分媒体元数据信息 */
+        .song-profile-metadata { text-align: center; }
+        .song-profile-metadata h1 { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #ffffff; }
+        .song-profile-metadata p { font-size: 13px; color: var(--text-muted); margin-top: 4px; font-weight: 700; }
+
+        /* 【彻底瘦身】极简半透明磨砂玻璃下拉菜单框容器样式表 */
+        .digital-track-selector-matrix { width: 100%; padding: 0 10px; margin: 6px 0; display: flex; justify-content: center; }
+        .track-dropdown-select-core {
+            width: 100%; max-width: 220px; height: 34px;
+            background: rgba(255, 255, 255, 0.06) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            border-radius: 6px; color: #ffffff !important; font-size: 12px; font-weight: 700;
+            padding: 0 12px; outline: none; cursor: pointer; text-align: center; letter-spacing: 0.5px;
+            transition: all 0.2s ease; -webkit-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://w3.org' width='12' height='12' fill='white'><path d='M2 4l4 4 4-4z'/></svg>") !important;
+            background-repeat: no-repeat !important; background-position: right 12px center !important;
+        }
+        .track-dropdown-select-core:hover { border-color: var(--player-tint) !important; background: rgba(255, 255, 255, 0.1) !important; }
+        .track-dropdown-select-core option { background-color: #161719 !important; color: #ffffff !important; font-weight: 600; }
+
+        /* 磨砂时间进度长条轨道控制 */
+        .audio-progress-bar-block { width: 100%; margin: 10px 0; }
+        .progress-time-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-weight: 700; margin-bottom: 6px; font-family: monospace; }
+        .slider-rail-track { position: relative; width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; cursor: pointer; }
+        .slider-fill-progress { position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: var(--player-tint); border-radius: 2px; }
+
+        /* 多媒体交互控制面板 */
+        .media-playback-dashboard { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 5px; }
+        .dashboard-btn { background: none; border: none; color: #ffffff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; outline: none; }
+        .dashboard-btn:hover { color: var(--player-tint); }
+        .dashboard-btn:active { transform: scale(0.9); }
+        
+        /* 100%全内网几何图形控制：全真内嵌播放与暂停 LOGO 图标的黑金放大圆形按键 */
+        .dashboard-btn.main-trigger-play { 
+            width: 60px !important; height: 60px !important; border-radius: 50% !important; 
+            background: #ffffff !important; color: #000000 !important; 
+            box-shadow: 0 8px 22px rgba(255,45,85,0.25) !important;
+        }
+        .dashboard-btn.main-trigger-play:hover { transform: scale(1.04); background: #ffffff; color: var(--player-tint); }
+
+        /* 内联多媒体按钮图标大小与返回长条参数控制 */
+        .dashboard-btn svg { width: 18px; height: 18px; fill: currentColor; }
+        .dashboard-btn.main-trigger-play svg { width: 20px; height: 20px; }
+
+        /* ==========================================================================
+           【最重要自适应修复】真手机、平板物理屏幕极其狭窄状态下的 100% 满铺全屏死命令
+           ========================================================================== */
+        @media (max-width: 480px), (max-height: 850px) {
+            body { padding: 0 !important; background-color: var(--os-bg) !important; }
+            .lapd-phone-hardware-shell { 
+                width: 100vw !important; max-width: 100vw !important; 
+                height: 100vh !important; max-height: 100vh !important; 
+                border-radius: 0 !important; padding: 0 !important; box-shadow: none !important; 
+            }
+            .virtual-phone-screen { border-radius: 0 !important; }
+            .phone-side-key { display: none !important; }
+            .phone-top-status-bar { padding: 8px 16px 0 16px !important; }
+            .music-app-main-panel { padding: 44px 16px 20px 16px !important; }
+            .vinyl-record-disk { width: 210px !important; height: 210px !important; }
+            .vinyl-center-cover { width: 76px !important; height: 76px !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================================================
+       【第 4 部分】极致纯净全面屏硬件外壳与中联移动高仿真状态栏结构 HTML
+       ========================================================================== -->
+    <div class="lapd-phone-hardware-shell">
+        <!-- 侧边高仿真凸起物理实体按键（音量加减与关机实体凸起键） -->
+        <div class="phone-side-key vol-up"></div>
+        <div class="phone-side-key vol-down"></div>
+        <div class="phone-side-key power"></div>
+        
+        <!-- 手机液晶视网膜内屏（纯净全面屏，剔除灵动岛） -->
+        <div class="virtual-phone-screen">
+            
+            <!-- 【高仿真政务级状态栏】：左侧死死锁定中联移动指标，全内联矢量绘图，拒绝外链 -->
+            <div class="phone-top-status-bar">
+                <!-- 左侧：运营商名称与信号Wi-Fi指标 -->
+                <div class="status-bar-left">
+                    <span class="operator-brand">中联移动</span>
+                    <!-- 5G 信号阶梯内联 SVG -->
+                    <svg class="svg-status-icon" viewBox="0 0 24 24"><path d="M2 22h20V2z" fill="currentColor"/></svg>
+                    <span class="network-type-badge">5G</span>
+                    <!-- Wi-Fi 信号内联 SVG -->
+                    <svg class="svg-status-icon" viewBox="0 0 24 24"><path d="M12 21l-12-12c4.5-4.5 12-4.5 16.5 0l-4.5 4.5zm0-16.5c-3.5 0-6.5 1.5-8.5 4l2.5 2.5c1.5-1.5 3.5-2.5 6-2.5s4.5 1 6 2.5l2.5-2.5c-2-2.5-5-4-8.5-4z" fill="currentColor"/></svg>
+                </div>
+                <!-- 右侧：保留系统固定时间与电池图标 -->
+                <div class="status-bar-right">
+                    <!-- 💡 此处的 id="os-live-clock-ticker" 会由第6部分控制引擎实时驱动走字 -->
+                    <span id="os-live-clock-ticker">19:24</span>
+                    <!-- 电池格子内联 SVG -->
+                    <svg class="svg-status-icon" viewBox="0 0 24 24"><path d="M17 5H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm1 11h2v-4h-2V7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-2z" fill="currentColor"/></svg>
+                </div>
+            </div>
+            <!-- ==========================================================================
+               【第 5 部分】一体化黑胶卡盘、极简下拉菜单、内联控制仪表盘与带字返回链接 HTML
+               ========================================================================== -->
+            <!-- 原生音频硬件驱动隐藏挂载器（所有外部网链已彻底清洗，全部改为纯本地 # 闭环） -->
+            <!-- 💡 后台插歌提示：您后期可以直接把 src="#" 改为您本地电脑里的音频路径（如 src="music/song1.mp3"） -->
+            <audio id="native-audio-core" src="#" preload="auto"></audio>
+
+            <!-- 播放器一体化内屏控制面板 -->
+            <div class="music-app-main-panel" id="music-app-shell">
+                
+                <!-- 顶部歌曲所属系统元数据 -->
+                <div class="playback-header-meta">
+                    <h2>Hi‑Res‑DSD256 高解析音频播放器</h2>
+                    <p id="app-meta-playlist-badge">蜂鸟音乐 5G 智慧立体声</p>
+                </div>
+
+                <!-- 【黑胶唱片机硬件刻画】：包含黑胶盘面和随切歌及下拉点选联动的封面 -->
+                <div class="turntable-hardware-deck">
+                    <div class="vinyl-record-disk">
+                        <!-- 唱片正中心【随切歌和下拉菜单点选自动变幻的歌曲封面纯圆形卡盘】 -->
+                        <div class="vinyl-center-cover">
+                            <!-- 💡 后台插图提示：初始默认为您本地的第 1 张图片 images/cover1.jpg -->
+                            <img src="images/cover1.jpg" alt="Song Album Artwork" id="ui-disk-cover">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 下半部分多媒体元数据（歌曲名与音乐人信息展示） -->
+                <div class="song-profile-metadata">
+                    <h1 id="ui-song-title">载入首频歌曲...</h1>
+                    <p id="ui-song-artist">LOADING ARTIST</p>
+                </div>
+
+                <!-- 【彻底精简】：点击才会平滑唤醒 1、2、3 歌曲选项的极简半透明下拉菜单框 -->
+                <div class="digital-track-selector-matrix">
+                    <select class="track-dropdown-select-core" id="ui-track-dropdown" onchange="selectTrackByDropdown(this.value)">
+                        <option value="0" selected>🎵 01 《半杯咖啡/专辑》</option>
+                     
+                    </select>
+                </div>
+
+                <!-- 时间进度条组件 -->
+                <div class="audio-progress-bar-block">
+                    <div class="progress-time-row">
+                        <span id="ui-current-time">00:00</span>
+                        <span id="ui-duration-time">00:00</span>
+                    </div>
+                    <!-- 进度条轨道 -->
+                    <div class="slider-rail-track" id="ui-progress-rail">
+                        <div class="slider-fill-progress" id="ui-progress-fill"></div>
+                    </div>
+                </div>
+
+                <!-- 100% 纯内网闭环流线型控制面板（全部采用内联传统矢量 SVG 图标，彻底拔除网络依赖） -->
+                <div class="media-playback-dashboard">
+                    <!-- 循环模式切替键 -->
+                    <button class="dashboard-btn" id="ctrl-loop-mode" title="切换单曲循环">
+                        <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
+                    </button>
+                    
+                    <!-- 上上一首 -->
+                    <button class="dashboard-btn" onclick="executeTrackSwitch('prev')" title="上一首">
+                        <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                    </button>
+                    
+                    <!-- 中间核心播放暂停主触发按键（全内联几何图形控制，绝无空心白，内嵌播放/暂停 LOGO 标志） -->
+                    <button class="dashboard-btn main-trigger-play" onclick="togglePlaybackState()" id="ctrl-main-trigger" title="播放/暂停">
+                        <!-- 动态 LOGO 图标的专属 SVG 载体：初始默认为播放三角徽标，点击自动代码重绘为双条暂停键 -->
+                        <svg id="ctrl-play-svg-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                    
+                    <!-- 下一首 -->
+                    <button class="dashboard-btn" onclick="executeTrackSwitch('next')" title="下一首">
+                        <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6zm9-12v12h2V6z"/></svg>
+                    </button>
+                    
+                    <!-- 【全新升级】：拔除旧弹窗，蜕变为带盾牌图标与硬朗纯白返回文字的门户直达键 -->
+                    <!-- 💡 后台插链接提示：href="index.html" 可以直接改成您新闻门户主页的任意相对或绝对路径 -->
+                    <a href="主页.html" class="dashboard-btn" title="返回新闻主页" style="flex-direction: column; gap: 2px; text-decoration: none;">
+                        <!-- 内联矢量 SVG 警方安全返回盾牌图标（0外链、秒开） -->
+                        <svg viewBox="0 0 24 24" style="width: 15px; height: 16px;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 15l-4-4 1.41-1.41L10 13.17l5.59-5.59L17 9l-7 7z"/></svg>
+                        <!-- 纯白硬朗微型标记字体（完美照顾多端自适应小屏幕辨识度） -->
+                        <span style="font-size: 9px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px;">返回</span>
+                    </a>
+                </div>
+
+            </div> <!-- 关闭 .music-app-main-panel -->
+
+        </div> <!-- 关闭 .virtual-phone-screen -->
+    </div> <!-- 关闭 .lapd-phone-hardware-shell -->
+    <!-- ==========================================================================
+       【第 6 部分 - 大结局】时钟走时、下拉 123 联动与播放暂停内联重绘核心 JS 引擎
+       ========================================================================== -->
+<script>
+    // =================================================================
+    // A 篇：系统仿真时钟、核心数据库、UI重绘引擎与控制切换流
+    // =================================================================
+
+    // 1. 系统状态栏 24 小时制高仿真动态时钟引擎
+    function updateStatusLiveClock() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const clockEl = document.getElementById('os-live-clock-ticker');
+        if (clockEl) { clockEl.innerText = `${hours}:${minutes}`; }
+    }
+    setInterval(updateStatusLiveClock, 1000);
+    updateStatusLiveClock();
+
+    // 2. 【核心歌曲数据库】：支持混合配置（真实 CDN 音频与离线 '#' 占位符）
+    const PLAYLIST_DATABASE = [
+        {
+            title: "半杯咖啡-苏婉",
+            artist: "点击播放后请等待耐心加载...",
+            cover: "歌手苏婉.png",  // 后台配置：指向您的第1张本地封面图片
+            url: "https://cdn.jsdelivr.net/gh/34690028-collab/jiemiyouxi@main/banliang.MP3"
+        },
+
+    ];
+
+    let currentTrackIndex = 0;
+    let isPlaying = false;
+    let isSingleLoopMode = false;
+    let mockTimer = null; // 模拟定时器句柄，用于 B 篇离线走字
+
+    // 获取全站核心 DOM 挂载触控点
+    const audioDriver = document.getElementById('native-audio-core');
+    const appShell = document.getElementById('music-app-shell');
+    const diskCover = document.getElementById('ui-disk-cover');
+    const songTitle = document.getElementById('ui-song-title');
+    const songArtist = document.getElementById('ui-song-artist');
+    const currentTimeText = document.getElementById('ui-current-time');
+    const durationTimeText = document.getElementById('ui-duration-time');
+    const progressFill = document.getElementById('ui-progress-fill');
+    const progressRail = document.getElementById('ui-progress-rail');
+    const loopBtn = document.getElementById('ctrl-loop-mode');
+    const playSvgContainer = document.getElementById('ctrl-main-trigger');
+
+    // 核心状态统一重绘引擎：平滑管理黑胶旋转动画与播放/暂停图标切换
+    function updatePlaybackUI(playing) {
+        isPlaying = playing;
+        if (playing) {
+            if (appShell) appShell.classList.add('playing');
+            if (playSvgContainer) {
+                playSvgContainer.innerHTML = `<svg id="ctrl-play-svg-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+            }
+        } else {
+            if (appShell) appShell.classList.remove('playing');
+            if (playSvgContainer) {
+                playSvgContainer.innerHTML = `<svg id="ctrl-play-svg-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+            }
+        }
+    }
+
+    // 3. 核心加载渲染流：切歌或下拉点选时，实现黑胶圆心封面与文本的零延迟变幻
+    function loadAudioTrack(index) {
+        const track = PLAYLIST_DATABASE[index];
+        
+        if (diskCover) diskCover.src = track.cover;
+        if (songTitle) songTitle.innerText = track.title;
+        if (songArtist) songArtist.innerText = track.artist;
+
+        // 联动下拉菜单的当前显示序号，防止画面与控件穿帮
+        const dropdownEl = document.getElementById('ui-track-dropdown');
+        if (dropdownEl) { dropdownEl.value = index; }
+
+        // 复位进度条与当前跑字时间
+        if (progressFill) progressFill.style.width = '0%';
+        if (currentTimeText) currentTimeText.innerText = "00:00";
+        
+        // 分流解析：如果是真实音频先显示等待，如果是全离线音源则赋予默认 04:12 时长
+        if (audioDriver) {
+            if (track.url !== '#') {
+                if (durationTimeText) durationTimeText.innerText = "--:--"; 
+                audioDriver.src = track.url;
+                audioDriver.load();
+            } else {
+                audioDriver.removeAttribute('src');
+                if (durationTimeText) durationTimeText.innerText = "04:12";
+            }
+        }
+        
+        // 销毁旧定时器，防止多开叠速
+        if (mockTimer) { clearInterval(mockTimer); mockTimer = null; }
+        // 如果在播放中切到 '#' 空链接，在 B 篇中会由 startMockTimer 接管
+        if (isPlaying && track.url === '#') { typeof startMockTimer === 'function' && startMockTimer(); }
+    }
+
+    // 4. 下拉菜单专门触发切歌引擎
+    function selectTrackByDropdown(selectedValue) {
+        currentTrackIndex = parseInt(selectedValue);
+        loadAudioTrack(currentTrackIndex);
+        
+        if (isPlaying) {
+            if (audioDriver && PLAYLIST_DATABASE[currentTrackIndex].url !== '#') {
+                audioDriver.play().then(() => updatePlaybackUI(true)).catch(() => updatePlaybackUI(false));
+            } else {
+                if (audioDriver) audioDriver.pause();
+                updatePlaybackUI(true);
+            }
+        }
+    }
+
+    // 5. 播放与暂停主控制流
+    function togglePlaybackState() {
+        if (!isPlaying) {
+            if (audioDriver && PLAYLIST_DATABASE[currentTrackIndex].url !== '#') {
+                audioDriver.play().then(() => {
+                    updatePlaybackUI(true);
+                }).catch(err => {
+                    console.log("提示：根据安全隐私法，需要先点击屏幕任意地方解锁声音。", err);
+                    updatePlaybackUI(false);
+                });
+            } else {
+                // 空链接时，纯逻辑启动模拟走字
+                updatePlaybackUI(true);
+                typeof startMockTimer === 'function' && startMockTimer();
+            }
+        } else {
+            if (audioDriver) audioDriver.pause();
+            updatePlaybackUI(false);
+            if (mockTimer) { clearInterval(mockTimer); mockTimer = null; }
+        }
+    }
+
+    // 6. 前后切歌驱动引擎
+    function executeTrackSwitch(direction) {
+        if (direction === 'next') {
+            currentTrackIndex = (currentTrackIndex + 1) % PLAYLIST_DATABASE.length;
+        } else if (direction === 'prev') {
+            currentTrackIndex = (currentTrackIndex - 1 + PLAYLIST_DATABASE.length) % PLAYLIST_DATABASE.length;
+        }
+        loadAudioTrack(currentTrackIndex);
+        
+        if (isPlaying) {
+            if (audioDriver && PLAYLIST_DATABASE[currentTrackIndex].url !== '#') {
+                audioDriver.play().then(() => updatePlaybackUI(true)).catch(() => updatePlaybackUI(false));
+            } else {
+                updatePlaybackUI(true);
+            }
+        }
+    }
+    // =================================================================
+    // B 篇：高精度音频同步、全离线跑字算法、进度条点击与开机装载
+    // =================================================================
+
+    // 7. 高精度真实音频数字同步引擎（绑定原生硬件音频流事件）
+    if (audioDriver) {
+        // 当歌曲成功加载出总时长时，刷新右侧总时间文本
+        audioDriver.addEventListener('loadedmetadata', () => {
+            if (PLAYLIST_DATABASE[currentTrackIndex].url === '#') return;
+            let totalSecs = Math.floor(audioDriver.duration);
+            if (isNaN(totalSecs)) return;
+            let m = String(Math.floor(totalSecs / 60)).padStart(2, '0');
+            let s = String(totalSecs % 60).padStart(2, '0');
+            if (durationTimeText) durationTimeText.innerText = `${m}:${s}`;
+        });
+
+        // 当歌曲播放时，毫秒级高精度实时刷新进度条宽度与左侧当前时间
+        audioDriver.addEventListener('timeupdate', () => {
+            if (PLAYLIST_DATABASE[currentTrackIndex].url === '#') return;
+            if (audioDriver.duration) {
+                let percentage = (audioDriver.currentTime / audioDriver.duration) * 100;
+                if (progressFill) progressFill.style.width = percentage + '%';
+                
+                let curSecs = Math.floor(audioDriver.currentTime);
+                let m = String(Math.floor(curSecs / 60)).padStart(2, '0');
+                let s = String(curSecs % 60).padStart(2, '0');
+                if (currentTimeText) currentTimeText.innerText = `${m}:${s}`;
+            }
+        });
+
+        // 真实音频自然播放完毕后的切歌/循环逻辑
+        audioDriver.addEventListener('ended', () => {
+            if (PLAYLIST_DATABASE[currentTrackIndex].url === '#') return;
+            if (isSingleLoopMode) {
+                audioDriver.currentTime = 0;
+                audioDriver.play().catch(err => console.log(err));
+            } else {
+                executeTrackSwitch('next'); // 自动播放下一首
+            }
+        });
+    }
+
+    // 7.5 辅助全离线模拟时间进度走字控制（专为 URL 为 '#' 的假音频服务）
+    function startMockTimer() {
+        if (mockTimer) clearInterval(mockTimer);
+        mockTimer = setInterval(() => {
+            // 只有当歌曲 URL 为 '#' 且处于播放状态时，该定时器才真正生效
+            if (isPlaying && PLAYLIST_DATABASE[currentTrackIndex].url === '#') {
+                let currentWidth = parseFloat(progressFill.style.width) || 0;
+                if (currentWidth < 100) {
+                    currentWidth += (100 / 252); // 按默认4分12秒(252秒)等比例精准滑进
+                    if (progressFill) progressFill.style.width = currentWidth + '%';
+                    
+                    let totalSecs = 252;
+                    let currentSecs = Math.floor((currentWidth / 100) * totalSecs);
+                    let m = String(Math.floor(currentSecs / 60)).padStart(2, '0');
+                    let s = String(currentSecs % 60).padStart(2, '0');
+                    if (currentTimeText) currentTimeText.innerText = `${m}:${s}`;
+                } else {
+                    // 当前歌曲播放完毕，清理本轮定时器
+                    if (mockTimer) { clearInterval(mockTimer); mockTimer = null; }
+                    if (isSingleLoopMode) {
+                        if (progressFill) progressFill.style.width = '0%';
+                        if (currentTimeText) currentTimeText.innerText = "00:00";
+                        startMockTimer(); // 重启新一轮单曲循环模拟
+                    } else {
+                        executeTrackSwitch('next'); // 自动切入下一首
+                    }
+                }
+            }
+        }, 1000);
+    }
+
+    // 进度条轨道高精度点击定位：点哪音乐/模拟进度就跳到哪
+    if (progressRail) {
+        progressRail.addEventListener('click', (event) => {
+            const railWidth = progressRail.clientWidth;
+            const clickPositionX = event.offsetX;
+            const clickPercentage = (clickPositionX / railWidth);
+            
+            // 瞬间拉动进度条视觉宽度
+            if (progressFill) progressFill.style.width = `${clickPercentage * 100}%`;
+            
+            // 如果是真实音频，同步拉动硬件物理播放进度
+            if (audioDriver && PLAYLIST_DATABASE[currentTrackIndex].url !== '#') {
+                if (audioDriver.duration) {
+                    audioDriver.currentTime = clickPercentage * audioDriver.duration;
+                }
+            } else {
+                // 如果是假音频，通过点击位置，等比例逆向推算并更新左侧跑字时间
+                let totalSecs = 252;
+                let currentSecs = Math.floor(clickPercentage * totalSecs);
+                let m = String(Math.floor(currentSecs / 60)).padStart(2, '0');
+                let s = String(currentSecs % 60).padStart(2, '0');
+                if (currentTimeText) currentTimeText.innerText = `${m}:${s}`;
+            }
+        });
+    }
+
+    // 8. 智能单曲循环按钮控制切换
+    if (loopBtn) {
+        loopBtn.addEventListener('click', () => {
+            isSingleLoopMode = !isSingleLoopMode;
+            if (isSingleLoopMode) {
+                loopBtn.style.color = "var(--player-tint)"; // 激活高亮主题色
+            } else {
+                loopBtn.style.color = "#ffffff"; // 恢复白色默认状态
+            }
+        });
+    }
+
+    // 9. 全网开机首次功能自动化初始化装载
+    loadAudioTrack(currentTrackIndex);
+</script>
+</body>
+</html>

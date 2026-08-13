@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>高级复古仿真录音机</title>
+    <style>
+        /* [第2段和第3段的全新极高质感 CSS 稍后将粘贴到这里] */
+        /* ==================== 1. 全局清除与手机外壳 ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #0d0d0d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .phone-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 430px;   
+            max-height: 932px;  
+            background: #000000;
+            border-radius: 45px;
+            border: 12px solid #2c2c2e; 
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+        }
+
+        .phone-wallpaper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background-image: url('https://unsplash.com');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .phone-ui-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px 0 30px 0;
+        }
+
+        /* ==================== 2. 仿真状态栏（中联移动） ==================== */
+        .status-bar {
+            height: 34px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 0 24px;
+            width: 100%;
+        }
+
+        .status-left, .status-right { display: flex; align-items: center; gap: 6px; }
+        .signal-bars { display: flex; align-items: flex-end; gap: 2.5px; height: 11px; }
+        .bar { width: 3px; background-color: rgba(255, 255, 255, 0.4); border-radius: 1px; }
+        .bar:nth-child(1) { height: 30%; background-color: #fff; }
+        .bar:nth-child(2) { height: 50%; background-color: #fff; }
+        .bar:nth-child(3) { height: 75%; background-color: #fff; }
+        .bar:nth-child(4) { height: 100%; background-color: #fff; }
+        .battery-outer { width: 24px; height: 12px; border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 3.5px; padding: 1px; position: relative; }
+        .battery-outer::after { content: ''; position: absolute; right: -3.5px; top: 3.5px; width: 1.5px; height: 4px; background-color: rgba(255, 255, 255, 0.8); border-radius: 0 1px 1px 0; }
+        .battery-core { height: 100%; background-color: #fff; border-radius: 1.5px; width: 85%; }
+
+        .toolbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; width: 100%; background-color: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 0.5px solid rgba(255, 255, 255, 0.1); }
+        .toolbar-left { display: flex; align-items: center; gap: 15px; }
+        .btn-back { background-color: rgba(255, 255, 255, 0.15); color: #ffffff; border: none; padding: 6px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .btn-back:active { background-color: rgba(255, 255, 255, 0.3); }
+        .toolbar-title { color: #ffffff; font-size: 18px; font-weight: 600; }
+
+        /* ==================== 3. 🔴 极致高清拟真磁带盒样式 ==================== */
+        .tape-container {
+            width: 90%;
+            height: 180px;
+            margin: 15px auto;
+            background: linear-gradient(145deg, #2c2c2e, #1c1c1e);
+            border: 4px solid #48484a;
+            border-radius: 16px;
+            position: relative;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.2);
+            padding: 15px;
+        }
+
+        /* 磁带中央透明观察长窗 */
+        .tape-window {
+            width: 75%;
+            height: 70px;
+            background: linear-gradient(to bottom, #111, #222);
+            border: 3px solid #3a3a3c;
+            border-radius: 8px;
+            margin: 25px auto 0 auto;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            position: relative;
+            box-shadow: inset 0 5px 15px rgba(0,0,0,0.9);
+            overflow: hidden;
+        }
+
+        /* 🔴 磁带齿轮转轴（带6个实体物理辐射针，杜绝浏览器静态死结） */
+        .tape-wheel-center {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: #ffffff;
+            border: 4px solid #8e8e93;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 生成6根机械传动指针 */
+        .tape-wheel-center::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background-color: #3a3a3c;
+            transform: rotate(0deg);
+        }
+        .tape-wheel-center::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background-color: #3a3a3c;
+            transform: rotate(60deg);
+        }
+        .tape-wheel-extra {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background-color: #3a3a3c;
+            transform: rotate(120deg);
+        }
+        /* 核心轴承孔 */
+        .wheel-hole {
+            width: 16px;
+            height: 16px;
+            background-color: #000000;
+            border-radius: 50%;
+            z-index: 5;
+        }
+
+        /* 🔴 机械动力源：采用无缝360度旋转驱动动画 */
+        @keyframes structuralSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 当赋予此类名时，指针转轴绝对会进行流畅旋转 */
+        .tape-spinning {
+            animation: structuralSpin 2.5s linear infinite !important;
+        }
+
+        .now-playing-title {
+            position: absolute;
+            bottom: 12px;
+            width: 100%;
+            text-align: center;
+            color: #ff9500;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+        /* ==================== 4. 录音列表词条布局样式 ==================== */
+        .recorder-list-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* 隐藏滚动条 */
+        .recorder-list-box::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 每一个录音词条卡片 */
+        .audio-item-card {
+            background-color: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.1s ease, border-color 0.1s ease;
+        }
+
+        .audio-item-card:active {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* 激活/播放状态下的词条样式 */
+        .audio-item-card.playing-active {
+            background-color: rgba(255, 149, 0, 0.15);
+            border-color: rgba(255, 149, 0, 0.4);
+        }
+
+        .audio-info-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .audio-title-text {
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .audio-item-card.playing-active .audio-title-text {
+            color: #ff9500;
+        }
+
+        .audio-meta-text {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+        }
+
+        .audio-play-status-icon {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 18px;
+        }
+
+        .audio-item-card.playing-active .audio-play-status-icon {
+            color: #ff9500;
+        }
+
+        @media (max-width: 450px) {
+            body { background-color: #000000; }
+            .phone-wrapper { width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh; border: none; border-radius: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone-wrapper">
+        <!-- 壁纸背景层 -->
+        <div class="phone-wallpaper"></div>
+        
+        <div class="phone-ui-content">
+            
+            <!-- 📱 仿真状态栏（已改为：中联移动） -->
+            <div class="status-bar">
+                <div class="status-left">
+                    <span class="carrier">中联移动</span>
+                    <div class="signal-bars">
+                        <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+                    </div>
+                </div>
+                <div class="status-center"></div>
+                <div class="status-right">
+                    <span id="statusBarTime">00:00</span>
+                    <div class="battery-outer"><div class="battery-core"></div></div>
+                </div>
+            </div>
+
+            <!-- 顶部导航栏 -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <button class="btn-back" onclick="window.location.href='主页.html';">⬅ 返回</button>
+                    <div class="toolbar-title">录音机</div>
+                </div>
+            </div>
+
+            <!-- 📼 🔴 全新重构极高质感仿真复古磁带核心组件 -->
+            <div class="tape-container">
+                <div class="tape-window">
+                    <!-- 左侧轮轴，内含辐射传动针保护 -->
+                    <div class="tape-wheel-center" id="leftTapeWheel">
+                        <div class="tape-wheel-extra"></div>
+                        <div class="wheel-hole"></div>
+                    </div>
+                    <!-- 右侧轮轴，内含辐射传动针保护 -->
+                    <div class="tape-wheel-center" id="rightTapeWheel">
+                        <div class="tape-wheel-extra"></div>
+                        <div class="wheel-hole"></div>
+                    </div>
+                </div>
+                <div class="now-playing-title" id="nowPlayingTitle">当前未播放录音</div>
+            </div>
+
+            <!-- 🎙️ 10 个标准录音列表词条（预留独立音频链接） -->
+            <div class="recorder-list-box">
+                <!-- 词条 1 -->
+                <div class="audio-item-card" data-url="通话录音1.AAC" data-name="FFF">
+                    <div class="audio-info-left">
+                        <div class="audio-title-text">无效录音</div>
+                        <div class="audio-meta-text">今天 10:15 &nbsp;&nbsp; 0:13</div>
+                    </div>
+                    <div class="audio-play-status-icon">▶</div>
+                </div>
+                <!-- 词条 2 -->
+                <div class="audio-item-card" data-url="https://soundhelix.com" data-name="FFF">
+                    <div class="audio-info-left">
+                        <div class="audio-title-text">无效录音</div>
+                        <div class="audio-meta-text">昨天 14:30 &nbsp;&nbsp; 1:20</div>
+                    </div>
+                    <div class="audio-play-status-icon">▶</div>
+                </div>
+                <!-- 词条 3 -->
+                <div class="audio-item-card" data-url="https://soundhelix.com" data-name="FFF">
+                    <div class="audio-info-left">
+                        <div class="audio-title-text">无效录音</div>
+                        <div class="audio-meta-text">周一 09:12 &nbsp;&nbsp; 0:15</div>
+                    </div>
+                    <div class="audio-play-status-icon">▶</div>
+                </div>
+                <!-- 词条 4 -->
+                <div class="audio-item-card" data-url="https://soundhelix.com" data-name="FFF">
+                    <div class="audio-info-left">
+                        <div class="audio-title-text">无效录音</div>
+                        <div class="audio-meta-text">10月24日 &nbsp;&nbsp; 2:05</div>
+                    </div>
+                    <div class="audio-play-status-icon">▶</div>
+                </div>
+                <!-- 词条 5 -->
+                <div class="audio-item-card" data-url="https://soundhelix.com" data-name="FFF">
+                    <div class="audio-info-left">
+                        <div class="audio-title-text">无效录音</div>
+                        <div class="audio-meta-text">10月22日 &nbsp;&nbsp; 5:40</div>
+                    </div>
+                    <div class="audio-play-status-icon">▶</div>
+                </div>
+                <!-- 词条 6 -->
+                <div class="audio-item-card" data-url="https://soundhelix.com" data-name="FFF">
+                    <div class="audio-info-left">
+                        <div class="audio-title-text">无效录音</div>
+                        <div class="audio-meta-text">10月18日 &nbsp;&nbsp; 1:12</div>
+                    </div>
+                    <div class="audio-play-status-icon">▶</div>
+                </div>
+                <!-- 词条 7 -->
+                <div class="audio-item-card" data-url="https://soundhelix.com" data-name="FFF">
+                    <div class="audio-info-left">
+                        <div class="audio-title-text">无效录音</div>
+                        <div class="audio-meta-text">10月15日 &nbsp;&nbsp; 3:50</div>
+                    </div>
+                    <div class="audio-play-status-icon">▶</div>
+                </div>
+                <!-- 词条 8 -->
+                <div class="audio-item-card" data-url="05银行留言.MP3" data-name="通话录音：联邦商业银行">
+                    <div class="audio-info-left">
+                        <div class="audio-title-text">联邦商业银行</div>
+                        <div class="audio-meta-text">N天前&nbsp;&nbsp; 0:18</div>
+                    </div>
+                    <div class="audio-play-status-icon">▶</div>
+                </div>
+                <!-- 词条 9 -->
+                <div class="audio-item-card" data-url="05柚子聚会.MP3" data-name="通话录音：柚子">
+                    <div class="audio-info-left">
+                        <div class="audio-title-text">通话录音：柚子</div>
+                        <div class="audio-meta-text">N天前 &nbsp;&nbsp; 0:13</div>
+                    </div>
+                    <div class="audio-play-status-icon">▶</div>
+                </div>
+                <!-- 词条 10 -->
+                <div class="audio-item-card" data-url="05师哥买股.MP3" data-name="通话录音：峰哥">
+                    <div class="audio-info-left">
+                        <div class="audio-title-text">通话录音：峰哥</div>
+                        <div class="audio-meta-text">N天前 &nbsp;&nbsp; 0:15</div>
+                    </div>
+                    <div class="audio-play-status-icon">▶</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <script>
+        // ==================== 1. 自定义配置项 ====================
+        // 🎵 全局点击反馈音效链接
+        const TOUCH_SOUND_URL = "https://mixkit.co";
+
+        // ==================== 2. 全局变量与节点获取 ====================
+        const clickAudioPlayer = new Audio(TOUCH_SOUND_URL);
+        clickAudioPlayer.preload = "auto"; 
+
+        // 核心播放控件：动态承载当前正在播放的录音
+        let currentRecordPlayer = null; 
+        let activeCard = null; // 记录当前正在播放的卡片节点
+
+        const statusBarTime = document.getElementById('statusBarTime');
+        const audioCards = document.querySelectorAll('.audio-item-card');
+        const leftTapeWheel = document.getElementById('leftTapeWheel');
+        const rightTapeWheel = document.getElementById('rightTapeWheel');
+        const nowPlayingTitle = document.getElementById('nowPlayingTitle');
+
+        // ==================== 3. 同步系统时间 ====================
+        function syncTime() {
+            const now = new Date();
+            let hrs = now.getHours().toString().padStart(2, '0');
+            let mins = now.getMinutes().toString().padStart(2, '0');
+            statusBarTime.textContent = hrs + ":" + mins;
+        }
+        syncTime();
+        setInterval(syncTime, 1000);
+
+        // ==================== 4. 声音反馈控制 ====================
+        function playTouchSound() {
+            const soundInstance = clickAudioPlayer.cloneNode();
+            soundInstance.volume = 0.3; 
+            soundInstance.play().catch(e => console.log("音频就绪"));
+        }
+
+        // 🔴 磁带物理动画控制函数：强制刷新类名，确保哪怕连续点击切歌也绝对触发旋转
+        function toggleTapeAnimation(isSpinning) {
+            if (isSpinning) {
+                leftTapeWheel.classList.add('tape-spinning');
+                rightTapeWheel.classList.add('tape-spinning');
+            } else {
+                leftTapeWheel.classList.remove('tape-spinning');
+                rightTapeWheel.classList.remove('tape-spinning');
+            }
+        }
+
+        // ==================== 5. 磁带连动音频播放逻辑 ====================
+        audioCards.forEach(function(card) {
+            card.addEventListener('click', function() {
+                // 优先播放物理点击声
+                playTouchSound();
+
+                const audioUrl = card.getAttribute('data-url');
+                const audioName = card.getAttribute('data-name');
+                const statusIcon = card.querySelector('.audio-play-status-icon');
+
+                // 情况A：如果点击的是当前“正在播放”的词条，执行【暂停/关闭】
+                if (activeCard === card) {
+                    if (currentRecordPlayer && !currentRecordPlayer.paused) {
+                        currentRecordPlayer.pause();
+                        toggleTapeAnimation(false); // 磁带立刻停止旋转
+                        statusIcon.textContent = "▶";
+                        nowPlayingTitle.textContent = "已暂停: " + audioName;
+                    } else if (currentRecordPlayer) {
+                        // 恢复播放
+                        currentRecordPlayer.play();
+                        toggleTapeAnimation(true); // 磁带恢复旋转
+                        statusIcon.textContent = "⏸";
+                        nowPlayingTitle.textContent = "正在播放: " + audioName;
+                    }
+                    return;
+                }
+
+                // 情况B：点击了“全新的词条”，先切断清除上一个正在播放的录音
+                if (currentRecordPlayer) {
+                    currentRecordPlayer.pause();
+                    currentRecordPlayer = null;
+                    toggleTapeAnimation(false); // 安全复位，防止多音轨导致静止假象
+                    if (activeCard) {
+                        activeCard.classList.remove('playing-active');
+                        activeCard.querySelector('.audio-play-status-icon').textContent = "▶";
+                    }
+                }
+
+                // 创建并装载新录音
+                activeCard = card;
+                card.classList.add('playing-active');
+                statusIcon.textContent = "⏸";
+                nowPlayingTitle.textContent = "正在播放: " + audioName;
+
+                currentRecordPlayer = new Audio(audioUrl);
+                currentRecordPlayer.volume = 0.7;
+                
+                // 开始播放并激活磁带旋转
+                currentRecordPlayer.play().then(function() {
+                    // 🔴 物理安全锁：在音乐真正流出、播放成功的瞬间，100%启动旋转类名
+                    toggleTapeAnimation(true);
+                }).catch(function(err) {
+                    console.log("音频流装载中，或需要用户在界面产生交互激活", err);
+                    nowPlayingTitle.textContent = "音频文件加载中...";
+                });
+
+                // 录音词条自然播放结束时，自动自动让小磁带停转复位
+                currentRecordPlayer.addEventListener('ended', function() {
+                    toggleTapeAnimation(false);
+                    statusIcon.textContent = "▶";
+                    card.classList.remove('playing-active');
+                    nowPlayingTitle.textContent = "当前未播放录音";
+                    activeCard = null;
+                    currentRecordPlayer = null;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

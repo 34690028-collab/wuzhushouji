@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 人脸比对系统</title>
+        <style>
+        /* ==========================================================================
+           1. 全局变量与基础重置
+           ========================================================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-color: #0a0f1d;
+            --card-bg: #131c32;
+            --text-main: #ffffff;
+            --text-muted: #7e8b9b;
+            --theme-color: #00d2ff;
+            --success-color: #00ff66;
+            --error-color: #ff3366;
+            --border-color: #223153;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* ==========================================================================
+           2. 左上角返回按钮
+           ========================================================================== */
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .back-btn:hover {
+            color: var(--theme-color);
+            border-color: var(--theme-color);
+            background: rgba(0, 210, 255, 0.1);
+        }
+
+        /* ==========================================================================
+           3. 主容器与搜索框布局
+           ========================================================================== */
+        .main-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .search-section {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            padding: 40px 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        .system-title {
+            font-size: 26px;
+            letter-spacing: 2px;
+            color: var(--theme-color);
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .system-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        .search-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            padding: 12px;
+            font-size: 16px;
+        }
+
+        .search-box input::placeholder {
+            color: #4e5d78;
+        }
+
+        .search-box button {
+            background: var(--theme-color);
+            color: #000;
+            border: none;
+            padding: 0 24px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .search-box button:hover {
+            background: #00b8e6;
+        }
+
+        .tip-info {
+            margin-top: 15px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        /* ==========================================================================
+           4. 比对舞台与紧凑型缩小相框
+           ========================================================================== */
+        .comparison-stage {
+            width: 100%;
+            max-width: 660px; /* 缩窄舞台宽度让相框距离适中 */
+            background: rgba(19, 28, 50, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stage-title {
+            text-align: center;
+            font-size: 16px;
+            color: var(--theme-color);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .match-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px; /* 缩短双相框间距 */
+            justify-content: center;
+        }
+
+        .scan-card {
+            background: #0d1527;
+            border: 1px solid rgba(0, 210, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 210px; /* 🛠️ 精确缩小相框宽度 */
+            margin: 0 auto;
+        }
+
+        .card-tag {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .image-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3 / 4; /* 保持经典人像比例 */
+            background: #050a14;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 极光扫描线动画 */
+        .scanner-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to bottom, rgba(0,210,255,0), var(--theme-color), rgba(0,210,255,0));
+            box-shadow: 0 0 10px var(--theme-color);
+            animation: scanMove 2.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes scanMove {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        /* ==========================================================================
+           5. 科技感结果弹窗 (Modal)
+           ========================================================================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(4, 7, 15, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.9) translateY(20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            letter-spacing: 1px;
+        }
+
+        /* 成功/失败状态下的颜色变幻 */
+        .modal-overlay.success .modal-content { border-color: var(--success-color); }
+        .modal-overlay.success .modal-header h2 { color: var(--success-color); }
+        .modal-overlay.fail .modal-content { border-color: var(--error-color); }
+        .modal-overlay.fail .modal-header h2 { color: var(--error-color); }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .user-details {
+            display: flex;
+            gap: 20px;
+        }
+
+        .result-avatar {
+            width: 110px;
+            height: 146px;
+            border: 1px solid var(--border-color);
+            background: #000;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .result-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .result-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .result-info p {
+            color: var(--text-muted);
+        }
+
+        .result-info span {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .fail-message {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 15px 0;
+            font-size: 14px;
+        }
+
+        .modal-footer {
+            padding: 15px 24px;
+            border-top: 1px solid var(--border-color);
+            text-align: right;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: 1px solid var(--text-muted);
+            color: var(--text-main);
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: var(--text-main);
+            color: #000;
+            border-color: var(--text-main);
+        }
+
+        /* ==========================================================================
+           6. 响应式适配媒体查询
+           ========================================================================== */
+        @media (max-width: 768px) {
+            .system-title { font-size: 20px; }
+            .search-box {
+                flex-direction: column;
+                background: transparent;
+                border: none;
+                padding: 0;
+            }
+            .search-box input {
+                background: var(--card-bg);
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+                margin-bottom: 10px;
+            }
+            .search-box button { padding: 12px; width: 100%; }
+            .back-btn span { display: none; }
+            .back-btn { padding: 8px; top: 15px; left: 15px; }
+        }
+
+        @media (max-width: 600px) {
+            .match-box { grid-template-columns: 1fr; gap: 15px; }
+            .user-details { flex-direction: column; align-items: center; text-align: center; }
+            .result-info { align-items: center; }
+        }
+    </style>
+
+</head>
+<body>
+
+    <!-- 左上角返回按钮 -->
+    <a href="巴布曼特联邦警察局.html" class="back-btn" title="返回上一页">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span>返回</span>
+    </a>
+    
+
+    <!-- 主容器 -->
+    <main class="main-container">
+        
+        <!-- 核心搜索交互区 -->
+        <section class="search-section" id="searchSection">
+            <h1 class="system-title">AI人脸比对数据库</h1>
+            <p class="system-subtitle">请输入照片编号信息进行数据库比对</p>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="请输入照片编号 (例如: ****)" autocomplete="off">
+                <button id="searchBtn">开始比对</button>
+            </div>
+            <div class="tip-info">提示：在游戏中出现的照片边角如有（照片编号）可输入编号比对</div>
+        </section>
+
+        <!-- 比对动画舞台（初始隐藏） -->
+        <section class="comparison-stage" id="comparisonStage" style="display: none;">
+            <div class="stage-title">正在检索系统数据库...</div>
+            <div class="match-box">
+                <!-- 左侧：对照图 -->
+                <div class="scan-card">
+                    <div class="card-tag">TARGET / 待查目标</div>
+                    <div class="image-wrapper">
+                        <img id="targetImg" src="SSX.png" alt="待查目标">
+                        <div class="scanner-line"></div>
+                    </div>
+                </div>
+                <!-- 右侧：数据库 -->
+                <div class="scan-card">
+                    <div class="card-tag">DATABASE / 数据库</div>
+                    <div class="image-wrapper">
+                        <img id="dbImg" src="S1.png" alt="数据库检索">
+                        <div class="scanner-line"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 结果通知弹窗（初始隐藏） -->
+    <div class="modal-overlay" id="resultModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header" id="modalHeader">
+                <h2 id="modalTitle">比对结束</h2>
+            </div>
+            <div class="modal-body">
+                <!-- 成功时显示的详细资料 -->
+                <div id="successDetails" class="user-details">
+                    <div class="result-avatar">
+                        <img id="resultImg" src="" alt="匹配结果">
+                    </div>
+                    <div class="result-info">
+                        <p><strong>人员编号：</strong><span id="resId"></span></p>
+                        <p><strong>姓名：</strong><span id="resName"></span></p>
+                        <p><strong>性别：</strong><span id="resGender"></span></p>
+                        <p><strong>相似度：</strong><span id="resMatch"></span></p>
+                        <p><strong>备注信息：</strong><span id="resNote"></span></p>
+                    </div>
+                </div>
+                <!-- 失败时显示的信息 -->
+                <p id="failMessage" class="fail-message" style="display: none;">
+                    未在系统数据库中检索到匹配的人脸特征数据。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="close-btn" id="closeModalBtn">确认并关闭</button>
+            </div>
+        </div>
+    </div>
+
+        <script>
+        /**
+         * ==========================================================================
+         * 1. 本地虚拟人像图片库与预设数据配置
+         * ==========================================================================
+         */
+
+        // 5秒动画期间，左右两侧同时快速高频轮播闪烁的 20 张本地图片路径
+        const DB_LOOP_IMAGES = [
+            'S1.png', 'S2.png', 'S3.png', 'S4.png', 'S5.png',
+            'S6.png', 'S7.png', 'S8.png', 'S9.png', 'S51.png',
+            'S52.png', 'S53.png', 'S54.png', 'S55.png', 'S56.png',
+            'S57.png', 'S58.png', 'S59.png', 'S60.png', 'SS1.png'
+        ];
+
+        // 5组可匹配成功的系统预设数据（包含对应的定格照片与详细资料）
+        const PRESET_DATABASE = {
+            '5311': {
+                name: '张明远', gender: '男', matchRate: '0%',
+                note: '机密',
+                targetImg: 'SSX.png', dbImg: 'SSXX.png'
+            },
+            '9911': {
+                name: 'Mr.李', gender: '男', matchRate: '96.1%',
+                note: '集团研发总监。',
+                targetImg: 'SS3.png', dbImg: 'SS33.png'
+            },
+            '6002': {
+                name: '保罗', gender: '男', matchRate: '97.1%',
+                note: '黑水镇镇长。',
+                targetImg: 'SSX.png', dbImg: 'SSXX.png'
+            },
+            '9922': {
+                name: '李磊', gender: '男', matchRate: '95.1%',
+                note: '蜂鸟保安。',
+                targetImg: 'SSX.png', dbImg: 'SSXX.png'
+            },
+            '8800': {
+                name: '顾珩', gender: '男', matchRate: '96.8%',
+                note: '蜂鸟新闻网主编，蜂鸟网CCO首席内容官。',
+                targetImg: 'SS5.png', dbImg: 'SS55.png'
+            },
+            '0033': {
+                name: '艾琳·索恩', gender: '女', matchRate: '96.1%',
+                note: '蜂鸟新闻网调查记者。',
+                targetImg: 'SS4.png', dbImg: 'SS44.png'
+            },
+            '8377': {
+                name: '沈秋', gender: '男', matchRate: '95.2%',
+                note: '秋野烤摊老板。',
+                targetImg: 'SS2.png', dbImg: 'SS22.png'
+            },
+            '9499': {
+                name: '振邦', gender: '男', matchRate: '91.5%',
+                note: '巴布曼特联邦警察局警员，警号94748',
+                targetImg: 'SS1.png',  // 5秒后左侧精准定格的目标图
+                dbImg: 'SS11.png'     // 5秒后右侧精准锁定的数据库图
+            }
+            
+        };
+
+        // 匹配失败时，左右相框默认显示的本地兜底占位图
+        const DEFAULT_IMAGES = {
+            targetDefault: 'SSX.png',
+            dbDefault: 'SSXX.png'
+        };
+        /**
+        /**
+         * ==========================================================================
+         * 2. 核心DOM元素获取与变量声明
+         * ==========================================================================
+         */
+        const searchBtn = document.getElementById('searchBtn');
+        const searchInput = document.getElementById('searchInput');
+        const searchSection = document.getElementById('searchSection');
+        const comparisonStage = document.getElementById('comparisonStage');
+        const targetImg = document.getElementById('targetImg');
+        const dbImg = document.getElementById('dbImg');
+
+        let loopInterval = null; // 用于控制数据库高频轮播的定时器
+
+        /**
+         * ==========================================================================
+         * 3. 5秒单侧闪烁与精准定格核心控制逻辑（修正版：左侧固定，右侧闪烁）
+         * ==========================================================================
+         */
+        searchBtn.addEventListener('click', () => {
+            const searchId = searchInput.value.trim();
+            
+            // 空值拦截
+            if (!searchId) {
+                alert('请输入人员编号后再进行比对！');
+                return;
+            }
+
+            // 1. 切换舞台：隐藏输入区域，展现科技比对舞台
+            searchSection.style.display = 'none';
+            comparisonStage.style.display = 'block';
+
+            // 2. 🛠️ 关键修正：在动画开始前，左侧“待查目标”照片就立刻固定好，不再参与任何闪烁轮播
+            if (PRESET_DATABASE[searchId]) {
+                targetImg.src = PRESET_DATABASE[searchId].targetImg; // 比如输入 9499，左边立刻雷打不动固定为 SS1.png
+            } else {
+                targetImg.src = DEFAULT_IMAGES.targetDefault; // 失败时固定为默认待查图
+            }
+
+            // 3. 启动数据库检索动效：只有右侧“数据库”照片在5秒内独自高频闪烁切换
+            let imgIndex = 0;
+            loopInterval = setInterval(() => {
+                // 右边相框独自极速乱序轮播系统图片库，模拟在海量库中搜寻比对的效果
+                dbImg.src = DB_LOOP_IMAGES[imgIndex];
+                imgIndex = (imgIndex + 1) % DB_LOOP_IMAGES.length;
+            }, 100); // 严格每 100 毫秒极速闪烁一次
+
+            // 4. 时间锁：精确控制 5 秒（5000毫秒）后切断右侧动画，实现右侧精准锁定
+            setTimeout(() => {
+                clearInterval(loopInterval); // 强行切断、停止右侧的高频闪烁
+
+                // 5. 判断结果并精准锁定右侧相片
+                if (PRESET_DATABASE[searchId]) {
+                    const matchedData = PRESET_DATABASE[searchId];
+                    
+                    // 右边相框在 5 秒结束的瞬间，无缝且精准地锁定到对应的数据库内存照（如 SS11.png）
+                    dbImg.src = matchedData.dbImg;         
+
+                    // 呼叫第 5 段的成功弹窗渲染逻辑
+                    renderAndShowModal(searchId, matchedData, true);
+                } else {
+                    // 如果编号不存在，右边相框定格为默认的失败兜底占位图
+                    dbImg.src = DEFAULT_IMAGES.dbDefault; 
+
+                    // 💡 核心修正：延迟 1.5 秒再出弹窗！
+                    // 这样用户就能在网页上先清清楚楚地看到右侧相框定格在“NO DATA”上整整 1.5 秒
+                    // 随后失败弹窗才会蹦出来，逻辑和视觉完美衔接，不再显得突兀
+                    setTimeout(() => {
+                        renderAndShowModal(searchId, null, false);
+                    }, 1500); // 1500毫秒 = 1.5秒缓冲时间，你可以根据需要改成 1000 或 2000
+                }
+            }, 5000); // 严格执行 5 秒比对动画时长
+        });
+
+        /**
+         * ==========================================================================
+         * 4. 弹窗数据渲染、结果控制与系统重置逻辑
+         * ==========================================================================
+         */
+        const resultModal = document.getElementById('resultModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const successDetails = document.getElementById('successDetails');
+        const failMessage = document.getElementById('failMessage');
+
+        // 统一渲染并弹出结果卡片
+        function renderAndShowModal(searchId, matchedData, isSuccess) {
+            if (isSuccess) {
+                // 【比对成功分支】：将预设的核心资料注入到弹窗的各个字段中
+                document.getElementById('resId').innerText = searchId;
+                document.getElementById('resName').innerText = matchedData.name;
+                document.getElementById('resGender').innerText = matchedData.gender;
+                document.getElementById('resMatch').innerText = matchedData.matchRate;
+                document.getElementById('resNote').innerText = matchedData.note;
+                document.getElementById('resultImg').src = matchedData.dbImg; // 弹窗头像同步为对应的数据库照片
+
+                // 界面显示切换：展示资料卡，隐藏失败文本
+                successDetails.style.display = 'flex';
+                failMessage.style.display = 'none';
+                
+                // 弹出绿色高亮成功的弹窗结构
+                document.getElementById('modalTitle').innerText = 'SUCCESS / 比对成功';
+                resultModal.className = 'modal-overlay success';
+            } else {
+                // 【比对失败分支】：隐藏资料卡，展示无法检索的警示信息
+                successDetails.style.display = 'none';
+                failMessage.style.display = 'block';
+
+                // 弹出红色高亮失败的弹窗结构
+                document.getElementById('modalTitle').innerText = 'FAILED / 匹配失败';
+                resultModal.className = 'modal-overlay fail';
+            }
+
+            // 触发弹窗显示
+            resultModal.style.display = 'flex';
+        }
+
+        // 关闭弹窗并完美重置系统到初始搜索状态，以便下一次正常检索
+        closeModalBtn.addEventListener('click', () => {
+            resultModal.style.display = 'none';      // 隐藏弹窗
+            comparisonStage.style.display = 'none';  // 隐藏比对动画舞台
+            searchSection.style.display = 'block';   // 重新将主搜索框显示出来
+            searchInput.value = '';                  // 彻底清空上一次输入的编号
+        });
+
+        // 用户交互优化：支持在输入框内直接敲击【回车键 (Enter)】触发比对
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchBtn.click();
+            }
+        });
+    </script>
+
+</body>
+</html>
