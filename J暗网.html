@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DARKNET_TERMINAL_v4.04</title>
+    <style>
+        /* --- 全局黑客黑绿风格样式 --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace, "Microsoft YaHei";
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            color: #00ff00;
+            overflow: hidden;
+            font-size: 16px;
+        }
+        /* 响应式基础字号调节，适配手机平板 */
+        @media (max-width: 768px) { html { font-size: 14px; } }
+
+        /* 矩阵背景流星微特效 */
+        .matrix-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0, 20, 0, 0.15) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 6px 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* --- 顶部控制栏 (左上角安全退出、返回) --- */
+        .top-control-bar {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            height: 50px;
+            background-color: rgba(5, 15, 5, 0.85);
+            border-bottom: 1px solid #00ff00;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            z-index: 100;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+        .nav-btn {
+            background: transparent;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 6px 14px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-right: 12px;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+        .nav-btn:hover {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 12px #00ff00;
+        }
+        .terminal-title {
+            font-size: 1rem;
+            letter-spacing: 2px;
+            animation: blink 1.5s infinite;
+            margin-left: auto;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        /* --- 核心容器层 --- */
+        .main-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            padding-top: 50px;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- 阶段一：黑客暗网登录界面 --- */
+        .login-panel {
+            width: 90%;
+            max-width: 450px;
+            background: rgba(0, 10, 0, 0.85);
+            border: 1px solid #00ff00;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            text-align: center;
+        }
+        .login-panel h2 {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            letter-spacing: 4px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        .input-field {
+            width: 100%;
+            background: #000;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 12px;
+            font-size: 1.1rem;
+            outline: none;
+        }
+        .input-field:focus {
+            box-shadow: 0 0 10px rgba(0,255,0,0.5);
+        }
+        .login-btn {
+            width: 100%;
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 2px;
+        }
+        .login-btn:hover {
+            background: #00cc00;
+            box-shadow: 0 0 15px #00ff00;
+        }
+        .error-msg {
+            color: #ff0000;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            min-height: 20px;
+        }
+
+        /* --- 阶段二：暗网大厅聊天主框 (全自适应) --- */
+        .chat-panel {
+            display: none; /* 默认隐藏，登录成功后切为 flex */
+            width: 95%;
+            max-width: 1000px;
+            height: 82vh;
+            background: rgba(0, 5, 0, 0.9);
+            border: 1px solid #00ff00;
+            flex-direction: column;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.15);
+        }
+        /* 聊天历史区域 */
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #00ff00;
+        }
+        /* 滚动条美化 */
+        .chat-messages::-webkit-scrollbar { width: 6px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #00ff00; }
+
+        /* 气泡样式（黑客极简流） */
+        .msg-row {
+            margin-bottom: 18px;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+        .msg-row.other { align-items: flex-start; }
+        .msg-row.me { align-items: flex-end; }
+        
+        .msg-sender {
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+            opacity: 0.7;
+        }
+        .msg-text {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 2px;
+            line-height: 1.5;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+        .other .msg-text {
+            background: rgba(0, 40, 0, 0.6);
+            border-left: 3px solid #00ff00;
+        }
+        .me .msg-text {
+            background: rgba(0, 100, 0, 0.3);
+            border-right: 3px solid #00ff00;
+            color: #88ff88;
+        }
+
+        /* 聊天输入栏 */
+        .chat-input-area {
+            height: 65px;
+            display: flex;
+            background: #000;
+        }
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            padding: 15px;
+            font-size: 1.1rem;
+            outline: none;
+        }
+        .send-btn {
+            background: transparent;
+            border: none;
+            border-left: 1px solid #00ff00;
+            color: #00ff00;
+            width: 90px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .send-btn:hover {
+            background: #00ff00;
+            color: #000;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- 黑客风格背衬网格 -->
+    <div class="matrix-bg"></div>
+
+    <!-- 顶部导航控制栏 -->
+    <div class="top-control-bar">
+        <button class="nav-btn" onclick="triggerNavigation('back')">◀ RETURN</button>
+        <button class="nav-btn" onclick="triggerNavigation('exit')">✖ EXIT_SAFE</button>
+        <span class="terminal-title">STATUS: ENCRYPTED_CONNECTING...</span>
+    </div>
+
+    <!-- 主交互视图层 -->
+    <div class="main-container">
+        
+        <!-- 阶段一：女主首次进入暗网登录面板 -->
+        <div class="login-panel" id="loginView">
+            <h2>ACCESS_DENIED: ENTER_CREDENTIALS</h2>
+            <div class="input-group">
+                <label>ONION_ACCOUNT (账户):</label>
+                <input type="text" class="input-field" id="usernameInput" value="小花" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label>DEEP_DECRYPT_KEY (密钥):</label>
+                <input type="password" class="input-field" id="passwordInput" placeholder="输入密码推进剧情" autocomplete="off">
+            </div>
+            <button class="login-btn" id="loginBtn">INITIALIZE DECRYPT</button>
+            <div class="error-msg" id="loginError"></div>
+        </div>
+
+        <!-- 阶段二：登录正确后弹出的黑客暗网聊天框 -->
+        <div class="chat-panel" id="chatView">
+            <div class="chat-messages" id="chatMsgContainer">
+                <!-- 动态剧情消息流注入点 -->
+            </div>
+            <div class="chat-input-area">
+                <input type="text" class="input-field chat-input" id="chatInputField" placeholder="输入反馈并回车..." autocomplete="off">
+                <button class="send-btn" id="chatSendBtn">EXECUTE</button>
+            </div>
+        </div>
+
+    </div>
+    <script>
+        /* ==========================================
+         * 1. 独立庞大的自由问答库 (游戏核心引擎数据)
+         * ========================================== */
+        const GAME_CONFIG = {
+            correctKey: "112233", // 登录通关口令
+            // 系统状态机。0:未登录, 1:黑客首发台词连发中, 2:进入自由开放式模糊问答交互阶段
+            state: 0,
+            // 开发者专属神级还原指令（在聊天框输入并回车即可瞬间重置游戏）
+            resetCommand: "开发者还原" 
+        };
+
+        // 自由开放式庞大知识库（支持关键字模糊包含匹配）
+        const GLOBAL_QA_DATABASE = [
+            { keywords: ["酒店密码"], reply: "费了好大劲终于搞到了，密码是：012340。调取监控和房客记录侵犯隐私啊，劝你不要哦。" },
+            { keywords: ["红枫酒店", "红枫", "酒店", "红叶", "红叶酒店", "旅店"], reply: "红枫酒店消费可不低啊，五星级酒店，都是上流人士聚集的地方，我能搞到它们的后台密码，你要吗？对我说：（酒店密码）。我给你" },
+            { keywords: ["大学", "巴布曼特联邦大学", "联邦大学", "学校"], reply: "巴布曼特联邦大学是一所百年历史大学，出了很多杰出人才，比如我，计算机系的高材生，你可以在门户网中搜索到。了解。" },
+            { keywords: ["股票", "赔钱", "投资", "失败"], reply: "57635元就是你当年的痛。不过别急着沮丧，我赔的比你多。诺凡泰克实验室大火，股票蒸发了一半，我觉得火烧的很蹊跷。有可能是毁灭什么证据吧？" },
+            { keywords: ["诺凡泰克", "诺凡泰克制药", "制药", "诺凡泰克集团", "生物制药", "药业", "药"], reply: "诺凡泰克制药生产的抗衰老神药，好多明星都在用，年轻不止10岁，20岁，这种抗衰老技术让诺凡泰克赚得盆满饱满。好是羡慕。" },
+            { keywords: ["巴布曼特联邦警察局", "警察", "警察局", "案"], reply: "可以去巴布曼特联邦警察局官网，那里有：人口失踪（失踪线索案件编号可以去这里查询），刑事举报（如果找到了物证密钥，在这里提交）AI人脸比对（如果图片上有照片编码，把编码号输入进去，可以比对出此人是谁，脸盲的福音），这3个子板块可以好好利用。" },
+            { keywords: ["航天局", "FASA联邦航空与太空管理局", "FASA", "联邦航空", "联邦航空与太空管理局", "火箭", "宇航局", "航空"], reply: "FASA联邦航空与太空管理局，负责发射火箭卫星等太空项目，现在的空间站真的好大啊，有好多实验室，真不知道里面研究什么东西。他们的负责人我有地址，你要吗？想要对我说：地址" },
+            { keywords: ["地址"], reply: "我破解他家的监控系统，链接已完成，<a href='J航天局长家画面.html' style='color:#00ff00; font-weight:bold; text-decoration:underline;'>点击进入</a>。小心触发警报！" },
+            { keywords: ["黑水镇", "黑水镇福利社", "福利社", "黑水镇福利院",, "福利院",], reply: "黑水镇福利社这个地方很什么，外界一直质疑，但是它还是年年评优，我之前搞到了它们网站搜索密钥词是:（档案）。要不要搜索试试" },
+            { keywords: ["HELP", "帮助", "提示"], reply: "可用暗语探测：【密码】【红枫酒店】【你是谁】【股票】【证据】【下一步】" },
+            { keywords: ["HELP", "帮助", "提示"], reply: "可用暗语探测：【密码】【红枫酒店】【你是谁】【股票】【证据】【下一步】" }
+        ];
+
+        /* ==========================================
+         * 2. 后台跳转与安全退出逻辑设置
+         * ========================================== */
+        function triggerNavigation(actionType) {
+            if (actionType === 'exit') {
+                alert("正在切断暗网高密隧道，清除本地Session，清除痕迹成功...");
+                window.location.href = "主页.html";  
+            } else if (actionType === 'back') {
+                if (confirm("确认回退到上级物理系统？当前未保存的解密进度将丢失。")) {
+                    window.location.href = "浏览器.html";
+                }
+            }
+        }
+        /* ==========================================
+        /* ==========================================
+         * 3. 核心节点绑定、安全配置与生命周期初始化
+         * ========================================== */
+        const loginView = document.getElementById('loginView');
+        const chatView = document.getElementById('chatView');
+        const usernameInput = document.getElementById('usernameInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
+        const chatMsgContainer = document.getElementById('chatMsgContainer');
+        const chatInputField = document.getElementById('chatInputField');
+        const chatSendBtn = document.getElementById('chatSendBtn');
+
+        // 安全沙盒配置：防冲突、防死锁
+        window.GAME_CONFIG = {
+            correctKey: "112233",            // 登录密钥
+            state: 0,                       // 状态机标识
+            resetCommand: "开发者还原" // 开发者一键重置密码
+        };
+
+        // 核心修复：确保 DOM 节点全部就绪后再安全读取断电缓存
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedState = localStorage.getItem('darknet_game_state');
+            const savedHistory = localStorage.getItem('darknet_chat_history');
+
+            if (savedState === '2' && savedHistory) {
+                window.GAME_CONFIG.state = 2;
+                loginView.style.display = 'none';
+                chatView.style.display = 'flex';
+                chatMsgContainer.innerHTML = savedHistory;
+                chatMsgContainer.scrollTop = chatMsgContainer.scrollHeight;
+            } else {
+                localStorage.clear();
+                window.GAME_CONFIG.state = 0;
+            }
+        });
+
+        // 统一本地存储持久化同步器
+        function saveChatToStorage() {
+            if (chatMsgContainer) {
+                localStorage.setItem('darknet_chat_history', chatMsgContainer.innerHTML);
+            }
+        }
+
+        // 事件监听器绑定（完美适配台式机与手机虚拟键盘的回车键）
+        if (passwordInput) {
+            passwordInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLogin(); });
+        }
+        if (loginBtn) {
+            loginBtn.addEventListener('click', handleLogin);
+        }
+        if (chatInputField) {
+            chatInputField.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleUserSendMessage(); });
+        }
+        if (chatSendBtn) {
+            chatSendBtn.addEventListener('click', handleUserSendMessage);
+        }
+
+        // 登录处理器
+        function handleLogin() {
+            const pwd = passwordInput.value.trim();
+            if (pwd === window.GAME_CONFIG.correctKey) {
+                loginError.style.color = "#00ff00";
+                loginError.innerText = "DECRYPT SUCCESS. LOADING TERMINAL...";
+                setTimeout(() => {
+                    loginView.style.display = 'none';
+                    chatView.style.display = 'flex';
+                    window.GAME_CONFIG.state = 1;
+                    triggerPlotOne(); 
+                }, 1000);
+            } else {
+                loginError.style.color = "#ff0000";
+                loginError.innerText = "ACCESS DENIED: INVALID DECRYPT KEY. RETRY.";
+                passwordInput.value = "";
+            }
+        }
+
+        // 升级版基础消息生成组件（完美兼容 innerHTML 富文本和超链接渲染）
+        function pushMessage(senderName, text, type) {
+            const msgRow = document.createElement('div');
+            msgRow.className = `msg-row ${type}`; 
+            msgRow.innerHTML = `
+                <span class="msg-sender">[${senderName.toUpperCase()}] @ ${new Date().toLocaleTimeString()}</span>
+                <div class="msg-text"></div>
+            `;
+            chatMsgContainer.appendChild(msgRow);
+            chatMsgContainer.scrollTop = chatMsgContainer.scrollHeight;
+            
+            const textContainer = msgRow.querySelector('.msg-text');
+            if (type === 'me') {
+                textContainer.innerHTML = text; // 玩家消息即时渲染
+                saveChatToStorage();
+            }
+            return textContainer; 
+        }
+
+        /* ==========================================
+         * 4. 复古打字机核心连发器（完美支持文本内嵌 HTML 超链接）
+         * ========================================== */
+        function triggerPlotOne() {
+            const scriptA = [
+                "大记者，这里聊天很安全。",
+                "有为什么问题尽管问我。",
+                "我会想办法帮助你的。"
+            ];
+
+            let sentenceIndex = 0;
+
+            function startTypewriter(htmlText, textContainer, callback) {
+                let charIndex = 0;
+                textContainer.innerHTML = ""; 
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = htmlText;
+                const childNodes = Array.from(tempDiv.childNodes);
+                
+                let nodeIndex = 0;
+                function typeNode() {
+                    if (nodeIndex < childNodes.length) {
+                        const currentNode = childNodes[nodeIndex];
+                        if (currentNode.nodeType === Node.TEXT_NODE) {
+                            let textCharIndex = 0;
+                            function typeText() {
+                                if (textCharIndex < currentNode.textContent.length) {
+                                    textContainer.innerHTML += currentNode.textContent.charAt(textCharIndex);
+                                    textCharIndex++;
+                                    chatMsgContainer.scrollTop = chatMsgContainer.scrollHeight;
+                                    setTimeout(typeText, 40);
+                                } else {
+                                    nodeIndex++;
+                                    typeNode();
+                                }
+                            }
+                            typeText();
+                        } else if (currentNode.nodeType === Node.ELEMENT_NODE) {
+                            textContainer.appendChild(currentNode.cloneNode(true));
+                            chatMsgContainer.scrollTop = chatMsgContainer.scrollHeight;
+                            nodeIndex++;
+                            setTimeout(typeNode, 40);
+                        }
+                    } else {
+                        if (callback) callback();
+                    }
+                }
+                typeNode();
+            }
+
+            function sendNext() {
+                if (sentenceIndex < scriptA.length) {
+                    const targetContainer = pushMessage("小 (Hacker)", "", "other");
+                    startTypewriter(scriptA[sentenceIndex], targetContainer, function() {
+                        saveChatToStorage();
+                        sentenceIndex++;
+                        setTimeout(sendNext, 800); 
+                    });
+                } else {
+                    window.GAME_CONFIG.state = 2; 
+                    localStorage.setItem('darknet_game_state', '2'); // 锁定存档状态
+                }
+            }
+            setTimeout(sendNext, 500);
+        }
+
+        /* ==========================================
+         * 5. 纯净模糊输入交互中枢（开发者重置指令与全联动应答复活）
+         * ========================================== */
+        function handleUserSendMessage() {
+            const text = chatInputField.value.trim();
+            if (!text) return;
+
+            // ⚡【最高优先拦截：开发者强行还原重置机制】
+            if (text === window.GAME_CONFIG.resetCommand) {
+                if (confirm("【开发者还原】确认强制清除本地所有暗网缓存并重新恢复到登录前界面吗？")) {
+                    localStorage.clear();
+                    chatMsgContainer.innerHTML = "";
+                    passwordInput.value = "";
+                    loginError.innerText = "";
+                    window.GAME_CONFIG.state = 0;
+                    chatInputField.value = "";
+                    chatView.style.display = 'none';
+                    loginView.style.display = 'block';
+                }
+                return;
+            }
+
+            // 正常回显玩家消息
+            pushMessage("小花", text, "me");
+            chatInputField.value = "";
+
+            setTimeout(() => {
+                const upperText = text.toUpperCase();
+
+                if (window.GAME_CONFIG.state === 2) {
+                    let matchedReply = null;
+                    
+                    // 全盘模糊扫描预留问答数据库
+                    for (let item of GLOBAL_QA_DATABASE) {
+                        const hit = item.keywords.some(keyword => upperText.includes(keyword.toUpperCase()));
+                        if (hit) {
+                            matchedReply = item.reply;
+                            break;
+                        }
+                    }
+
+                    const targetContainer = pushMessage("小 (Hacker)", "", "other");
+                    if (matchedReply) {
+                        // 核心修复点：使用 innerHTML 动态向气泡渲染带链接的解答，决不闪退卡死
+                        targetContainer.innerHTML = matchedReply;
+                    } else {
+                        targetContainer.innerHTML = `没听说 "${text}" 这个啊，换个问题问问。`;
+                    }
+                    saveChatToStorage(); // 动态存储当前最新对话
+                } else {
+                    const targetContainer = pushMessage("系统安全终端", "", "other");
+                    targetContainer.innerHTML = "[警告] 正在建立密钥通道，请等待黑客完成首次传输...";
+                    saveChatToStorage();
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
