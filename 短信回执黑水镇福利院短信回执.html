@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密信息终端</title>
+    <style>
+        /* 🎨 核心：背景随系统（白天与暗黑模式自适应调色盘） */
+        :root {
+            /* 浅色/白天模式默认配色 */
+            --phone-bg: #E5E5EA;         /* 网页外大背景（浅灰） */
+            --sms-bg: #FFFFFF;           /* 手机内主背景（纯白） */
+            --imessage-blue: #007AFF;    /* 发送方气泡（苹果蓝） */
+            --receive-box: #E9E9EB;      /* 接收方气泡（日间浅灰） */
+            --text-main: #000000;        /* 主文字颜色（黑） */
+            --text-sub: #8E8E93;         /* 副文字颜色（深灰） */
+            --bank-gold: #B8860B;        /* 按钮高亮色（金棕） */
+            --border-phone: #C7C7CC;     /* 手机外框颜色 */
+        }
+
+        /* 🌙 当用户的手机或电脑开启"深色/暗黑模式"时，自动无缝切换以下配色 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --phone-bg: #0B0E14;       /* 网页外大背景（极夜黑） */
+                --sms-bg: #161B26;         /* 手机内主背景（钛金灰） */
+                --imessage-blue: #0A84FF;  /* 发送方气泡（高亮蓝） */
+                --receive-box: #262E3D;    /* 接收方气泡（暗夜灰） */
+                --text-main: #FFFFFF;      /* 主文字颜色（白） */
+                --text-sub: #718096;       /* 副文字颜色（浅灰） */
+                --bank-gold: #D4AF37;      /* 按钮高亮色（拉丝金） */
+                --border-phone: #2D3748;   /* 手机外框颜色 */
+            }
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+            background-color: var(--phone-bg);
+            color: var(--text-main);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* 📱 仿手机实体外框（手机、笔记本、电脑多端全兼容） */
+        .phone-wrapper {
+            width: 100%; max-width: 420px; height: 92vh;
+            background-color: var(--sms-bg); border-radius: 36px;
+            border: 4px solid var(--border-phone); 
+            box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
+            transition: all 0.3s ease;
+        }
+        /* 在电脑端（大屏幕）增加更厚重的阴影感 */
+        @media (min-width: 769px) {
+            .phone-wrapper { box-shadow: 0 25px 60px rgba(0,0,0,0.4); }
+        }
+
+        /* 顶部导航层 */
+        .phone-header {
+            background: var(--sms-bg);
+            border-bottom: 1px solid rgba(128,128,128,0.15);
+            padding: 16px 20px; display: flex; align-items: center; position: relative;
+        }
+        
+        /* ⬅️ 标头高保真返回键 */
+        .btn-back {
+            color: var(--imessage-blue); text-decoration: none;
+            font-size: 1.05rem; font-weight: 500; display: flex; align-items: center;
+            gap: 4px; cursor: pointer; transition: opacity 0.2s;
+        }
+        .btn-back:hover { opacity: 0.7; }
+
+        /* 标头中间联系人名 */
+        .header-contact-info {
+            flex: 1; text-align: center; margin-right: 40px; /* 使文字严格水平居中 */
+        }
+        .contact-name { font-size: 1.05rem; font-weight: 700; color: var(--text-main); letter-spacing: 0.5px; }
+        .contact-status { font-size: 0.72rem; color: var(--imessage-blue); font-weight: bold; margin-top: 2px; }
+
+        /* 💬 短信聊天气泡滚动区 */
+        .sms-chat-scroller {
+            flex: 1; overflow-y: auto; padding: 20px 16px;
+            display: flex; flex-direction: column; gap: 14px;
+            scroll-behavior: smooth;
+        }
+        .sms-chat-scroller::-webkit-scrollbar { display: none; } /* 隐藏滚动条 */
+
+        /* 动态系统时间戳样式 */
+        .sms-timestamp { text-align: center; font-size: 0.75rem; color: var(--text-sub); margin: 8px 0; font-weight: 600; }
+
+        /* 气泡基础框架 */
+        .sms-row { display: flex; width: 100%; }
+        .sms-row.incoming { justify-content: flex-start; } 
+        .sms-row.outgoing { justify-content: flex-end; }   
+
+        .sms-bubble {
+            max-width: 75%; padding: 12px 16px; border-radius: 20px;
+            font-size: 0.92rem; line-height: 1.45; word-break: break-all;
+            position: relative;
+        }
+        /* 接收方气泡 */
+        .incoming .sms-bubble { background-color: var(--receive-box); color: var(--text-main); border-bottom-left-radius: 4px; }
+        /* 发送方气泡 */
+        .outgoing .sms-bubble { background-color: var(--imessage-blue); color: #FFFFFF; border-bottom-right-radius: 4px; }
+
+        /* 气泡内特定的高大上跳转链接 */
+        .sms-inner-link {
+            display: block; margin-top: 8px; padding-top: 8px;
+            border-top: 1px solid rgba(128,128,128,0.2);
+            color: var(--bank-gold); text-decoration: none;
+            font-weight: 700; font-size: 0.8rem; text-align: right;
+            transition: opacity 0.2s;
+        }
+        .sms-inner-link:hover { opacity: 0.8; text-decoration: underline; }
+
+        /* 底部仿手机虚拟输入栏 */
+        .phone-footer-input {
+            background: var(--sms-bg); padding: 12px 16px;
+            display: flex; align-items: center; gap: 10px;
+            border-top: 1px solid rgba(128,128,128,0.1);
+        }
+        .mock-input-field {
+            flex: 1; background: var(--receive-box);
+            border-radius: 20px; padding: 8px 16px; font-size: 0.88rem; color: var(--text-sub);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 📱 仿手机外框容器 -->
+    <div class="phone-wrapper">
+        
+        <!-- 1. 顶部状态与导航栏 -->
+        <header class="phone-header">
+            <!-- ⬅️ 返回按键对接到您的提款结算主页面 -->
+            <a href="口令提款.html" class="btn-back">
+                <span>ㄑ</span> 返回
+            </a>
+            
+            <div class="header-contact-info">
+                <div class="contact-name" id="senderNameDisplay">加载中...</div>
+                <div class="contact-status">● 中联移动</div>
+            </div>
+        </header>
+
+        <!-- 2. 短信聊天列表核心区 -->
+        <main class="sms-chat-scroller" id="smsChatContainer">
+            <!-- 时间戳和消息气泡会在下方JS加载时，按照最新系统时间自动化生成 -->
+        </main>
+
+        <!-- 3. 底部虚拟输入框（只读提升逼真度） -->
+        <footer class="phone-footer-input">
+            <div class="mock-input-field">🔒 当前信道已单向安全锁定...</div>
+        </footer>
+        
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- ⚙️ 核心配置脚本区：内容您随时可以自由更改 -->
+    <!-- ========================================================================= -->
+    <script>
+        // 📥 【内容自定义区】在这里直接修改联系人名字和具体短消息
+        const SMS_DATA = {
+            senderName: "黑水镇社会福利院", // 👈 手机顶部显示的对方名字
+
+            messages: [
+            {
+                    type: "incoming",
+                    content: "【黑水镇社会福利院】尊敬的捐赠人您好！我们已收到您捐赠资金$1,000,000.00（One Million United States Dollars）。本次善款将全部用于院内困境儿童生活、医疗保障。衷心感谢您的无私捐助，愿孩童皆得安稳。捐赠编号：CF-734910",
+                    link: "J黑水.html" // 👈 已添加正确的跳转链接
+                }
+            ]
+        };
+
+        // 🕒 局部改动：自动抓取当前物理设备的真实系统时间（严格24小时制）
+        function getSystemFormattedTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const hours = now.getHours().toString().padStart(2, '0');    // 24小时制：00-23
+            const minutes = now.getMinutes().toString().padStart(2, '0');  // 分钟：00-59
+            
+            return `${year}年${month}月${date}日 ${hours}:${minutes}`;
+        }
+
+        // 页面初始化自动分发与装载
+        window.addEventListener('DOMContentLoaded', () => {
+            // 装载联系人姓名
+            document.getElementById('senderNameDisplay').innerText = SMS_DATA.senderName;
+            const container = document.getElementById('smsChatContainer');
+            
+            // 1. 动态生成并挂载符合用户当前真实的系统时间戳
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'sms-timestamp';
+            timeDiv.innerText = getSystemFormattedTime();
+            container.appendChild(timeDiv);
+            
+            // 2. 依次平滑铺设对话气泡
+            SMS_DATA.messages.forEach(item => {
+                const row = document.createElement('div');
+                row.className = `sms-row ${item.type}`;
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'sms-bubble';
+                bubble.innerText = item.content;
+                
+                // 如果该条短信带有特定跳转链接
+                if (item.link) {
+                    const linkBtn = document.createElement('a');
+                    linkBtn.className = 'sms-inner-link';
+                    linkBtn.href = item.link;
+                    linkBtn.innerText = "黑水镇社会福利院官网 »";
+                    linkBtn.target = "_blank"; // 在新标签页打开
+                    linkBtn.rel = "noopener noreferrer"; // 安全设置
+                    bubble.appendChild(linkBtn);
+                }
+                
+                row.appendChild(bubble);
+                container.appendChild(row);
+            });
+            
+            // 自动化滚动聚焦到最底部消息
+            container.scrollTop = container.scrollHeight;
+        });
+    </script>
+</body>
+</html>
