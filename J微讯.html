@@ -621,7 +621,7 @@ function submitAddFriend() {
                 if (PRESET_CODES[codeKey].type === '小' && chatStateTracker[currentActiveChatId] === 4) {
                     if (text.toUpperCase() === "57635") {
                         setTimeout(function() { pushSystemMessage(currentActiveChatId, "答对了，对于你投资失败，深表遗憾。", '小'); }, 1000);
-                        setTimeout(function() { pushSystemMessage(currentActiveChatId, "我手里可能有你需要的东西（红枫叶酒店）后台密码：012340", '小'); }, 2000);
+                        setTimeout(function() { pushSystemMessage(currentActiveChatId, "这里聊天不安全，推荐你安全的聊天环境，蜂鸟门户网搜索：暗网。密码112233", '小'); }, 2000);
                         chatStateTracker[currentActiveChatId] = 5; 
                         saveToLocalStorage();
                     } else {
