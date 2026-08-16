@@ -23,13 +23,7 @@
             --btn-top: 60.3%;              /* 👈 播放键距离顶部的百分比 */
             --btn-left: 46.35%;             /* 👈 播放键距离左侧的百分比 */
             --btn-size: 7.5%;              /* 👈 播放键按钮的直径大小 */
-             /* 4. 底部上一首/下一首按钮参数 */
-            --bottom-btn-width: 18%;
-            --bottom-btn-height: 8%;
-            --bottom-btn-gap: 12%;
-            --bottom-btn-bottom: 5%;
         }
-        
 
         /* 基础页面重置 */
         * {
@@ -106,34 +100,7 @@ body {
             background: rgba(189, 152, 152, 0.4); 
             transition: background-color 0.2s;
         }
-                .nav-btn {
-            width: var(--bottom-btn-width);
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
-            color: #00ff66;
-            font-size: clamp(12px, 2.5vmin, 16px);
-            font-weight: 500;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(4px);
-        }
         
-               .bottom-buttons {
-            position: absolute;
-            bottom: var(--bottom-btn-bottom);
-            width: 100%;
-            height: var(--bottom-btn-height);
-            display: flex;
-            justify-content: space-between;
-            padding: 0 calc((100% - var(--bottom-btn-width)*2 - var(--bottom-btn-gap)) / 2);
-            z-index: 4;
-        }
         .center-play-btn:active {
             background: rgba(255, 255, 255, 0.3);
         }
@@ -148,17 +115,14 @@ body {
         <!-- 顶层 按钮点击透明触控热区 -->
         <div id="playBtn" class="center-play-btn"></div>
     </div>
-            <div class="bottom-buttons">
-                <a href="#" class="nav-btn" target="_self">返回</a>
-                <a href="#" class="nav-btn" target="_self">下一步</a>
-            </div>
+
 <script>
     const playBtn = document.getElementById('playBtn');
     const canvas = document.getElementById('screen');
     const ctx = canvas.getContext('2d');
 
     // 绑定您同目录下的音频文件，请确保名字叫 audio.mp3
-    const audio = new Audio('https://cdn.jsdelivr.net/gh/34690028-collab/wuzhushouji@main/艾琳录音.MP3'); 
+    const audio = new Audio('https://cdn.jsdelivr.net/gh/34690028-collab/wuzhushouji@main/主谋录音.MP3'); 
     audio.crossOrigin = "anonymous"; 
 
     let audioCtx, analyser, source, bufferLength, dataArray;
@@ -205,9 +169,9 @@ body {
     });
 
     // 1. 定义您想显示的自定义文本变量（可以随时通过代码去修改它们）
-    let currentTitle = "REC "; // 自定义文件名/歌名
-    let isPlayingText = "播放中";    // 状态文字
-    let isPausedText = "暂停";       // 暂停状态文字
+    let currentTitle = "REC"; // 自定义文件名/歌名
+    let isPlayingText = "▶";    // 状态文字
+    let isPausedText = "⏸";       // 暂停状态文字
 
     // 升级版绘制函数：移除原有音柱，仅保留文本+音量起伏动态效果
     function drawVolumeEffect() {
