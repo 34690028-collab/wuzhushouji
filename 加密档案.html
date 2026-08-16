@@ -2,290 +2,493 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>响应式云盘档案系统 - 竖版9:16</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>响应式云盘档案系统</title>
     <style>
-        /* 全局基础重置与响应式 */
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body, html { width: 100%; height: 100%; font-family: -apple-system, sans-serif; background: #0f172a; color: #f8fafc; overflow: hidden; }
-        
-        /* 全局顶部返回键 */
-        .global-back-btn { position: fixed; top: 20px; left: 20px; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 8px; cursor: pointer; font-size: 14px; z-index: 100; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
-        .global-back-btn:hover { background: rgba(255,255,255,0.2); transform: translateX(-3px); }
+        /* 全局基础重置 */
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body, html { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f8fafc; overflow: hidden; }
 
-        /* 视图面板容器 */
-        .view-panel { position: absolute; width: 100%; height: 100%; top: 0; left: 0; display: none; align-items: center; justify-content: center; flex-direction: column; overflow: hidden; }
+        /* 全局路由返回键 (带#路径) */
+        .global-back-btn { position: fixed; top: 16px; left: 16px; padding: 10px 18px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; border-radius: 20px; text-decoration: none; font-size: 13px; z-index: 999; display: flex; align-items: center; gap: 6px; transition: all 0.3s; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .global-back-btn:hover { color: #fff; border-color: #38bdf8; transform: translateX(-2px); }
+
+        /* 单页视图面板通用容器 */
+        .view-panel { position: absolute; width: 100%; height: 100%; top: 0; left: 0; display: none; align-items: center; justify-content: center; flex-direction: column; overflow: hidden; z-index: 10; }
         .view-panel.active { display: flex; }
 
+        /* 核心多端自适应：竖版固定比例外壳（兼容手机、平板、笔记本、台式机） */
+        .responsive-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 450px;       /* 限制最大宽度，保持移动端黄金竖版比例 */
+            max-height: 850px;      /* 限制最大高度 */
+            aspect-ratio: 9 / 16;   /* 强制 9:16 竖版 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            margin: auto;
+        }
+
+        /* 当在宽屏大设备（台式机/笔记本）上时，外层包裹轻微发光边框作为舞台 */
+        @media (min-width: 768px) {
+            body { display: flex; align-items: center; justify-content: center; background: #070a13; }
+            .responsive-container { background: #0f172a; border-radius: 32px; border: 1px solid rgba(56, 189, 248, 0.15); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); }
+        }
         /* 登录卡片布局 */
-        .login-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: center; }
-        .login-card h2 { margin-bottom: 24px; font-weight: 600; color: #38bdf8; }
-        .input-group { margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 8px; font-size: 14px; color: #94a3b8; }
-        .input-group input { width: 100%; padding: 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; font-size: 16px; outline: none; transition: all 0.3s; }
-        .input-group input:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
-        .login-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #38bdf8, #0284c7); border: none; border-radius: 12px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; margin-top: 10px; }
-        .login-btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        .error-msg { color: #f43f5e; font-size: 14px; margin-top: 12px; min-height: 20px; }
-        /* 真实加载动画页面 */
-        .loader-container { text-align: center; }
-        .spinner { width: 60px; height: 60px; border: 5px solid rgba(56, 189, 248, 0.2); border-top-color: #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
-        .progress-text { font-size: 18px; color: #94a3b8; font-weight: 500; }
+        .login-card {
+            width: 100%;
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 32px 24px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        }
+        .login-card h2 { font-size: 24px; font-weight: 600; margin-bottom: 8px; color: #f8fafc; }
+        .login-card p { font-size: 14px; color: #64748b; margin-bottom: 28px; }
+
+        /* 输入框容器 */
+        .input-group { width: 100%; margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 13px; color: #94a3b8; font-weight: 500; }
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .input-group input:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); background: rgba(15, 23, 42, 0.9); }
+        
+        /* 登录按钮 */
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+        }
+        .login-btn:hover { opacity: 0.95; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(56, 189, 248, 0.3); }
+        .error-msg { color: #f43f5e; font-size: 13px; margin-top: 12px; min-height: 18px; font-weight: 500; }
+
+        /* 真实图片加载动画视图样式 */
+        .loader-wrapper { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner-ring {
+            width: 64px;
+            height: 64px;
+            border: 4px solid rgba(56, 189, 248, 0.1);
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+        }
+        .progress-text { font-size: 18px; color: #f8fafc; font-weight: 600; margin-bottom: 6px; font-family: monospace; }
+        .progress-sub { font-size: 13px; color: #64748b; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* 三维仿纸翻页舞台 - 固定9:16竖版比例容器 */
-        .archive-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 20px; }
-        .book-stage { position: relative; width: 90%; max-width: 520px; aspect-ratio: 9/16; perspective: 1500px; -webkit-perspective: 1500px; margin-bottom: 24px; }
-        .page { position: absolute; width: 100%; height: 100%; top: 0; left: 0; transform-style: preserve-3d; -webkit-transform-style: preserve-3d; transform-origin: left center; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1); cursor: grab; background: #1e293b; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
-        .page:active { cursor: grabbing; }
-        .page img { width: 100%; height: 100%; object-fit: contain; object-position: center; background: #0f172a; pointer-events: none; }
-        .page::after { content: ''; position: absolute; width: 100%; height: 100%; top: 0; left: 0; background: rgba(0,0,0,0.8); opacity: 0; transition: opacity 0.6s; backface-visibility: hidden; -webkit-backface-visibility: hidden; pointer-events: none; }
-        .page.flipped { transform: rotateY(-145deg) scale(0.95); z-index: 10 !important; }
-        .page.flipped::after { opacity: 0.4; }
-
-        /* 备份组件与弹窗 */
-        .backup-btn-container { width: 100%; text-align: center; z-index: 20; }
-        .backup-btn { padding: 14px 32px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 12px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
-        .backup-btn:hover { opacity: 0.9; transform: translateY(-2px); }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
-        .modal-overlay.active { display: flex; }
-        .modal-card { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; width: 100%; max-width: 450px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-        .modal-card h3 { margin-bottom: 16px; color: #10b981; }
-        .code-box { background: #0f172a; border: 1px solid rgba(255,255,255,0.05); padding: 16px; border-radius: 10px; font-family: monospace; font-size: 14px; color: #34d399; word-break: break-all; max-height: 120px; overflow-y: auto; text-align: left; margin-bottom: 20px; white-space: pre-wrap; }
-        .close-modal-btn { width: 100%; padding: 12px; background: rgba(255,255,255,0.1); border: none; border-radius: 10px; color: #fff; font-size: 14px; cursor: pointer; transition: background 0.3s; }
-        .close-modal-btn:hover { background: rgba(255,255,255,0.2); }
-
-        @media (max-width: 768px) { 
-            .book-stage { width: 92vw; max-width: 92vw; } 
-            .login-card { padding: 30px 20px; } 
-            .global-back-btn { top: 12px; left: 12px; padding: 8px 14px; font-size: 13px; }
+        /* 三维仿纸翻页舞台 */
+        .archive-stage {
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            max-height: 520px;
+            perspective: 2000px;
+            -webkit-perspective: 2000px;
+            margin-bottom: 20px;
         }
-        @media (min-width: 1200px) {
-            .book-stage { max-width: 640px; } /* 竖版大屏适配，调整为更合理的最大宽度 */
+        /* 单张卡片书页（核心：左侧轴心旋转） */
+        .page-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+            transform-origin: left center;
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            background: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            cursor: grab;
         }
+        .page-card:active { cursor: grabbing; }
+        .page-card img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        
+        /* 书页翻开背面的黑影遮罩层，模拟光影遮挡 */
+        .page-card::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background: rgba(0,0,0,0.85);
+            opacity: 0;
+            transition: opacity 0.6s;
+            pointer-events: none;
+        }
+        /* 翻过去的状态：向左甩出 145 度并微缩，露出下方卡片 */
+        .page-card.flipped { transform: rotateY(-145deg) scale(0.96); z-index: 10 !important; }
+        .page-card.flipped::after { opacity: 0.5; }
+
+        /* 一键备份按钮外壳：默认透明且不可交互 */
+        .action-area {
+            width: 100%;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            transform: translateY(10px);
+            z-index: 100;
+        }
+        .action-area.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .backup-action-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 12px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); transition: all 0.2s; }
+        .backup-action-btn:hover { opacity: 0.95; transform: translateY(-1px); }
+
+        /* 全局高斯模糊遮罩弹窗 */
+        .mask-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 10, 19, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+        .mask-overlay.active { display: flex; }
+        .alert-card { background: #1e293b; border: 1px solid rgba(255,255,255,0.08); padding: 32px 24px; border-radius: 24px; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
+        .alert-card h3 { font-size: 18px; margin-bottom: 12px; color: #10b981; }
+        .value-box { background: #0b0f19; border: 1px solid rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; font-family: monospace; font-size: 28px; font-weight: bold; color: #38bdf8; letter-spacing: 2px; margin-bottom: 24px; }
+        .confirm-btn { width: 100%; padding: 12px; background: rgba(255,255,255,0.08); border: none; border-radius: 10px; color: #94a3b8; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .confirm-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
     </style>
 </head>
 <body>
-
-    <!-- 登录界面 -->
+    <!-- ================= 1. 登录界面 ================= -->
     <div id="loginView" class="view-panel active">
-        <button class="global-back-btn" onclick="alert('已经是登录页')">← 退出</button>
-        <div class="login-card">
-            <h2>网络云盘登录</h2>
-            <div class="input-group">
-                <label for="username">账号</label>
-                <input type="text" id="username" placeholder="请输入任意账号" autocomplete="off">
-            </div>
-            <div class="input-group">
-                <label for="password">密码</label>
-                <input type="password" id="password" placeholder="请输入密码 (123456)">
-            </div>
-            <button class="login-btn" onclick="handleLogin()">立即登录</button>
-            <div id="errorMsg" class="error-msg"></div>
-        </div>
-    </div>
-    <!-- 加载动画界面 -->
-    <div id="loadingView" class="view-panel">
-        <button class="global-back-btn" onclick="resetToLogin()">← 取消加载</button>
-        <div class="loader-container">
-            <div class="spinner"></div>
-            <div id="progressText" class="progress-text">系统解密中... 0%</div>
-        </div>
-    </div>
-
-    <!-- 仿真档案内容界面 -->
-    <div id="archiveView" class="view-panel">
-        <button class="global-back-btn" onclick="resetToLogin()">← 退出档案</button>
+        <!-- 路由路径返回键 -->
+        <a class="global-back-btn" href="D艾琳·索恩详情.html">← 退出系统</a>
         
-        <div class="archive-wrapper">
-            <!-- 三维翻页舞台 -->
-            <div id="bookStage" class="book-stage">
-                <!-- 预留的5张贴图路径 -->
-                <div class="page" style="z-index: 5;">
-                    <img src="机密1.jpg" alt="档案第1页">
+        <div class="responsive-container">
+            <div class="login-card">
+                <h2>网络云盘系统</h2>
+                <p>内部机密档案安全验证中心</p>
+                
+                <div class="input-group">
+                    <label for="username">管理账号</label>
+                    <input type="text" id="username" placeholder="***" autocomplete="off">
                 </div>
-                <div class="page" style="z-index: 4;">
-                    <img src="机密2.jpg" alt="档案第2页">
+                <div class="input-group">
+                    <label for="password">安全密码</label>
+                    <input type="password" id="password" placeholder="***">
                 </div>
-                <div class="page" style="z-index: 3;">
-                    <img src="机密3.jpg" alt="档案第3页">
-                </div>
-                <div class="page" style="z-index: 2;">
-                    <img src="机密4.jpg" alt="档案第4页">
-                </div>
-                <div class="page" style="z-index: 1;">
-                    <img src="机密5.jpg" alt="档案第5页">
-                </div>
-            </div>
-
-            <!-- 底部固定保留的一键备份按钮 -->
-            <div class="backup-btn-container">
-                <button class="backup-btn" onclick="triggerBackup()">一键备份核心数据</button>
+                
+                <button class="login-btn" onclick="handleLogin()">安全验证登录</button>
+                <div id="errorMsg" class="error-msg"></div>
             </div>
         </div>
     </div>
 
-    <!-- 备份编码弹窗 -->
-    <div id="modalOverlay" class="modal-overlay">
-        <div class="modal-card">
-            <h3>🔒 备份数据已加密生成</h3>
-            <div id="codeBox" class="code-box"></div>
-            <button class="close-modal-btn" onclick="closeModal()">确认并关闭</button>
+    <!-- ================= 2. 真实图片预加载动画界面 ================= -->
+    <div id="loadingView" class="view-panel">
+        <a class="global-back-btn" href="#/login" onclick="cancelLoading(); return false;">← 中断加载</a>
+        
+        <div class="responsive-container">
+            <div class="loader-wrapper">
+                <div class="spinner-ring"></div>
+                <div id="progressText" class="progress-text">0%</div>
+                <div id="progressSub" class="progress-sub">正在载入档案切片资源...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 3. 三维档案翻页阅览界面 ================= -->
+    <div id="archiveView" class="view-panel">
+        <a class="global-back-btn" href="#/logout" onclick="logoutSystem(); return false;">← 注销退出</a>
+        
+        <div class="responsive-container">
+            <!-- 3D 翻页主舞台 -->
+            <div class="archive-stage" id="archiveStage">
+                <!-- 预留 5 张贴图路径，按层级堆叠 (z-index 由高到低) -->
+                <!-- 书页 1 -->
+                <div class="page-card" style="z-index: 5;">
+                    <img src="机密1.jpg" alt="档案1(可替换本地路径)">
+                </div>
+                <!-- 书页 2 -->
+                <div class="page-card" style="z-index: 4;">
+                    <img src="机密2.jpg" alt="档案2(可替换本地路径)">
+                </div>
+                <!-- 书页 3 -->
+                <div class="page-card" style="z-index: 3;">
+                    <img src="机密3.jpg" alt="档案3(可替换本地路径)">
+                </div>
+                <!-- 书页 4 -->
+                <div class="page-card" style="z-index: 2;">
+                    <img src="机密4.jpg" alt="档案4(可替换本地路径)">
+                </div>
+                <!-- 书页 5 (最后一页) -->
+                <div class="page-card" style="z-index: 1;">
+                    <img src="机密5.jpg" alt="档案5(可替换本地路径)">
+                </div>
+            </div>
+
+            <!-- 一键备份控制区 -->
+            <div id="actionArea" class="action-area">
+                <button class="backup-action-btn" id="backupBtn" onclick="startUploadBackup()">一键备份机密档案</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 4. 固证数字结果弹窗 ================= -->
+    <div id="maskOverlay" class="mask-overlay">
+        <div class="alert-card">
+            <h3 id="popTitle">📌 电子凭证生成成功</h3>
+            <div style="margin: 16px 0;">
+                <div id="valueBox" class="value-box">123</div>
+            </div>
+            <button class="confirm-btn" onclick="closePopModal()">确认并关闭</button>
         </div>
     </div>
     <script>
-        // 1. 系统配置
-        const TARGET_PASSWORD = "1"; 
-        let imagesLoadedCount = 0;        
-        const totalImages = 5;            
-        let isImageLoadingStarted = false; 
+        // ================= 核心状态配置 =================
+        const CONFIG = {
+            PASSWORD: "1" // 在这里设置你所需要的专属登录密码
+        };
 
-        const loginView = document.getElementById('loginView');
-        const loadingView = document.getElementById('loadingView');
-        const archiveView = document.getElementById('archiveView');
-        const progressText = document.getElementById('progressText');
-        const errorMsg = document.getElementById('errorMsg');
+        let currentFlippedCount = 0; // 当前已翻开的页数
+        const totalPages = 5;       // 总档案页数
+        let isUploading = false;     // 防二次触发上传状态锁
 
-        // 2. 登录验证控制
-        function handleLogin() {
-            const passInput = document.getElementById('password').value;
-            errorMsg.innerText = "";
+        // ================= 核心1: 登录验证与跳转 =================
+    function handleLogin() {
+    const userInp = document.getElementById('username').value.trim();
+    const passInp = document.getElementById('password').value;
+    const errorDiv = document.getElementById('errorMsg');
 
-            if (passInput === TARGET_PASSWORD) {
-                switchView(loadingView);
-                startRealImageLoading();
-            } else {
-                errorMsg.innerText = "密码错误，请重新输入！";
-            }
+    // 1. 在这里修改你要固定的【账号】（把 admin 改成你想要的）
+    if (userInp !== "1") {
+        errorDiv.innerText = "管理账号错误";
+        return;
+    }
+
+    // 2. 校验预设的安全密码
+    if (passInp !== CONFIG.PASSWORD) {
+        errorDiv.innerText = "安全密码错误，拒绝访问";
+        return;
+    }
+
+    errorDiv.innerText = ""; 
+    switchView('loadingView'); 
+    startImagePreloader();    
+}
+
+        // 切换全屏视图面板工具函数
+        function switchView(viewId) {
+            document.querySelectorAll('.view-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            document.getElementById(viewId).classList.add('active');
         }
 
-        // 3. 5张图片真实下载网速测速加载逻辑
-        function startRealImageLoading() {
-            if (isImageLoadingStarted) return; 
-            isImageLoadingStarted = true;
-            imagesLoadedCount = 0;
-            updateProgressDisplay(0);
+        // ================= 核心2: 真实图片速度预加载监听 =================
+        function startImagePreloader() {
+            const imgElements = document.querySelectorAll('.page-card img');
+            const totalImages = imgElements.length;
+            let loadedCount = 0;
 
-            const imgElements = document.querySelectorAll('#bookStage .page img');
-            
+            const progressText = document.getElementById('progressText');
+            const progressSub = document.getElementById('progressSub');
+
+            progressText.innerText = "0%";
+            progressSub.innerText = `正在初始化高密链路 (0/${totalImages})...`;
+
+            // 提取 5 张贴图路径进行并发异步加载监听
             imgElements.forEach((img) => {
                 const fakeImg = new Image();
-                
-                fakeImg.onload = fakeImg.onerror = () => {
-                    imagesLoadedCount++;
-                    let progressPercent = Math.floor((imagesLoadedCount / totalImages) * 100);
-                    updateProgressDisplay(progressPercent);
-
-                    if (imagesLoadedCount >= totalImages) {
-                        setTimeout(() => {
-                            switchView(archiveView);
-                            initFlipFeature(); 
-                        }, 400); 
-                    }
-                };
                 fakeImg.src = img.src;
+
+                // 成功载入单张贴图触发
+                fakeImg.onload = () => {
+                    loadedCount++;
+                    updateProgress(loadedCount, totalImages);
+                };
+
+                // 若贴图路径失效、断网或加载失败，跳过计数防止程序卡死死锁
+                fakeImg.onerror = () => {
+                    loadedCount++;
+                    updateProgress(loadedCount, totalImages);
+                };
             });
         }
 
-        function updateProgressDisplay(percent) {
-            progressText.innerText = `数据解密中... ${percent}%`;
+        // 动态计算百分比更新
+        function updateProgress(loaded, total) {
+            const percent = Math.floor((loaded / total) * 100);
+            document.getElementById('progressText').innerText = `${percent}%`;
+            document.getElementById('progressSub').innerText = `正在下载档案切片集群 (${loaded}/${total})...`;
+
+            // 5张贴图资源完全下载完毕后，平滑导入3D阅览档案舞台
+            if (loaded >= total) {
+                setTimeout(() => {
+                    switchView('archiveView');
+                    initFlipEngine(); // 初始化移动端/PC端 3D 手势拖拽引擎
+                }, 500);
+            }
         }
 
-        function switchView(targetView) {
-            document.querySelectorAll('.view-panel').forEach(panel => panel.classList.remove('active'));
-            targetView.classList.add('active');
+        // 返回及取消加载逻辑
+        function cancelLoading() {
+            switchView('loginView');
         }
-        // 4. 全局返回与重置逻辑
         function resetToLogin() {
+            switchView('loginView');
+        }
+        function logoutSystem() {
+            // 清理状态，重置表单并返回登录页面路径
             document.getElementById('password').value = "";
-            errorMsg.innerText = "";
-            isImageLoadingStarted = false;
+            document.getElementById('errorMsg').innerText = "";
             
-            document.querySelectorAll('.page').forEach(page => {
+            // 还原所有翻过去的页面
+            document.querySelectorAll('.page-card').forEach(page => {
                 page.classList.remove('flipped');
             });
-            switchView(loginView);
+            currentFlippedCount = 0;
+            document.getElementById('actionArea').classList.remove('visible');
+            
+            switchView('loginView');
+            window.location.hash = "/login";
         }
+        // ================= 核心3: 兼容多端(鼠标拖拽/触屏滑动)的3D翻页引擎 =================
+        // ================= 核心3(升级版): 兼容多端、支持前后双向滑动的3D翻页引擎 =================
+        // ================= 核心3(完美修复版): 兼容多端、双向翻页且完美触发备份的引擎 =================
+        function initFlipEngine() {
+            const pages = document.querySelectorAll('.page-card');
+            
+            pages.forEach((page, index) => {
+                let startX = 0;
+                let isDragging = false;
 
-        // 5. 鼠标拖拽/手机触控双端兼容的仿真反纸页核心算法
-        function initFlipFeature() {
-            const pages = Array.from(document.querySelectorAll('.page'));
-            let startX = 0;
-            let currentX = 0;
-            let isDragging = false;
-            let activePage = null;
+                // 1. 触屏触控起始 (移动端)
+                page.addEventListener('touchstart', (e) => {
+                    startX = e.touches.clientX;
+                    isDragging = true;
+                }, { passive: true });
 
-            function getTopVisiblePage() {
-                return pages.find(page => !page.classList.contains('flipped'));
-            }
+                // 2. 鼠标点击起始 (PC端)
+                page.addEventListener('mousedown', (e) => {
+                    startX = e.clientX;
+                    isDragging = true;
+                });
 
-            function getTopFlippedPage() {
-                const flippedPages = pages.filter(page => page.classList.contains('flipped'));
-                return flippedPages.length > 0 ? flippedPages[flippedPages.length - 1] : null;
-            }
+                // 3. 触屏拖拽滑动 (移动端)
+                page.addEventListener('touchmove', (e) => {
+                    if (!isDragging) return;
+                    handleMoveCheck(e.touches.clientX, page, index);
+                }, { passive: true });
 
-            function dragStart(e) {
-                isDragging = true;
-                const touch = e.type.includes('touch') ? e.touches : e;
-                startX = touch.clientX;
-                currentX = startX; 
-            }
+                // 4. 鼠标指针拖拽 (PC端)
+                page.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    handleMoveCheck(e.clientX, page, index);
+                });
 
-            function dragMove(e) {
-                if (!isDragging) return;
-                const touch = e.type.includes('touch') ? e.touches : e;
-                currentX = touch.clientX;
-            }
+                // 5. 交互结束释放锁
+                const handleEnd = () => { isDragging = false; };
+                page.addEventListener('touchend', handleEnd);
+                page.addEventListener('mouseup', handleEnd);
+                page.addEventListener('mouseleave', handleEnd);
 
-            function dragEnd(e) {
-                if (!isDragging) return;
-                isDragging = false;
+                // 核心手势位移双向判定
+                function handleMoveCheck(currentX, element, currentIndex) {
+                    const deltaX = startX - currentX; // 正数向左划(前进)，负数向右划(后退)
 
-                const deltaX = currentX - startX;
-                const swipeThreshold = 50; 
+                    // --- 场景 A: 向左滑动 (翻看下一页) ---
+                    if (deltaX > 30 && !element.classList.contains('flipped')) {
+                        element.classList.add('flipped');
+                        isDragging = false; 
+                        currentFlippedCount++;
+                        checkBackupButtonVisibility();
+                        return;
+                    }
 
-                if (Math.abs(deltaX) > swipeThreshold && currentX !== 0) {
-                    if (deltaX < 0) {
-                        activePage = getTopVisiblePage();
-                        if (activePage) {
-                            activePage.classList.add('flipped');
-                        }
-                    } else {
-                        activePage = getTopFlippedPage();
-                        if (activePage) {
-                            activePage.classList.remove('flipped');
+                    // --- 场景 B: 向右滑动 (回翻上一页) ---
+                    if (deltaX < -30) {
+                        const allPages = Array.from(document.querySelectorAll('.page-card'));
+                        const flippedPages = allPages.filter(p => p.classList.contains('flipped'));
+                        
+                        if (flippedPages.length > 0) {
+                            const lastFlippedPage = flippedPages[flippedPages.length - 1];
+                            lastFlippedPage.classList.remove('flipped');
+                            isDragging = false;
+                            currentFlippedCount--;
+                            checkBackupButtonVisibility();
                         }
                     }
                 }
-                startX = 0;
-                currentX = 0;
+            });
+        }
+
+        // 智能判定一键备份按钮是否该显示（修复了计数逻辑偏差）
+        function checkBackupButtonVisibility() {
+            const actionArea = document.getElementById('actionArea');
+            // 只要翻过的页数等于总页数减一（意味着前4张翻完，当前正展示第5张最后一页），就唤醒按钮
+            if (currentFlippedCount === totalPages - 1) {
+                actionArea.classList.add('visible');
+            } else {
+                actionArea.classList.remove('visible');
             }
-
-            const stage = document.getElementById('bookStage');
-            
-            // 鼠标事件兼容
-            stage.addEventListener('mousedown', dragStart);
-            window.addEventListener('mousemove', dragMove);
-            window.addEventListener('mouseup', dragEnd);
-
-            // 移动/平板触控事件兼容
-            stage.addEventListener('touchstart', dragStart, { passive: true });
-            stage.addEventListener('touchmove', dragMove, { passive: true });
-            stage.addEventListener('touchend', dragEnd);
         }
 
-        // 6. 一键备份核心数据按钮逻辑
-        function triggerBackup() {
-            const timestamp = new Date().getTime();
-            const randomHex = Math.random().toString(16).substring(2, 10).toUpperCase();
-            const mockCode = `BAK-CLOUD-${randomHex}-${timestamp}\nSYS-INTEGRITY: SUCCESS\nBLOCK-VERIFY: OK\nMD5: ${Math.random().toString(36).substring(2, 15)}`;
-            
-            document.getElementById('codeBox').innerText = mockCode;
-            document.getElementById('modalOverlay').classList.add('active');
+        // ================= 核心4: 5秒定时模拟上传动画与固证弹窗 =================
+        function startUploadBackup() {
+            if (isUploading) return; // 状态锁，防止5秒内重复点击
+            isUploading = true;
+
+            const btn = document.getElementById('backupBtn');
+            let countdown = 5;
+
+            // 改变按钮状态，展示上传中的倒计时反馈
+            btn.style.background = "#4b5563";
+            btn.style.cursor = "not-allowed";
+            btn.innerText = `⏳ 正在打包同步至云端... ${countdown}s`;
+
+            // 开启5秒精确定时器
+            const timer = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    btn.innerText = `⏳ 正在打包同步至云端... ${countdown}s`;
+                } else {
+                    clearInterval(timer); // 5秒到，销毁定时器
+                    
+                    // 还原备份按钮原本的绿色状态与可用性
+                    btn.style.background = "linear-gradient(135deg, #10b981, #059669)";
+                    btn.style.cursor = "pointer";
+                    btn.innerText = "一键备份机密档案";
+                    isUploading = false;
+
+                    // 弹出固证数值弹窗
+                    openPopModal();
+                }
+            }, 1000);
         }
 
-        function closeModal() {
-            document.getElementById('modalOverlay').classList.remove('active');
+        // 弹窗展示控制
+        function openPopModal() {
+            document.getElementById('valueBox').innerText = '233'; // 写入固定数字
+            document.getElementById('maskOverlay').classList.add('active');
+        }
+
+        function closePopModal() {
+            document.getElementById('maskOverlay').classList.remove('active');
         }
     </script>
 </body>
