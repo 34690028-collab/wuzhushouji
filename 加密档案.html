@@ -5,483 +5,279 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>响应式云盘档案系统</title>
     <style>
-        /* 全局基础重置 */
+        /* 全局基础重置与防错 */
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         body, html { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f8fafc; overflow: hidden; }
 
-        /* 全局路由返回键 (带#路径) */
-        .global-back-btn { position: fixed; top: 16px; left: 16px; padding: 10px 18px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; border-radius: 20px; text-decoration: none; font-size: 13px; z-index: 999; display: flex; align-items: center; gap: 6px; transition: all 0.3s; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .global-back-btn:hover { color: #fff; border-color: #38bdf8; transform: translateX(-2px); }
+        /* 全局顶部返回路径键 */
+        .global-back-btn { position: fixed; top: 16px; left: 16px; padding: 10px 18px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; border-radius: 20px; text-decoration: none; font-size: 13px; z-index: 999; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .global-back-btn:hover { color: #fff; border-color: #38bdf8; }
 
         /* 单页视图面板通用容器 */
         .view-panel { position: absolute; width: 100%; height: 100%; top: 0; left: 0; display: none; align-items: center; justify-content: center; flex-direction: column; overflow: hidden; z-index: 10; }
         .view-panel.active { display: flex; }
 
-        /* 核心多端自适应：竖版固定比例外壳（兼容手机、平板、笔记本、台式机） */
-        .responsive-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            max-width: 450px;       /* 限制最大宽度，保持移动端黄金竖版比例 */
-            max-height: 850px;      /* 限制最大高度 */
-            aspect-ratio: 9 / 16;   /* 强制 9:16 竖版 */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            margin: auto;
-        }
-
-        /* 当在宽屏大设备（台式机/笔记本）上时，外层包裹轻微发光边框作为舞台 */
+        /* 核心多端自适应外壳 */
+        .responsive-container { position: relative; width: 100%; height: 100%; max-width: 450px; max-height: 850px; aspect-ratio: 9 / 16; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; margin: auto; }
         @media (min-width: 768px) {
             body { display: flex; align-items: center; justify-content: center; background: #070a13; }
-            .responsive-container { background: #0f172a; border-radius: 32px; border: 1px solid rgba(56, 189, 248, 0.15); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); }
+            .responsive-container { background: #0f172a; border-radius: 32px; border: 1px solid rgba(56, 189, 248, 0.15); box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
         }
-        /* 登录卡片布局 */
-        .login-card {
-            width: 100%;
-            background: rgba(30, 41, 59, 0.4);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 32px 24px;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            text-align: center;
-        }
-        .login-card h2 { font-size: 24px; font-weight: 600; margin-bottom: 8px; color: #f8fafc; }
+        /* 登录卡片 */
+        .login-card { width: 100%; background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 32px 24px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.08); text-align: center; }
+        .login-card h2 { font-size: 24px; margin-bottom: 8px; color: #f8fafc; }
         .login-card p { font-size: 14px; color: #64748b; margin-bottom: 28px; }
-
-        /* 输入框容器 */
         .input-group { width: 100%; margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 8px; font-size: 13px; color: #94a3b8; font-weight: 500; }
-        .input-group input {
-            width: 100%;
-            padding: 14px 16px;
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            color: #fff;
-            font-size: 15px;
-            outline: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .input-group input:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); background: rgba(15, 23, 42, 0.9); }
-        
-        /* 登录按钮 */
-        .login-btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #38bdf8, #0284c7);
-            border: none;
-            border-radius: 12px;
-            color: #fff;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
-        }
-        .login-btn:hover { opacity: 0.95; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(56, 189, 248, 0.3); }
-        .error-msg { color: #f43f5e; font-size: 13px; margin-top: 12px; min-height: 18px; font-weight: 500; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 13px; color: #94a3b8; }
+        .input-group input { width: 100%; padding: 14px 16px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; color: #fff; font-size: 15px; outline: none; }
+        .input-group input:focus { border-color: #38bdf8; }
+        .login-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #38bdf8, #0284c7); border: none; border-radius: 12px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .error-msg { color: #f43f5e; font-size: 13px; margin-top: 12px; min-height: 18px; }
 
-        /* 真实图片加载动画视图样式 */
-        .loader-wrapper { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .spinner-ring {
-            width: 64px;
-            height: 64px;
-            border: 4px solid rgba(56, 189, 248, 0.1);
-            border-top-color: #38bdf8;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 20px;
-        }
+        /* 真实加载页面 */
+        .spinner-ring { width: 64px; height: 64px; border: 4px solid rgba(56, 189, 248, 0.1); border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 20px; }
         .progress-text { font-size: 18px; color: #f8fafc; font-weight: 600; margin-bottom: 6px; font-family: monospace; }
         .progress-sub { font-size: 13px; color: #64748b; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        /* 三维仿纸翻页舞台 */
-        .archive-stage {
-            position: relative;
-            width: 100%;
-            height: 70vh;
-            max-height: 520px;
-            perspective: 2000px;
-            -webkit-perspective: 2000px;
-            margin-bottom: 20px;
+        /* 3D 档案阅览舞台 */
+        .archive-stage { position: relative; width: 100%; height: 70vh; max-height: 520px; perspective: 2000px; -webkit-perspective: 2000px; margin-bottom: 20px; }
+        
+        /* 正反双向 3D 纸张过渡动效 */
+        .page-card { 
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0; 
+            transform-style: preserve-3d; -webkit-transform-style: preserve-3d; transform-origin: left center; 
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s, visibility 0.6s; 
+            background: #1e293b; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 20px rgba(0,0,0,0.3); 
+            opacity: 1; visibility: visible; transform: rotateY(0deg) scale(1);
         }
-        /* 单张卡片书页（核心：左侧轴心旋转） */
-        .page-card {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            transform-style: preserve-3d;
-            -webkit-transform-style: preserve-3d;
-            transform-origin: left center;
-            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-            background: #1e293b;
-            border-radius: 16px;
-            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.05);
-            cursor: grab;
-        }
-        .page-card:active { cursor: grabbing; }
         .page-card img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
         
-        /* 书页翻开背面的黑影遮罩层，模拟光影遮挡 */
-        .page-card::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            background: rgba(0,0,0,0.85);
-            opacity: 0;
-            transition: opacity 0.6s;
-            pointer-events: none;
-        }
-        /* 翻过去的状态：向左甩出 145 度并微缩，露出下方卡片 */
-        .page-card.flipped { transform: rotateY(-145deg) scale(0.96); z-index: 10 !important; }
-        .page-card.flipped::after { opacity: 0.5; }
+        /* 后翻（翻开）隐藏状态 */
+        .page-card.flipped { transform: rotateY(-135deg) scale(0.92); opacity: 0; pointer-events: none; visibility: hidden; }
 
-        /* 一键备份按钮外壳：默认透明且不可交互 */
-        .action-area {
-            width: 100%;
-            text-align: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s ease, transform 0.4s ease;
-            transform: translateY(10px);
-            z-index: 100;
-        }
-        .action-area.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
-        .backup-action-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 12px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); transition: all 0.2s; }
-        .backup-action-btn:hover { opacity: 0.95; transform: translateY(-1px); }
+        /* 一键备份控制区 */
+        .action-area { width: 100%; text-align: center; display: none; z-index: 105; position: relative; }
+        .action-area.visible { display: block; }
+        .backup-action-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 12px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
 
-        /* 全局高斯模糊遮罩弹窗 */
-        .mask-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 10, 19, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+        /* 高斯模糊遮罩弹窗 */
+        .mask-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 10, 19, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 9999; }
         .mask-overlay.active { display: flex; }
-        .alert-card { background: #1e293b; border: 1px solid rgba(255,255,255,0.08); padding: 32px 24px; border-radius: 24px; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
-        .alert-card h3 { font-size: 18px; margin-bottom: 12px; color: #10b981; }
-        .value-box { background: #0b0f19; border: 1px solid rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; font-family: monospace; font-size: 28px; font-weight: bold; color: #38bdf8; letter-spacing: 2px; margin-bottom: 24px; }
-        .confirm-btn { width: 100%; padding: 12px; background: rgba(255,255,255,0.08); border: none; border-radius: 10px; color: #94a3b8; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-        .confirm-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+        .alert-card { background: #1e293b; border: 1px solid rgba(255,255,255,0.08); padding: 32px 24px; border-radius: 24px; width: 90%; max-width: 380px; text-align: center; }
+        .value-box { background: #0b0f19; padding: 16px; border-radius: 12px; font-size: 28px; font-weight: bold; color: #38bdf8; margin: 16px 0 24px; }
+        .confirm-btn { width: 100%; padding: 12px; background: rgba(255,255,255,0.08); border: none; border-radius: 10px; color: #fff; cursor: pointer; }
     </style>
 </head>
 <body>
     <!-- ================= 1. 登录界面 ================= -->
     <div id="loginView" class="view-panel active">
-        <!-- 路由路径返回键 -->
         <a class="global-back-btn" href="D艾琳·索恩详情.html">← 退出系统</a>
-        
         <div class="responsive-container">
             <div class="login-card">
                 <h2>网络云盘系统</h2>
                 <p>内部机密档案安全验证中心</p>
-                
                 <div class="input-group">
                     <label for="username">管理账号</label>
-                    <input type="text" id="username" placeholder="***" autocomplete="off">
+                    <input type="text" id="username" placeholder="请输入管理账号" autocomplete="off">
                 </div>
                 <div class="input-group">
                     <label for="password">安全密码</label>
-                    <input type="password" id="password" placeholder="***">
+                    <input type="password" id="password" placeholder="请输入安全密码">
                 </div>
-                
                 <button class="login-btn" onclick="handleLogin()">安全验证登录</button>
                 <div id="errorMsg" class="error-msg"></div>
             </div>
         </div>
     </div>
 
-    <!-- ================= 2. 真实图片预加载动画界面 ================= -->
+    <!-- ================= 2. 图片预加载界面 ================= -->
     <div id="loadingView" class="view-panel">
-        <a class="global-back-btn" href="#/login" onclick="cancelLoading(); return false;">← 中断加载</a>
-        
         <div class="responsive-container">
-            <div class="loader-wrapper">
-                <div class="spinner-ring"></div>
-                <div id="progressText" class="progress-text">0%</div>
-                <div id="progressSub" class="progress-sub">正在载入档案切片资源...</div>
-            </div>
+            <div class="spinner-ring"></div>
+            <div id="progressText" class="progress-text">0%</div>
+            <div id="progressSub" class="progress-sub">正在载入档案切片资源...</div>
         </div>
     </div>
 
     <!-- ================= 3. 三维档案翻页阅览界面 ================= -->
     <div id="archiveView" class="view-panel">
         <a class="global-back-btn" href="#/logout" onclick="logoutSystem(); return false;">← 注销退出</a>
-        
         <div class="responsive-container">
-            <!-- 3D 翻页主舞台 -->
-            <div class="archive-stage" id="archiveStage">
-                <!-- 预留 5 张贴图路径，按层级堆叠 (z-index 由高到低) -->
-                <!-- 书页 1 -->
-                <div class="page-card" style="z-index: 5;">
-                    <img src="机密1.jpg" alt="档案1(可替换本地路径)">
-                </div>
-                <!-- 书页 2 -->
-                <div class="page-card" style="z-index: 4;">
-                    <img src="机密2.jpg" alt="档案2(可替换本地路径)">
-                </div>
-                <!-- 书页 3 -->
-                <div class="page-card" style="z-index: 3;">
-                    <img src="机密3.jpg" alt="档案3(可替换本地路径)">
-                </div>
-                <!-- 书页 4 -->
-                <div class="page-card" style="z-index: 2;">
-                    <img src="机密4.jpg" alt="档案4(可替换本地路径)">
-                </div>
-                <!-- 书页 5 (最后一页) -->
-                <div class="page-card" style="z-index: 1;">
-                    <img src="机密5.jpg" alt="档案5(可替换本地路径)">
-                </div>
+            
+            <!-- 全透明触控罩：负责在全端监听点击。左右对半分，左边点退，右边点进 -->
+            <div id="clickCover" style="position: absolute; width:100%; height:70vh; max-height:520px; top:24px; left:0; z-index:100; display:flex;">
+                <div onclick="handleGlobalTurn('prev')" style="width:50%; height:100%; cursor:pointer;"></div>
+                <div onclick="handleGlobalTurn('next')" style="width:50%; height:100%; cursor:pointer;"></div>
             </div>
 
-            <!-- 一键备份控制区 -->
+            <div class="archive-stage">
+                <!-- 预留 5 张贴图路径 -->
+                <div class="page-card" style="z-index: 5;"><img src="机密1.jpg" alt="1"></div>
+                <div class="page-card" style="z-index: 4;"><img src="机密2.jpg" alt="2"></div>
+                <div class="page-card" style="z-index: 3;"><img src="机密3.jpg" alt="3"></div>
+                <div class="page-card" style="z-index: 2;"><img src="机密4.jpg" alt="4"></div>
+                <div class="page-card" style="z-index: 1;"><img src="机密5.jpg" alt="5"></div>
+            </div>
+
             <div id="actionArea" class="action-area">
                 <button class="backup-action-btn" id="backupBtn" onclick="startUploadBackup()">一键备份机密档案</button>
             </div>
         </div>
     </div>
 
-    <!-- ================= 4. 固证数字结果弹窗 ================= -->
+    <!-- ================= 4. 结果弹窗 ================= -->
     <div id="maskOverlay" class="mask-overlay">
         <div class="alert-card">
-            <h3 id="popTitle">📌 物证生成，妥善保管，前往警局举报</h3>
-            <div style="margin: 16px 0;">
-                <div id="valueBox" class="value-box">123</div>
-            </div>
+            <h3>📌物证密钥妥善保管前往警局举报</h3>
+            <div id="valueBox" class="value-box">EPT233</div>
             <button class="confirm-btn" onclick="closePopModal()">确认并关闭</button>
         </div>
     </div>
     <script>
-        // ================= 核心状态配置 =================
+        // ================= [最顶部配置] 在这里修改你的账号和密码 =================
         const CONFIG = {
-            PASSWORD: "1" // 在这里设置你所需要的专属登录密码
+            ACCOUNT: "1",    // 想要固定的账号写在这里
+            PASSWORD: "1"  // 想要固定的密码写在这里
         };
 
         let currentFlippedCount = 0; // 当前已翻开的页数
         const totalPages = 5;       // 总档案页数
         let isUploading = false;     // 防二次触发上传状态锁
 
-        // ================= 核心1: 登录验证与跳转 =================
-    function handleLogin() {
-    const userInp = document.getElementById('username').value.trim();
-    const passInp = document.getElementById('password').value;
-    const errorDiv = document.getElementById('errorMsg');
+        // ================= 1. 登录验证与跳转 =================
+        function handleLogin() {
+            const userInp = document.getElementById('username').value.trim();
+            const passInp = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMsg');
 
-    // 1. 在这里修改你要固定的【账号】（把 admin 改成你想要的）
-    if (userInp !== "1") {
-        errorDiv.innerText = "管理账号错误";
-        return;
-    }
+            // 严格验证账号
+            if (userInp !== CONFIG.ACCOUNT) {
+                errorDiv.innerText = "管理账号错误";
+                return;
+            }
+            // 严格验证密码
+            if (passInp !== CONFIG.PASSWORD) {
+                errorDiv.innerText = "安全密码错误，拒绝访问";
+                return;
+            }
 
-    // 2. 校验预设的安全密码
-    if (passInp !== CONFIG.PASSWORD) {
-        errorDiv.innerText = "安全密码错误，拒绝访问";
-        return;
-    }
+            errorDiv.innerText = ""; 
+            switchView('loadingView'); 
+            startImagePreloader();    
+        }
 
-    errorDiv.innerText = ""; 
-    switchView('loadingView'); 
-    startImagePreloader();    
-}
-
-        // 切换全屏视图面板工具函数
+        // 切换视图通用函数
         function switchView(viewId) {
-            document.querySelectorAll('.view-panel').forEach(panel => {
-                panel.classList.remove('active');
-            });
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
         }
 
-        // ================= 核心2: 真实图片速度预加载监听 =================
+        // ================= 2. 真实图片速度预加载监听 =================
         function startImagePreloader() {
             const imgElements = document.querySelectorAll('.page-card img');
-            const totalImages = imgElements.length;
             let loadedCount = 0;
+            
+            document.getElementById('progressText').innerText = "0%";
+            document.getElementById('progressSub').innerText = `正在初始化高密链路 (0/${imgElements.length})...`;
 
-            const progressText = document.getElementById('progressText');
-            const progressSub = document.getElementById('progressSub');
-
-            progressText.innerText = "0%";
-            progressSub.innerText = `正在初始化高密链路 (0/${totalImages})...`;
-
-            // 提取 5 张贴图路径进行并发异步加载监听
             imgElements.forEach((img) => {
                 const fakeImg = new Image();
                 fakeImg.src = img.src;
-
-                // 成功载入单张贴图触发
-                fakeImg.onload = () => {
+                fakeImg.onload = fakeImg.onerror = () => {
                     loadedCount++;
-                    updateProgress(loadedCount, totalImages);
-                };
-
-                // 若贴图路径失效、断网或加载失败，跳过计数防止程序卡死死锁
-                fakeImg.onerror = () => {
-                    loadedCount++;
-                    updateProgress(loadedCount, totalImages);
+                    const percent = Math.floor((loadedCount / imgElements.length) * 100);
+                    document.getElementById('progressText').innerText = `${percent}%`;
+                    document.getElementById('progressSub').innerText = `正在下载档案切片集群 (${loadedCount}/${imgElements.length})...`;
+                    
+                    // 5张贴图资源完全下载完毕后，平滑导入3D阅览档案舞台
+                    if (loadedCount >= imgElements.length) {
+                        setTimeout(() => { 
+                            switchView('archiveView'); 
+                            initFlipEngine();
+                        }, 400);
+                    }
                 };
             });
         }
-
-        // 动态计算百分比更新
-        function updateProgress(loaded, total) {
-            const percent = Math.floor((loaded / total) * 100);
-            document.getElementById('progressText').innerText = `${percent}%`;
-            document.getElementById('progressSub').innerText = `正在下载档案切片集群 (${loaded}/${total})...`;
-
-            // 5张贴图资源完全下载完毕后，平滑导入3D阅览档案舞台
-            if (loaded >= total) {
-                setTimeout(() => {
-                    switchView('archiveView');
-                    initFlipEngine(); // 初始化移动端/PC端 3D 手势拖拽引擎
-                }, 500);
-            }
-        }
-
-        // 返回及取消加载逻辑
-        function cancelLoading() {
-            switchView('loginView');
-        }
-        function resetToLogin() {
-            switchView('loginView');
-        }
-        function logoutSystem() {
-            // 清理状态，重置表单并返回登录页面路径
-            document.getElementById('password').value = "";
-            document.getElementById('errorMsg').innerText = "";
-            
-            // 还原所有翻过去的页面
-            document.querySelectorAll('.page-card').forEach(page => {
-                page.classList.remove('flipped');
-            });
+        // ================= 3. 跨端通用点击翻页引擎与层级冲突控制 =================
+        function initFlipEngine() {
             currentFlippedCount = 0;
             document.getElementById('actionArea').classList.remove('visible');
-            
-            switchView('loginView');
-            window.location.hash = "/login";
-        }
-        // ================= 核心3: 兼容多端(鼠标拖拽/触屏滑动)的3D翻页引擎 =================
-        // ================= 核心3(升级版): 兼容多端、支持前后双向滑动的3D翻页引擎 =================
-        // ================= 核心3(完美修复版): 兼容多端、双向翻页且完美触发备份的引擎 =================
-        // ================= 核心3(点击版): 兼容手机和电脑的左右点击翻页引擎 =================
-        // ================= 核心3(最终修复版): 智能识别最后一页的左右点击引擎 =================
-        function initFlipEngine() {
-            const pages = document.querySelectorAll('.page-card');
-            
-            pages.forEach((page, index) => {
-                page.addEventListener('touchstart', handlePageClick, { passive: false });
-                page.addEventListener('click', handlePageClick);
-
-                function handlePageClick(e) {
-                    if (e.type === 'touchstart') {
-                        e.preventDefault();
-                    }
-
-                    // 计算点击位置在卡片上的横向百分比
-                    const rect = page.getBoundingClientRect();
-                    const clientX = e.touches ? e.touches.clientX : e.clientX;
-                    const clickXPercentage = (clientX - rect.left) / rect.width;
-
-                    // --- 场景 A: 点击右半边 (前进) ---
-                    if (clickXPercentage > 0.5) {
-                        // 核心修复：如果是最后一张图（第5页，索引是4），右半边不响应任何翻页，把点击留给底部的备份按钮
-                        if (index === totalPages - 1) {
-                            return; 
-                        }
-
-                        if (!page.classList.contains('flipped')) {
-                            page.classList.add('flipped');
-                            currentFlippedCount++;
-                            checkBackupButtonVisibility();
-                        }
-                    } 
-                    // --- 场景 B: 点击左半边 (回翻) ---
-                    else {
-                        // 核心修复：如果你当前已经在最后一页了，点击左半边直接去帮用户合上倒数第二页（第4页）
-                        if (index === totalPages - 1) {
-                            const prevPage = pages[totalPages - 2]; // 找到前一页
-                            if (prevPage && prevPage.classList.contains('flipped')) {
-                                prevPage.classList.remove('flipped');
-                                currentFlippedCount--;
-                                checkBackupButtonVisibility();
-                            }
-                            return;
-                        }
-
-                        // 正常层级下的常规回翻逻辑
-                        const allPages = Array.from(document.querySelectorAll('.page-card'));
-                        const flippedPages = allPages.filter(p => p.classList.contains('flipped'));
-                        
-                        if (flippedPages.length > 0) {
-                            const lastFlippedPage = flippedPages[flippedPages.length - 1];
-                            lastFlippedPage.classList.remove('flipped');
-                            currentFlippedCount--;
-                            checkBackupButtonVisibility();
-                        }
-                    }
-                }
-            });
+            document.getElementById('clickCover').style.zIndex = "100"; // 确保返回时点击恢复
+            document.querySelectorAll('.page-card').forEach(p => p.classList.remove('flipped'));
         }
 
-        // 智能判定一键备份按钮是否该显示（修复了计数逻辑偏差）
-        function checkBackupButtonVisibility() {
-            const actionArea = document.getElementById('actionArea');
-            // 只要翻过的页数等于总页数减一（意味着前4张翻完，当前正展示第5张最后一页），就唤醒按钮
-            if (currentFlippedCount === totalPages - 1) {
-                actionArea.classList.add('visible');
+        /**
+         * 统一控制核心中控
+         * @param {string} direction - 'next' 代表点右侧前进, 'prev' 代表点左侧回翻
+         */
+        function handleGlobalTurn(direction) {
+            const cards = document.querySelectorAll('.page-card');
+            
+            if (direction === 'next') {
+                if (currentFlippedCount >= 4) return; // 严格限制：第5页时右击不再翻页
+
+                cards[currentFlippedCount].classList.add('flipped');
+                currentFlippedCount++;
             } else {
+                if (currentFlippedCount <= 0) return;
+
+                currentFlippedCount--;
+                cards[currentFlippedCount].classList.remove('flipped');
+            }
+
+            // 🔑 智能防阻断层级调节
+            const actionArea = document.getElementById('actionArea');
+            const clickCover = document.getElementById('clickCover');
+            
+            if (currentFlippedCount === 4) {
+                // 翻到第五页：按钮立刻浮现，同时将全透明罩的 z-index 沉降到 1，彻底让路给备份按钮点击！
+                actionArea.classList.add('visible');
+                clickCover.style.zIndex = "1"; 
+            } else {
+                // 离开第五页（往回翻）：按钮隐藏，全透明罩恢复 z-index: 100 重新全面统领全屏点击
                 actionArea.classList.remove('visible');
+                clickCover.style.zIndex = "100"; 
             }
         }
 
-        // ================= 核心4: 5秒定时模拟上传动画与固证弹窗 =================
+        // ================= 4. 5秒定时模拟上传动画与固证弹窗 =================
         function startUploadBackup() {
-            if (isUploading) return; // 状态锁，防止5秒内重复点击
+            if (isUploading) return; 
             isUploading = true;
-
+            
             const btn = document.getElementById('backupBtn');
             let countdown = 5;
-
-            // 改变按钮状态，展示上传中的倒计时反馈
-            btn.style.background = "#4b5563";
-            btn.style.cursor = "not-allowed";
             btn.innerText = `⏳ 正在打包同步至云端... ${countdown}s`;
 
-            // 开启5秒精确定时器
+            // 5秒倒计时跑条动画
             const timer = setInterval(() => {
                 countdown--;
                 if (countdown > 0) {
                     btn.innerText = `⏳ 正在打包同步至云端... ${countdown}s`;
                 } else {
-                    clearInterval(timer); // 5秒到，销毁定时器
-                    
-                    // 还原备份按钮原本的绿色状态与可用性
-                    btn.style.background = "linear-gradient(135deg, #10b981, #059669)";
-                    btn.style.cursor = "pointer";
+                    clearInterval(timer);
                     btn.innerText = "一键备份机密档案";
                     isUploading = false;
-
-                    // 弹出固证数值弹窗
-                    openPopModal();
+                    
+                    // 倒计时结束，精确唤醒 123 固证弹窗
+                    document.getElementById('maskOverlay').classList.add('active');
                 }
             }, 1000);
         }
 
-        // 弹窗展示控制
-        function openPopModal() {
-            document.getElementById('valueBox').innerText = 'EPT233'; // 写入固定数字
-            document.getElementById('maskOverlay').classList.add('active');
-        }
-
         function closePopModal() {
             document.getElementById('maskOverlay').classList.remove('active');
+            // 关闭弹窗后，重置点击罩层级，让用户可以随时往左点击回翻
+            document.getElementById('clickCover').style.zIndex = "100";
+        }
+
+        // 顶部注销退出与状态初始化路径重置
+        function logoutSystem() {
+            document.getElementById('password').value = "";
+            document.getElementById('username').value = "";
+            initFlipEngine();
+            switchView('loginView');
         }
     </script>
 </body>
