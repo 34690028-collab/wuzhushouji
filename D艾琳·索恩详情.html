@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蜂鸟 帐号 - 个人控制台</title>
+    <style>
+        /* ================= 全局核心变量与防冲突安全重置 ================= */
+        :root {
+            --google-blue: #1a73e8;
+            --google-blue-hover: #1557b0;
+            --google-blue-alpha: rgba(26, 115, 232, 0.08);
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --bg-main: #ffffff;
+            --bg-sidebar: #ffffff;
+            --border-color: #dadce0;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box !important;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: hidden;
+            display: block !important;
+        }
+
+        a {
+            color: var(--google-blue);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        /* ================= 纯 CSS 绘制的矢量基础图标 ================= */
+        .icon-arrow-left {
+            width: 10px; height: 10px;
+            border-left: 2px solid var(--text-secondary);
+            border-bottom: 2px solid var(--text-secondary);
+            transform: rotate(45deg);
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .icon-chevron-right {
+            width: 8px; height: 8px;
+            border-right: 2px solid var(--text-secondary);
+            border-top: 2px solid var(--text-secondary);
+            transform: rotate(45deg);
+            display: inline-block;
+        }
+
+        /* ================= 顶部固定导航栏 ================= */
+        .header {
+            height: 64px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; position: fixed;
+            top: 0; left: 0; right: 0; background: #fff; z-index: 1000;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .header-right { display: flex; align-items: center; }
+
+        .back-btn {
+            display: flex; align-items: center; justify-content: center;
+            padding: 8px 16px; border-radius: 4px; border: 1px solid var(--border-color);
+            background: #fff; color: var(--text-secondary); font-weight: 500; cursor: pointer;
+        }
+        .back-btn:hover { background: rgba(0,0,0,0.04); color: var(--text-primary); }
+
+        .google-logo-text { font-size: 22px; font-weight: 400; color: var(--text-secondary); }
+        .logo-g { color: #4285F4; font-weight: 500; }
+        .logo-o1 { color: #EA4335; font-weight: 500; }
+        .logo-o2 { color: #FBBC05; font-weight: 500; }
+        .logo-g2 { color: #4285F4; font-weight: 500; }
+        .logo-l { color: #34A853; font-weight: 500; }
+        .logo-e { color: #EA4335; font-weight: 500; }
+        /* ================= 分栏主壳模型与侧边栏 ================= */
+        .wrapper {
+            display: flex; margin-top: 64px; min-height: calc(100vh - 64px);
+        }
+
+        .sidebar {
+            width: 280px; padding: 24px 0; flex-shrink: 0; background: var(--bg-sidebar);
+        }
+
+        .menu-item {
+            display: flex; align-items: center; padding: 12px 24px;
+            color: var(--text-secondary); font-weight: 500; border-radius: 0 50px 50px 0;
+            margin-right: 12px; cursor: pointer;
+        }
+        .menu-item.active { color: var(--google-blue); background-color: var(--google-blue-alpha); }
+        .menu-item:hover:not(.active) { background-color: rgba(0,0,0,0.04); }
+
+        .main-content { flex-grow: 1; padding: 40px 48px; max-width: 1080px; }
+
+        /* ================= 业务内容与网格卡片布局 ================= */
+        .welcome-section { text-align: center; margin-bottom: 32px; }
+        
+        .avatar-container {
+            position: relative; width: 96px; height: 96px; margin: 0 auto 16px;
+        }
+        .user-avatar {
+            width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+            border: 1px solid var(--border-color); background: #e8eaed;
+        }
+        .avatar-edit-overlay {
+            position: absolute; bottom: 0; right: 0; background: #fff;
+            border: 1px solid var(--border-color); border-radius: 50%;
+            width: 32px; height: 32px; display: flex; align-items: center;
+            justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .welcome-title { font-size: 28px; font-weight: 400; margin-bottom: 8px; }
+        .welcome-subtitle { color: var(--text-secondary); font-size: 14px; }
+
+        .cards-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px; margin-top: 32px;
+        }
+        .chrome-card {
+            border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 24px; background: #fff; display: flex;
+            flex-direction: column; justify-content: space-between;
+        }
+        .card-title { font-size: 18px; font-weight: 400; margin-bottom: 12px; color: var(--text-primary); }
+        .card-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6; }
+
+        .data-list { border-top: 1px solid var(--border-color); margin-top: 8px; }
+        .data-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 0; border-bottom: 1px solid #f1f3f4; text-decoration: none !important;
+        }
+        .data-item:hover { background-color: rgba(0,0,0,0.01); text-decoration: none !important; }
+        
+        .data-left-info { display: flex; flex-direction: column; gap: 4px; max-width: 80%; text-align: left; }
+        .data-main-text { font-size: 14px; color: var(--google-blue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .data-sub-text { font-size: 12px; color: var(--text-secondary); }
+        .data-badge { font-size: 12px; padding: 2px 8px; border-radius: 12px; background: #e8f0fe; color: var(--google-blue); font-weight: 500; }
+        .data-badge.danger { background: #fce8e6; color: #c5221f; }
+        .card-action-link { display: inline-block; margin-top: 16px; font-weight: 500; color: var(--google-blue); text-align: left; }
+
+        /* ================= 移动端/多尺寸屏幕自适应微调 ================= */
+        @media (max-width: 860px) {
+            .wrapper { flex-direction: column; }
+            .sidebar { width: 100%; padding: 12px; display: flex; overflow-x: auto; border-bottom: 1px solid var(--border-color); }
+            .menu-item { border-radius: 20px; margin-right: 8px; padding: 8px 16px; white-space: nowrap; }
+            .main-content { padding: 20px 16px; }
+            .cards-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部固定导航栏 -->
+    <header class="header">
+        <div class="header-left">
+            <a href="浏览器.html" class="back-btn"><span class="icon-arrow-left"></span>返回</a>
+            <div class="google-logo-text">
+                <span class="logo-g">H</span><span class="logo-o1">y</span><span class="logo-o2">m</span><span class="logo-g2">m</span><span class="logo-l">i</span><span class="logo-e">n</span></span><span class="logo-o1">g</span><span class="logo-o2">b</span><span class="logo-g2">i</span><span class="logo-g">r</span><span class="logo-o1">d</span> 帐号
+            </div>
+        </div>
+        <div class="header-right">
+            <!-- 右上角小头像：已为您精准绑定一键应用名称 -->
+            <img src="浏览器2用户名图片.png" alt="User" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color); display: block;">
+        </div>
+    </header>
+
+    <div class="wrapper">
+        <!-- 侧边栏导航 -->
+        <nav class="sidebar">
+            <div class="menu-item active">首页</div>
+            <a href="#" class="menu-item">理财</a>  
+            <div class="menu-item">数据和隐私</div>
+            <div class="menu-item">安全性</div>
+            <div class="menu-item">付款和订阅</div>
+        </nav>
+
+        <!-- 主内容数据流区域 -->
+        <main class="main-content">
+            
+            <!-- 欢迎与中间大头像区域（标签严格原地独立闭合） -->
+            <div class="welcome-section">
+                <div class="avatar-container">
+                    <!-- 中间大头像：已为您精准绑定一键应用名称 -->
+                    <img class="user-avatar" src="浏览器2用户名图片.png" alt="User Avatar">
+                    <div class="avatar-edit-overlay">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#5f6368">
+                            <circle cx="12" cy="12" r="3.2"/>
+                            <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+                        </svg>
+                    </div>
+                </div>
+                <h1 class="welcome-title">尊敬的用户：您好!</h1>
+                <p class="welcome-subtitle">管理您的信息、隐私和安全，以更好地让 蜂鸟 为您服务</p>
+            </div>
+
+            <!-- 卡片自适应网格开始 -->
+            <div class="cards-grid">
+                <!-- 卡片一：最近的历史浏览记录 (解谜核心区) -->
+                <div class="chrome-card">
+                    <div>
+                        <h2 class="card-title">最近的历史浏览记录</h2>
+                        <p class="card-desc">系统为您保存的最近网页访问快照，点击可重新访问关键线索页面。</p>
+                        
+                        <div class="data-list">
+                            <!-- ❗日后添加或调整记录：修改 href、名称和时间即可 -->
+                            <a href="加密档案.html" class="data-item">
+                                <div class="data-left-info">
+                                    <span class="data-main-text">蜂鸟加密网络云盘</span>
+                                    <span class="data-sub-text">三天前 22:41 加密云盘</span>
+                                </div>
+                                <span class="icon-chevron-right"></span>
+                            </a>
+                            
+                            <a href="新闻素材.html" class="data-item">
+                                <div class="data-left-info">
+                                    <span class="data-main-text">某制药公司新闻素材备份</span>
+                                    <span class="data-sub-text">五天前 08:41  采访纪要</span>
+                                </div>
+                                <span class="icon-chevron-right"></span>
+                            </a>
+
+                            <a href="#.html" class="data-item">
+                                <div class="data-left-info">
+                                    <span class="data-main-text">药企包揽警局全员医疗，执法公正蒙上阴影</span>
+                                    <span class="data-sub-text">半月前 07:11 采访纪要</span>
+                                </div>
+                                <span class="icon-chevron-right"></span>
+                            </a>
+                                                        <a href="#.html" class="data-item">
+                                <div class="data-left-info">
+                                    <span class="data-main-text">内部文件披露：BFPD紧急调度台(911)存在多处运营疏漏</span>
+                                    <span class="data-sub-text">半个前 16:21 采访纪要</span>
+                                </div>
+                                <span class="icon-chevron-right"></span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- 链接到历史记录详情页 -->
+                    <a href="#.html" class="card-action-link">管理所有历史记录</a>
+                </div>
+
+                <!-- 卡片二：网络购买记录与账单 (剧情与动机线索区) -->
+                <div class="chrome-card">
+                    <div>
+                        <h2 class="card-title">网络购买记录与账单</h2>
+                        <p class="card-desc">通过 蜂鸟闪付 或关联账户完成的线上交易存根，包含数字化商品。</p>
+                        
+                        <div class="data-list">
+                            <!-- ❗日后添加或调整账单：修改 href、账单名、状态及金额 -->
+                            <a href="#.html" class="data-item">
+                                <div class="data-left-info">
+                                    <span class="data-main-text">高清降噪小巧录音笔 转文字会议纪要 录音设备记录神器耳机 蜂鸟自营</span>
+                                    <span class="data-sub-text">订单号：#GP-9661201 · 已收货</span>
+                                </div>
+                                <span class="data-badge">2199.00元</span>
+                            </a>
+                            
+                            <a href="#.html" class="data-item">
+                                <div class="data-left-info">
+                                    <span class="data-main-text">polo衫运动套装女夏季新款冰丝速干女士短袖T恤防走光A字短裙 梦影蓝</span>
+                                    <span class="data-sub-text">订单号：#GP-0056948 · 已收货</span>
+                                </div>
+                                <span class="data-badge">988.99元</span>
+                            </a>
+
+                            <a href="#.html" class="data-item">
+                                <div class="data-left-info">
+                                    <span class="data-main-text">AuAulimon丨Degine 女士夹克 & 芯吸 黑色</span>
+                                    <span class="data-sub-text">订单号：#GP-ERR559 · 已收货</span>
+                                </div>
+                                <span class="data-badge">988.99元</span>
+                            </a>
+                                <a href="#.html" class="data-item">
+                                <div class="data-left-info">
+                                    <span class="data-main-text">ARNMNI/官方旗舰女秀场同款青果领单粒扣西装外套春夏</span>
+                                    <span class="data-sub-text">订单号：#GP-ERR0031 · 已收货</span>
+                                </div>
+                                <span class="data-badge">7399.00元</span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- 链接到账单明细页 -->
+                    <a href="#.html" class="card-action-link">查看完整账单流向</a>
+                </div>
+
+            </div> <!-- 卡片自适应网格结束 -->
+        </main> <!-- 主内容区域结束 -->
+    </div> <!-- wrapper结束 -->
+</body>
+</html>
