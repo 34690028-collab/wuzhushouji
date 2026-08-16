@@ -251,7 +251,7 @@
     <!-- ================= 4. 固证数字结果弹窗 ================= -->
     <div id="maskOverlay" class="mask-overlay">
         <div class="alert-card">
-            <h3 id="popTitle">📌 电子凭证生成成功</h3>
+            <h3 id="popTitle">📌 物证生成，妥善保管，前往警局举报</h3>
             <div style="margin: 16px 0;">
                 <div id="valueBox" class="value-box">123</div>
             </div>
@@ -377,35 +377,39 @@
                 let startX = 0;
                 let isDragging = false;
 
-                // 1. 触屏触控起始 (移动端)
-                page.addEventListener('touchstart', (e) => {
-                    startX = e.touches.clientX;
-                    isDragging = true;
-                }, { passive: true });
+// 1. 触屏触控起始 (移动端) -> 修改处：passive 改为 false
+page.addEventListener('touchstart', (e) => {
+    startX = e.touches.clientX;
+    isDragging = true;
+}, { passive: false });
 
-                // 2. 鼠标点击起始 (PC端)
-                page.addEventListener('mousedown', (e) => {
-                    startX = e.clientX;
-                    isDragging = true;
-                });
+// 2. 鼠标点击起始 (PC端) -> 保持不变
+page.addEventListener('mousedown', (e) => {
+    startX = e.clientX;
+    isDragging = true;
+});
 
-                // 3. 触屏拖拽滑动 (移动端)
-                page.addEventListener('touchmove', (e) => {
-                    if (!isDragging) return;
-                    handleMoveCheck(e.touches.clientX, page, index);
-                }, { passive: true });
+// 3. 触屏拖拽滑动 (移动端) -> 修改处：加入 preventDefault() 阻止手机网页滚动
+page.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    
+    // 核心修复：强制阻止手机默认的网页滚动行为
+    e.preventDefault(); 
+    
+    handleMoveCheck(e.touches.clientX, page, index);
+}, { passive: false });
 
-                // 4. 鼠标指针拖拽 (PC端)
-                page.addEventListener('mousemove', (e) => {
-                    if (!isDragging) return;
-                    handleMoveCheck(e.clientX, page, index);
-                });
+// 4. 鼠标指针拖拽 (PC端) -> 保持不变
+page.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    handleMoveCheck(e.clientX, page, index);
+});
 
-                // 5. 交互结束释放锁
-                const handleEnd = () => { isDragging = false; };
-                page.addEventListener('touchend', handleEnd);
-                page.addEventListener('mouseup', handleEnd);
-                page.addEventListener('mouseleave', handleEnd);
+// 5. 交互结束释放锁 -> 保持不变
+const handleEnd = () => { isDragging = false; };
+page.addEventListener('touchend', handleEnd);
+page.addEventListener('mouseup', handleEnd);
+page.addEventListener('mouseleave', handleEnd);
 
                 // 核心手势位移双向判定
                 function handleMoveCheck(currentX, element, currentIndex) {
@@ -483,7 +487,7 @@
 
         // 弹窗展示控制
         function openPopModal() {
-            document.getElementById('valueBox').innerText = '233'; // 写入固定数字
+            document.getElementById('valueBox').innerText = 'EPT233'; // 写入固定数字
             document.getElementById('maskOverlay').classList.add('active');
         }
 
