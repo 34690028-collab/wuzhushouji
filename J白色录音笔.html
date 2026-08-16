@@ -1,0 +1,362 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Audio Player</title>
+    <style>
+        /* ========================================================
+           【核心调节区】您需要的所有尺寸和位置调节，全部在这里！
+           ======================================================== */
+:root {
+    /* 1. 整体大小控制 */
+    --recorder-size: 70vmin;     /* 整体图层大小：数值越大录音笔越大 */
+
+    /* 2. 镂空屏幕 Canvas 位置与大小微调 */
+    --screen-top: 24%;         
+    --screen-left: 40%;        
+    --screen-width: 20%;       
+    --screen-height: 21%;      
+
+    /* 3. 中间播放按钮位置与大小微调 */
+    --btn-top: 59.55%;              
+    --btn-left: 46.29%;             
+    --btn-size: 7.5%;              
+
+    /* 4. 底部上一首/下一首按钮参数 */
+    --bottom-btn-width: 18%;
+    --bottom-btn-height: 8%;
+    --bottom-btn-gap: 12%;
+    --bottom-btn-bottom: 5%;
+}
+
+/* 基础页面重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* =======================================================
+   【防挤压核心实现】：录音笔主容器开启容器查询上下文
+   ======================================================= */
+.recorder-container {
+    position: relative;
+    width: var(--recorder-size);
+    /* 假设录音笔原图高宽比约为 1 : 2.45，锁死比例防止图像变形 */
+    aspect-ratio: 1 / 2.45; 
+    
+    /* 关键属性：将此容器设为字体的缩放参考坐标系 */
+    container-type: inline-size; 
+    
+    background-image: url('image_7cPIwT.png'); 
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* 镂空屏幕图层 */
+.recorder-screen {
+    position: absolute;
+    top: var(--screen-top);
+    left: var(--screen-left);
+    width: var(--screen-width);
+    height: var(--screen-height);
+    background-color: transparent; /* 透明色，直接露出背景图的黑屏 */
+    
+    /* 完美居中内部文字 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* 核心防御：万一文字极长，直接裁剪，绝不撑大或挤压变形 */
+    overflow: hidden; 
+    padding: 2px;
+}
+
+/* 🔴 绝对防挤压的红色数字字体 */
+.screen-text {
+    color: #ff3b30; 
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    text-shadow: 0 0 6px rgba(255, 59, 48, 0.6);
+    text-align: center;
+
+    /* ----------------------------------------------------
+       【三大防变形铁律】
+       ---------------------------------------------------- */
+    /* 1. 动态字号：15cqw 代表字号永远是【录音笔整体宽度】的 15%。
+          无论外部浏览器变成手机还是台式机，文字都与机身同步放大缩小。 */
+    font-size: 15cqw; 
+
+    /* 2. 强行禁止换行：即使屏幕变窄，文字也绝不换行堆积成两行 */
+    white-space: nowrap; 
+
+    /* 3. 终极防溢出：若字号依然偏大，自动等比例缩小塞进屏幕，绝不挤压字体本身 */
+    object-fit: contain; 
+    max-width: 100%;
+}
+
+
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    
+    /* 1. 核心：双层背景叠加 */
+    /* 第一层：叠加微弱的沙粒感/噪点，消除纯颜色的生硬感 */
+    /* 第二层：还原图片中“中心偏白亮、向外过渡为冷灰、边缘死黑”的摄影棚灯光 */
+    background: 
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://w3.org id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.025'/%3E%3C/svg%3E"),
+        radial-gradient(circle at 50% 45%, #5a5f66 0%, #2e3136 45%, #151618 100%);
+    
+    background-color: #151618;
+}
+
+
+        /* 主容器：大小由最顶部的 --recorder-size 变量统一控制 */
+        .player-container {
+            position: relative;
+            width: var(--recorder-size);      
+            height: var(--recorder-size);     
+        }
+
+        /* 底层屏幕 Canvas */
+        .screen-canvas {
+            position: absolute;
+            top: var(--screen-top);          
+            left: var(--screen-left);        
+            width: var(--screen-width);       
+            height: var(--screen-height);       
+            background-color: #000000;
+            z-index: 1;
+            /* 🟢 完美继承：绿色外发光荧光滤镜 */
+            filter: drop-shadow(0 0 6px rgba(0, 255, 100, 0.8));
+        }
+
+        /* 顶层外壳：使用您的真实图片 '录音笔.png' */
+        .recorder-shell {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* 如果没有图片，这里会显示空白，建议保留图片文件或在CSS中设置背景色调试 */
+            background: url('录音笔白.png') no-repeat center;
+            background-size: contain; 
+            z-index: 2;
+            pointer-events: none;        /* 让点击穿透外壳作用到下层按钮 */
+        }
+
+        /* 中间播放按钮点击热区 */
+        .center-play-btn {
+            position: absolute;
+            top: var(--btn-top);         
+            left: var(--btn-left);
+            width: var(--btn-size);
+            height: var(--btn-size);
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 3;
+            /* 🔴 调试提示：当前带有 0.4 半透明红色，方便您肉眼确认是否对齐中间圆盘键。
+               当您确认在手机/电脑上都对齐后，请把下方的 0.4 改成 0 即可完美隐藏它 */
+            background: rgba(189, 152, 152, 0.4); 
+            transition: background-color 0.2s;
+        }
+                .nav-btn {
+            width: var(--bottom-btn-width);
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #00ff66;
+            font-size: clamp(12px, 2.5vmin, 16px);
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+        }
+        
+               .bottom-buttons {
+            position: absolute;
+            bottom: var(--bottom-btn-bottom);
+            width: 100%;
+            height: var(--bottom-btn-height);
+            display: flex;
+            justify-content: space-between;
+            padding: 0 calc((100% - var(--bottom-btn-width)*2 - var(--bottom-btn-gap)) / 2);
+            z-index: 4;
+        }
+        .center-play-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <!-- 新增镂空屏幕 Canvas 元素 -->
+        <canvas id="screen" class="screen-canvas"></canvas>
+        <!-- 中层 录音笔透明镂壳 -->
+        <div class="recorder-shell"></div>
+        <!-- 顶层 按钮点击透明触控热区 -->
+        <div id="playBtn" class="center-play-btn"></div>
+    </div>
+            <div class="bottom-buttons">
+                <a href="#" class="nav-btn" target="_self">返回</a>
+                <a href="#" class="nav-btn" target="_self">下一步</a>
+            </div>
+<script>
+    const playBtn = document.getElementById('playBtn');
+    const canvas = document.getElementById('screen');
+    const ctx = canvas.getContext('2d');
+
+    // 绑定您同目录下的音频文件，请确保名字叫 audio.mp3
+    const audio = new Audio('https://cdn.jsdelivr.net/gh/34690028-collab/wuzhushouji@main/艾琳录音.MP3'); 
+    audio.crossOrigin = "anonymous"; 
+
+    let audioCtx, analyser, source, bufferLength, dataArray;
+    let isInitialized = false;
+
+    // 自动追踪并刷新 Canvas 物理分辨率，防止在大屏幕下波形变模糊
+    function resizeCanvas() {
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+    }
+    window.addEventListener('load', resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
+
+    function initAudioVisualizer() {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        
+        source = audioCtx.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+
+        analyser.fftSize = 128; 
+        bufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+        
+        isInitialized = true;
+        resizeCanvas();
+    }
+
+    playBtn.addEventListener('click', () => {
+        if (!isInitialized) {
+            initAudioVisualizer();
+        }
+
+        if (audio.paused) {
+            audio.play().then(() => {
+                drawVolumeEffect();
+            }).catch(err => {
+                console.log("Playback error: ", err);
+            });
+        } else {
+            audio.pause();
+        }
+    });
+
+    // 1. 定义您想显示的自定义文本变量（可以随时通过代码去修改它们）
+    let currentTitle = "REC"; // 自定义文件名/歌名
+    let isPlayingText = "▶";    // 状态文字
+    let isPausedText = "⏸";       // 暂停状态文字
+
+    // 升级版绘制函数：移除原有音柱，仅保留文本+音量起伏动态效果
+    function drawVolumeEffect() {
+        if (audio.paused) return;
+
+        requestAnimationFrame(drawVolumeEffect);
+        analyser.getByteFrequencyData(dataArray);
+
+        // 【步骤 A】清空上一帧屏幕，铺上纯黑底色
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 【步骤 B】基于平均音量生成起伏的底部动态光带效果
+        const avgVolume = dataArray.reduce((sum, val) => sum + val, 0) / bufferLength;
+        // 动态光带高度跟随音量变化，最大占屏幕下半部分30%的高度
+        const dynamicBandHeight = (avgVolume / 255) * canvas.height * 0.3;
+        const gradient = ctx.createLinearGradient(0, canvas.height, 0, canvas.height - dynamicBandHeight);
+        gradient.addColorStop(0, '#004411');   
+        gradient.addColorStop(0.5, '#00ff66'); 
+        gradient.addColorStop(1, '#ccffdd');   
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, canvas.height - dynamicBandHeight, canvas.width, dynamicBandHeight);
+
+        // ========================================================
+        // 【步骤 C】在屏幕上方绘制自定义内容（同样完美继承绿色荧光发光）
+        // ========================================================
+        
+        // 1. 绘制左上角的音频文件名/自定义标题
+        // 修复乱码：使用系统通用中文字体
+        ctx.font = 'bold 12px "Microsoft YaHei", "PingFang SC", sans-serif';
+        ctx.fillStyle = "#00ff66";                 // 设置经典的荧光绿颜色
+        ctx.textAlign = "left";                    // 文字左对齐
+        ctx.fillText(currentTitle, 8, 20);         // 坐标 (x: 8px, y: 20px)
+
+        // 2. 绘制右上角的播放状态
+        ctx.font = '10px "Microsoft YaHei", "PingFang SC", sans-serif';
+        ctx.fillStyle = "#00ff66";
+        ctx.textAlign = "right";                   // 文字右对齐
+        ctx.fillText(isPlayingText, canvas.width - 8, 20); // 坐标 (右侧边缘留白 8px, y: 20px)
+
+        // 3. 实时提取并绘制当前播放的时间点 (例如: 00:14)
+        let minutes = Math.floor(audio.currentTime / 60);
+        let seconds = Math.floor(audio.currentTime % 60);
+        // 如果个位数，前面自动补 0 (例如将 5 变成 05)
+        let timeString = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
+
+        ctx.font = "bold 18px monospace";          // 使用等宽字体，防止数字变动时文字抖动
+        ctx.fillStyle = "#ccffdd";                 // 使用更亮、偏白的绿色，让时间更显眼
+        ctx.textAlign = "center";                  // 文字水平居中
+        ctx.fillText(timeString, canvas.width / 2, 45); // 坐标 (水平正中间, y: 45px)
+    }
+
+    // 单独绘制暂停状态的画面
+    function drawPauseScreen() {
+        // 清空屏幕铺纯黑底色
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 绘制左上角的音频文件名
+        ctx.font = 'bold 12px "Microsoft YaHei", "PingFang SC", sans-serif';
+        ctx.fillStyle = "#00ff66";
+        ctx.textAlign = "left";
+        ctx.fillText(currentTitle, 8, 20);
+
+        // 绘制右上角的暂停状态
+        ctx.font = '10px "Microsoft YaHei", "PingFang SC", sans-serif';
+        ctx.fillStyle = "#00ff66";
+        ctx.textAlign = "right";
+        ctx.fillText(isPausedText, canvas.width - 8, 20);
+
+        // 绘制当前暂停时的时间点
+        let minutes = Math.floor(audio.currentTime / 60);
+        let seconds = Math.floor(audio.currentTime % 60);
+        let timeString = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
+
+        ctx.font = "bold 18px monospace";
+        ctx.fillStyle = "#ccffdd";
+        ctx.textAlign = "center";
+        ctx.fillText(timeString, canvas.width / 2, 45);
+    }
+
+    // 监听音频暂停事件，自动切换到暂停静态画面
+    audio.addEventListener('pause', drawPauseScreen);
+
+    // 页面初次加载完成时，先渲染暂停状态的初始画面
+    window.addEventListener('load', drawPauseScreen);
+</script>
+
+</body>
+</html>
