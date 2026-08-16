@@ -370,69 +370,58 @@
         // ================= 核心3: 兼容多端(鼠标拖拽/触屏滑动)的3D翻页引擎 =================
         // ================= 核心3(升级版): 兼容多端、支持前后双向滑动的3D翻页引擎 =================
         // ================= 核心3(完美修复版): 兼容多端、双向翻页且完美触发备份的引擎 =================
+        // ================= 核心3(点击版): 兼容手机和电脑的左右点击翻页引擎 =================
+        // ================= 核心3(最终修复版): 智能识别最后一页的左右点击引擎 =================
         function initFlipEngine() {
             const pages = document.querySelectorAll('.page-card');
             
             pages.forEach((page, index) => {
-                let startX = 0;
-                let isDragging = false;
+                page.addEventListener('touchstart', handlePageClick, { passive: false });
+                page.addEventListener('click', handlePageClick);
 
-// 1. 触屏触控起始 (移动端) -> 修改处：passive 改为 false
-page.addEventListener('touchstart', (e) => {
-    startX = e.touches.clientX;
-    isDragging = true;
-}, { passive: false });
-
-// 2. 鼠标点击起始 (PC端) -> 保持不变
-page.addEventListener('mousedown', (e) => {
-    startX = e.clientX;
-    isDragging = true;
-});
-
-// 3. 触屏拖拽滑动 (移动端) -> 修改处：加入 preventDefault() 阻止手机网页滚动
-page.addEventListener('touchmove', (e) => {
-    if (!isDragging) return;
-    
-    // 核心修复：强制阻止手机默认的网页滚动行为
-    e.preventDefault(); 
-    
-    handleMoveCheck(e.touches.clientX, page, index);
-}, { passive: false });
-
-// 4. 鼠标指针拖拽 (PC端) -> 保持不变
-page.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    handleMoveCheck(e.clientX, page, index);
-});
-
-// 5. 交互结束释放锁 -> 保持不变
-const handleEnd = () => { isDragging = false; };
-page.addEventListener('touchend', handleEnd);
-page.addEventListener('mouseup', handleEnd);
-page.addEventListener('mouseleave', handleEnd);
-
-                // 核心手势位移双向判定
-                function handleMoveCheck(currentX, element, currentIndex) {
-                    const deltaX = startX - currentX; // 正数向左划(前进)，负数向右划(后退)
-
-                    // --- 场景 A: 向左滑动 (翻看下一页) ---
-                    if (deltaX > 30 && !element.classList.contains('flipped')) {
-                        element.classList.add('flipped');
-                        isDragging = false; 
-                        currentFlippedCount++;
-                        checkBackupButtonVisibility();
-                        return;
+                function handlePageClick(e) {
+                    if (e.type === 'touchstart') {
+                        e.preventDefault();
                     }
 
-                    // --- 场景 B: 向右滑动 (回翻上一页) ---
-                    if (deltaX < -30) {
+                    // 计算点击位置在卡片上的横向百分比
+                    const rect = page.getBoundingClientRect();
+                    const clientX = e.touches ? e.touches.clientX : e.clientX;
+                    const clickXPercentage = (clientX - rect.left) / rect.width;
+
+                    // --- 场景 A: 点击右半边 (前进) ---
+                    if (clickXPercentage > 0.5) {
+                        // 核心修复：如果是最后一张图（第5页，索引是4），右半边不响应任何翻页，把点击留给底部的备份按钮
+                        if (index === totalPages - 1) {
+                            return; 
+                        }
+
+                        if (!page.classList.contains('flipped')) {
+                            page.classList.add('flipped');
+                            currentFlippedCount++;
+                            checkBackupButtonVisibility();
+                        }
+                    } 
+                    // --- 场景 B: 点击左半边 (回翻) ---
+                    else {
+                        // 核心修复：如果你当前已经在最后一页了，点击左半边直接去帮用户合上倒数第二页（第4页）
+                        if (index === totalPages - 1) {
+                            const prevPage = pages[totalPages - 2]; // 找到前一页
+                            if (prevPage && prevPage.classList.contains('flipped')) {
+                                prevPage.classList.remove('flipped');
+                                currentFlippedCount--;
+                                checkBackupButtonVisibility();
+                            }
+                            return;
+                        }
+
+                        // 正常层级下的常规回翻逻辑
                         const allPages = Array.from(document.querySelectorAll('.page-card'));
                         const flippedPages = allPages.filter(p => p.classList.contains('flipped'));
                         
                         if (flippedPages.length > 0) {
                             const lastFlippedPage = flippedPages[flippedPages.length - 1];
                             lastFlippedPage.classList.remove('flipped');
-                            isDragging = false;
                             currentFlippedCount--;
                             checkBackupButtonVisibility();
                         }
