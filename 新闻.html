@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蜂鸟新闻 Hummingbird News Network - 权威·全球视角</title>
+    <!-- 引入 BBC/CNN 最爱的现代硬朗无衬线黑体 -->
+    <link href="XXX" rel="stylesheet">
+    <!-- FontAwesome 极简国际图标库 -->
+    <link rel="stylesheet" href="X">
+    
+        <!-- ==========================================================================
+       【第 2 部分 - A 部分】大牌基础色彩、头部与导航样式表
+       ========================================================================== -->
+    <style>
+        :root {
+            --bbc-red: #bb1919;         /* BBC 经典正红 */
+            --cnn-red: #cc0000;         /* CNN 经典亮红 */
+            --global-black: #121212;    /* 国际大牌通用的暗黑底色 */
+            --text-dark: #222222;       /* 高级正文灰黑 */
+            --text-muted: #666666;      /* 严谨的辅助灰 */
+            --border-thin: #e2e2e2;     /* 极细的单像素分割线 */
+            --bg-light: #f6f6f6;        /* 标志性冷淡浅灰背景 */
+            --font-global: 'Inter', 'Noto Sans SC', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-global);
+            color: var(--text-dark);
+            background-color: #ffffff;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { text-decoration: none; color: inherit; transition: color 0.2s ease; }
+        ul { list-style: none; }
+        
+        .container {
+            width: 100%;
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* 顶部全球状态栏 */
+        .top-mini-bar {
+            background-color: var(--global-black);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .live-badge {
+            background-color: var(--cnn-red);
+            color: #fff;
+            padding: 2px 6px;
+            font-weight: 900;
+            border-radius: 2px;
+            margin-right: 8px;
+        }
+
+        /* 主品牌头部区域 与 CNN极简搜索框 */
+        .main-brand-header { background-color: var(--global-black); padding: 20px 0; }
+        .main-brand-header .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        
+        /* 纯图片 LOGO 预留尺寸与位置控制（去除所有冲突文字） */
+        .brand-logo-zone { display: flex; align-items: center; justify-content: flex-start; }
+        .custom-uploaded-logo { display: block !important; max-height: 75px; width: auto; object-fit: contain; }
+
+        /* CNN 风格隐藏边界线检索栏 */
+        .global-search-wrapper { width: 100%; max-width: 300px; }
+        .search-input-group {
+            display: flex; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); transition: all 0.2s ease;
+        }
+        .search-input-group:focus-within { background: #ffffff; border-color: #ffffff; }
+        .search-core-input {
+            width: 100%; background: transparent; border: none; outline: none; padding: 8px 12px; color: #ffffff; font-size: 13px; font-family: var(--font-global);
+        }
+        .search-input-group:focus-within .search-core-input { color: var(--global-black); }
+        .search-submit-trigger { background: transparent; border: none; color: rgba(255,255,255,0.5); padding: 0 12px; cursor: pointer; }
+        .search-input-group:focus-within .search-submit-trigger { color: var(--global-black); }
+
+        /* 通栏主导航条 */
+        .international-nav { background-color: var(--bbc-red); color: #ffffff; }
+        .nav-links-container { display: flex; }
+        .nav-link-node a { display: block; padding: 12px 20px; font-size: 14px; font-weight: 700; border-right: 1px solid rgba(255,255,255,0.08); }
+        .nav-link-node:first-child a { background-color: rgba(0,0,0,0.18); }
+        .nav-link-node a:hover { background-color: #ffffff; color: var(--global-black); }
+                /* ==========================================================================
+           【第 2 部分 - B 部分】首屏核心网格、详情就地展开与智能跳转弹窗样式
+           ========================================================================== */
+        /* CNN 首屏黄金位置样式 */
+        .cnn-hero-section { padding: 32px 0; background-color: #ffffff; border-bottom: 1px solid var(--border-thin); }
+        .hero-layout-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 32px; }
+        .main-headline-block { display: flex; flex-direction: column; }
+        .breaking-tag-label { align-self: flex-start; background-color: var(--cnn-red); color: #ffffff; font-size: 11px; font-weight: 900; padding: 3px 8px; text-transform: uppercase; margin-bottom: 12px; }
+        .main-headline-block h1 { font-size: 38px; font-weight: 900; color: var(--global-black); line-height: 1.25; margin-bottom: 16px; }
+        .main-headline-block h1 a:hover { color: var(--bbc-red); }
+        .headline-sub-excerpt { font-size: 15px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
+        
+        /* 巨幅头条大图硬性尺寸固定，防止页面布局抖动 */
+        .giant-photo-frame { width: 100% !important; height: 400px !important; overflow: hidden; background-color: var(--bg-light); cursor: pointer; }
+        .giant-photo-frame img { width: 100% !important; height: 100% !important; object-fit: cover !important; transition: transform 0.5s; }
+        .giant-photo-frame:hover img { transform: scale(1.02); }
+        .photo-caption-bar { font-size: 11px; color: var(--text-muted); padding: 6px 0; border-bottom: 1px solid var(--border-thin); margin-bottom: 20px; }
+
+        /* 右侧时效强手垂直多图流 */
+        .secondary-hot-column { display: flex; flex-direction: column; gap: 24px; }
+        .section-mini-title { font-size: 14px; font-weight: 900; text-transform: uppercase; border-bottom: 2px solid var(--global-black); padding-bottom: 6px; margin-bottom: 8px; }
+        .sub-news-card { display: flex; flex-direction: column; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--border-thin); cursor: pointer; }
+        .sub-card-thumb { width: 100% !important; height: 150px !important; overflow: hidden; }
+        .sub-card-thumb img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+        .sub-news-card h3 { font-size: 15px; font-weight: 700; line-height: 1.4; }
+        .sub-news-card h3 a:hover { color: var(--bbc-red); }
+
+        /* BBC式下半部分双网格流样式 */
+        .bbc-stream-section { padding: 30px 0; background-color: #ffffff; }
+        .stream-layout-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 32px; }
+        .main-news-stream { display: flex; flex-direction: column; gap: 24px; }
+        
+        /* 预设5个图文新闻卡片及点击就地展开框 */
+        .news-list-card { display: flex; flex-direction: column; padding-bottom: 20px; border-bottom: 1px solid var(--border-thin); }
+        .card-main-row { display: flex; gap: 20px; cursor: pointer; }
+        .card-image-box { width: 220px !important; height: 140px !important; flex-shrink: 0; overflow: hidden; background-color: var(--bg-light); }
+        .card-image-box img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+        .card-text-box { display: flex; flex-direction: column; justify-content: flex-start; flex-grow: 1; }
+        .search-filter-badge { display: inline-block; background-color: #121212; color: #fff; font-size: 10px; font-weight: 900; padding: 2px 6px; margin-right: 8px; text-transform: uppercase; vertical-align: middle; }
+        .news-list-card h2 { font-size: 18px; font-weight: 700; display: inline; line-height: 1.35; vertical-align: middle; }
+        .news-list-card h2 a:hover { color: var(--bbc-red); }
+        .news-card-desc { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
+        
+        /* 就地展开图文详情展示框（平滑淡入效果） */
+        .news-detail-expansion { display: none; background-color: var(--bg-light); padding: 20px; margin-top: 15px; border-left: 3px solid var(--bbc-red); font-size: 14px; color: var(--text-dark); line-height: 1.6; }
+        .news-detail-expansion.expanded { display: block; animation: bbcFadeIn 0.3s ease; }
+
+        /* 预设5个右侧纯文本无图小标题新闻样式 */
+        .sidebar-panel { background-color: #ffffff; border: 1px solid var(--border-thin); padding: 20px; border-top: 3px solid var(--global-black); }
+        .text-only-news-card { padding: 14px 0; border-bottom: 1px dashed var(--border-thin); cursor: pointer; }
+        .text-only-news-card:last-child { border-bottom: none; }
+        .text-news-heading { font-size: 14px; font-weight: 700; color: var(--text-dark); line-height: 1.4; transition: color 0.2s; }
+        .text-only-news-card:hover .text-news-heading { color: var(--bbc-red); }
+        .text-news-meta { font-size: 11px; color: #999; margin-top: 5px; text-transform: uppercase; font-weight: 600; }
+        
+        /* 就地展开纯文本详情展示框 */
+        .text-detail-expansion { display: none; font-size: 13px; color: var(--text-muted); background-color: var(--bg-light); padding: 12px; margin-top: 10px; line-height: 1.5; border-left: 2px solid var(--global-black); }
+        .text-detail-expansion.expanded { display: block; animation: bbcFadeIn 0.2s ease; }
+
+        @keyframes bbcFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 页脚与智能检索弹窗核心样式 */
+        .site-footer { background-color: var(--global-black); color: #888888; padding: 40px 0 20px 0; font-size: 12px; border-top: 4px solid var(--bbc-red); margin-top: 20px; }
+        .footer-wrap { display: flex; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .footer-brand h4 { color: #fff; font-size: 16px; margin-bottom: 10px; }
+        .footer-bottom { text-align: center; padding-top: 20px; color: #555555; }
+
+        .search-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            display: flex; justify-content: center; align-items: center; z-index: 9999;
+            opacity: 0; pointer-events: none; transition: all 0.35s ease;
+        }
+        .search-modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .search-modal-window { background-color: #ffffff; width: 90%; max-width: 600px; border-top: 6px solid var(--bbc-red); box-shadow: 0 25px 60px rgba(0,0,0,0.4); }
+        .modal-header { padding: 20px; background: var(--bg-light); border-bottom: 1px solid var(--border-thin); display: flex; justify-content: space-between; align-items: center; }
+        .modal-close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); }
+        .modal-body { padding: 25px; }
+        .redirect-alert-box { background-color: #f1f8e9; border-left: 4px solid #7cb342; padding: 12px; margin-bottom: 16px; color: #33691e; font-size: 13.5px; font-weight: 700; }
+        .target-preview-panel { border: 1px solid var(--border-thin); padding: 16px; background-color: #fafafa; margin-bottom: 20px; }
+        .target-preview-panel h5 { font-size: 15px; color: var(--global-black); margin-bottom: 6px; }
+        .target-preview-panel p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+        .modal-action-row { display: flex; justify-content: flex-end; gap: 12px; }
+        .btn-cancel { background: #eceff1; border: none; padding: 8px 16px; cursor: pointer; font-size: 13px; }
+        .btn-go { background: var(--bbc-red); color: #fff; border: none; padding: 8px 20px; cursor: pointer; font-size: 13px; font-weight: 700; }
+
+        /* 极致多端响应式兼容媒体查询（支持手机、电脑、平板） */
+        @media (max-width: 992px) {
+            .hero-layout-grid, .stream-layout-grid { grid-template-columns: 1fr; }
+            .giant-photo-frame { height: 320px !important; }
+        }
+        @media (max-width: 768px) {
+            .main-brand-header .container { flex-direction: column; align-items: flex-start; }
+            .global-search-wrapper { max-width: 100%; }
+            .nav-links-container { flex-wrap: wrap; }
+            .nav-link-node a { padding: 8px 14px; font-size: 12px; }
+            .card-main-row { flex-direction: column; }
+            .card-image-box { width: 100% !important; height: 160px !important; }
+        }
+
+    </style>
+
+    
+</head>
+<body>
+
+        <!-- ==========================================================================
+       【第 3 部分】纯图片 Logo 预留、国际化导航条与 CNN 风格通栏超级大头条区
+
+       ========================================================================== -->
+    <!-- 顶部全球状态栏 -->
+    <div class="top-mini-bar">
+        <div class="container">
+            <div>
+                <span class="live-badge">LIVE</span>
+                <span id="global-clock-ticker">GLOBAL TIME: LOADING...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主品牌头部区域（大牌专属深黑底） -->
+    <header class="main-brand-header">
+        <div class="container">
+            <!-- 纯图片 LOGO 固定区：排在整个网页的最前面，左侧死死对齐 -->
+            <div class="brand-logo-zone">
+                <!-- 【后台配置区】：请在 src="" 内部直接填入您的图片 Logo 路径（例如 src="logo.png"） -->
+                <!-- 如果暂时没有放图片路径，它会显示为标准无冲突的极简状态，绝不会产生任何文字冲突 -->
+                <img src="蜂鸟新闻LOGO.png" alt="HNN 蜂鸟新闻 LOGO" id="brand-logo-custom" class="custom-uploaded-logo">
+            </div>
+
+            <!-- CNN 风格的隐藏边界高效检索栏 -->
+            <div class="global-search-wrapper">
+                <form onsubmit="executeGlobalSearch(event)">
+                    <div class="search-input-group">
+                        <input type="text" class="search-core-input" id="search-term-input" placeholder="检索全球动态、突发事件..." required>
+                        <button type="submit" class="search-submit-trigger">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- 通栏红色国际化主导航条 -->
+    <nav class="international-nav">
+        <div class="container">
+            <ul class="nav-links-container">
+                <li class="nav-link-node"><a href="浏览器.html">返回</a></li>
+                <li class="nav-link-node"><a href="#">WORLD</a></li>
+                <li class="nav-link-node"><a href="#">BUSINESS</a></li>
+                <li class="nav-link-node"><a href="#">TECH</a></li>
+                <li class="nav-link-node"><a href="#">FEATURES</a></li>
+            </ul>
+        </div>
+    </nav>
+    <!-- ==========================================================================
+       【第 3 部分 - B 部分】CNN 风格首屏通栏超级大头条与前 3 张大图结构
+       ========================================================================== -->
+    <section class="cnn-hero-section">
+        <div class="container">
+            <div class="hero-layout-grid">
+                
+                <!-- 左侧：全球重磅大头条（点击大图或标题，即可就地优雅展开新闻详情） -->
+                <div class="main-headline-block">
+                    <span class="breaking-tag-label">Breaking News</span>
+                    <h1 onclick="toggleExpansion('hero-main-detail')"><a href="javascript:void(0);">独家直击：诺凡泰克制药公司实验室突发大火，关键科研资料损毁，事故原因存疑</a></h1>
+                    <p class="headline-sub-excerpt">
+                        HNN通讯社  责编：凯丽
+                    </p>
+                    
+                    <!-- 【第 1 张图】首屏黄金位置硬性尺寸固定大图 -->
+                    <div class="giant-photo-frame" onclick="toggleExpansion('hero-main-detail')">
+                        <img src="3着火.jpg" alt="图为诺凡泰克制药公司实验室火灾现场画面">
+                    </div>
+                    <div class="photo-caption-bar">
+                        <i class="fa-solid fa-camera"></i> 图为诺凡泰克制药公司实验室火灾现场画面。 · 蜂鸟特约摄影记者 姜涵
+                    </div>
+
+                    <!-- 就地展开的头条详情框 -->
+                    <div class="news-detail-expansion" id="hero-main-detail">
+                        <strong>【蜂鸟电网深度直击专题报道】</strong><br><br>
+                        诺凡泰克集团旗下诺凡泰克制药公司实验室凌晨发生的火灾事件，应急管理部门第一时间启动应急响应，并同步开展现场勘验与调查取证工作，已正式排除刑事案件可能性，初步排查认定起火原因为实验室核心温控设备突发故障，引发周边实验物料局部燃烧，未造成火势大规模蔓延。 该实验室为诺凡泰克集团抗衰老延长寿命类核心药物的专项研发，此前已完成该药物的全部研发流程，取得关键性技术突破，相关核心实验数据、成品样本受到一定损毁，但未出现药物相关危险成分泄漏情况及人员伤亡。 目前涉事企业已全面暂停实验室所有设备运行，启动安全隐患排查。另此次火灾对诺凡泰克太空空间站实验室对接合作产生影响，股票表现恐有波动。（完）责编：凯丽
+                    </div>
+                </div>
+
+                <!-- 右侧：时效强手突闻（包含第 2 和第 3 张高清配图，点击同样就地展开） -->
+                <div class="secondary-hot-column">
+                    <h2 class="section-mini-title">Trending / 24H强手</h2>
+                    
+                    <!-- 次级图文 1 -->
+                    <div class="sub-news-card" onclick="toggleExpansion('hero-sub-1')">
+                        <div class="sub-card-thumb">
+                            <img src="3火箭.jpg" alt="新闻图">
+                        </div>
+                        <h3><a href="javascript:void(0);">重型星戟运载火箭点火升空，完成第100次升空记录</a></h3>
+                        <p class="news-card-desc">搭载三十二台猛禽引擎奔赴星海，为星际移民与太空生命科研筑牢根基(点击详情)</p>
+                        <div class="text-detail-expansion" id="hero-sub-1">
+                            本报科技组讯：联邦航空与太空管理局FASA的“星戟”重型运载火箭顺利完成发射任务。该火箭搭载三十二台改良版MQ系列发动机，全箭不锈钢可回收技术，大幅降低轨道发射成本。（特派记者 慕竹）
+                        </div>
+                    </div>
+
+                    <!-- 次级图文 2 -->
+                    <div class="sub-news-card" onclick="toggleExpansion('hero-sub-2')">
+                        <div class="sub-card-thumb">
+                            <img src="3太空实验室.jpg" alt="新闻图">
+                        </div>
+                        <h3><a href="javascript:void(0);">联邦航空与太空管理局FASA轨道太空生物实验室，已平稳在轨安全运行一年。</a></h3>
+                        <p class="news-card-desc">秉求索寰宇之初心，践深空研析之使命(点击详情)</p>
+                        <div class="text-detail-expansion" id="hero-sub-2">
+                            本报科技直击组讯：联邦航空与太空管理局FASA与诺凡泰克制药Novatech Pharma太空生物实验室，已平稳在轨安全运行满一年。
+                            整套舱内科研设备运转稳定，微重力环境下的生物、药剂相关实验持续开展。科研人员身着舱内科研服，在站内完成多组射线基因排序、制剂对照试验，依托太空特殊环境挖掘抗衰药物全新研发方向。
+                            一年来，平台经受住轨道环境多重考验，数据回传完整可靠，为地面新一代注射抗衰药剂研发提供关键实验依据。航天局FASA局长戴维表示，后续会继续拓展太空实验项目，进一步推进与诺凡泰克制合作，加速延寿类药物的技术迭代。（主编：顾珩）
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </section>
+    <!-- ==========================================================================
+       【第 4 部分 - A 部分】下半部分 3 个图文点击展开新闻列表
+       ========================================================================== -->
+    <section class="bbc-stream-section">
+        <div class="container">
+            <div class="stream-layout-grid">
+                
+                <!-- 左侧主栏：滚动权威直击新闻流（包含第 4 和第 5 张高清配图，点击就地展开详情） -->
+                <div class="main-news-stream">
+                    
+                    <!-- 【图文新闻 3】 -->
+                    <article class="news-list-card">
+                        <div class="card-main-row" onclick="toggleExpansion('stream-detail-3')">
+                            <div class="card-image-box">
+                                <img src="3社会福利院.jpg" alt="新闻图">
+                            </div>
+                            <div class="card-text-box">
+                                <div>
+                                    <span class="search-filter-badge">民生</span>
+                                    <h2><a href="javascript:void(0);">BBTSWI再度获评区域标杆慈善福利机构</a></h2>
+                                    <p class="news-card-desc">据区域公益评审委员会最新公示，巴布曼特黑水镇社会福利院（BBTSWI）成功蝉联模范慈善机构评级。…… (点击详情)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="news-detail-expansion" id="stream-detail-3">
+                            <strong>【怀悲悯之心行帮扶实事，以赤诚良知践行公益使命】</strong><br><br>
+                            年度考核包含实地走访、服务样本抽查、弱势群体权益核查等多维度评估。评审组指出，福利院长期为无依靠成年人、弱势青少年提供食宿与基础医疗帮扶，公益配套体系完善，社会帮扶项目落地成效突出。
+                            福利院院长CorinVale/科琳·维尔对外回应，该荣誉依托全体工作人员长期运营与社会各界捐助支持，机构将持续优化照料服务标准，保障院内收容人群基本权益。
+                            最后还要感谢诺凡泰克集团Novatech Group长期以来对本院的巨额资金支持，用爱回馈的良心企业，行业典范慈善标杆。（主编：顾珩）
+                    </article>
+
+                    <!-- 【图文新闻 4】 -->
+                    <article class="news-list-card">
+                        <div class="card-main-row" onclick="toggleExpansion('stream-detail-4')">
+                            <div class="card-image-box">
+                                <img src="3明星.jpg" alt="新闻图">
+                            </div>
+                            <div class="card-text-box">
+                                <div>
+                                    <span class="search-filter-badge">娱乐</span>
+                                    <h2><a href="javascript:void(0);">全民炸锅！好莱坞掀起史诗级逆龄风潮，顶尖生物科技改写衰老定律</a></h2>
+                                    <p class="news-card-desc">近期的好来坞娱乐圈，正在上演一场不可思议的“集体逆龄”现象。…… (点击详情)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="news-detail-expansion" id="stream-detail-4">
+                            <strong>【重塑基因底层逻辑 探索生命科学边界】</strong><br><br>
+                            众多早已过巅峰期的老牌影星、国际超模，近期公开亮相状态全面回春。皮肤紧致无松弛、体态年轻饱满、精气神堪比二十岁新人演员，彻底打破了艺人“花期短暂、岁月催老”的固有规律。
+                            业内知情人士爆料，这场席卷整个欧美顶流圈层的冻龄浪潮，源于最新落地的顶尖生物抗衰黑科技。
+                            区别于传统医美、护肤、运动保养的表层修饰，本次全新的生物注射技术直击人体衰老根源。通过人体基因修复再生技术，大幅延缓机体老化速度，直接实现平均长达二十年的年轻健康态延续。
+                            这项颠覆性技术流出后，瞬间在好莱坞顶层社交圈刷屏。(记者：承峰 实习记者:温知佑)
+                            
+                    </div>
+                    </article>
+
+                    <!-- 【图文新闻 5】 -->
+                    <article class="news-list-card">
+                        <div class="card-main-row" onclick="toggleExpansion('stream-detail-5')">
+                            <div class="card-image-box">
+                                <img src="3负面新闻.jpg" alt="新闻图">
+                            </div>
+                            <div class="card-text-box">
+                                <div>
+                                    <span class="search-filter-badge">调查</span>
+                                    <h2><a href="javascript:void(0);">惊天黑幕曝光！某制药企业违规实验，数据造假，疑操纵股市</a></h2>
+                                    <p class="news-card-desc">匿名举报直指药企无伦理审批、篡改药效数据、隐瞒药物副作用，相关材料已移交监管部门核查…… (点击详情)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="news-detail-expansion" id="stream-detail-5">
+                            <strong>【罔守科研伦理之底线，背弃济世研发之初心】</strong><br><br>
+                            本报近日收到匿名人士实名举报材料，直指某生物企业存在多项严重违规行为。举报内容显示，该公司多款产品的生物实验均未取得伦理委员会审批许可，私自开展临床测试。
+                            实验过程中企业刻意隐瞒药物副作用，篡改、筛选实验数据美化药效；同时存在利用内部实验信息暗中操纵公司股价，牟利套现的嫌疑。
+                            目前本报已完整整理举报证据移交监管机构，相关部门回应会尽快针对举报线索启动全面初步核查。（记者 月亮）
+                        </div>
+                    </article>
+
+                </div>
+                <!-- ==========================================================================
+                   【第 4 部分 - B 部分】右侧 5 个纯文本无图点击展开小标题新闻与页脚
+                   ========================================================================== -->
+                <!-- 右侧边栏：预设 5 个纯文本无图片小标题新闻（点击就地优雅展开全文） -->
+                <div class="sidebar-panel">
+                    <h4 style="font-size: 14px; font-weight: 900; margin-bottom: 12px; border-bottom: 2px solid #121212; padding-bottom: 4px;">Exclusive / 纯文本精选</h4>
+                    
+                    <!-- 【纯文本新闻 1】 -->
+                    <div class="text-only-news-card" onclick="toggleTextExpansion('text-news-1')">
+                        <div class="text-news-heading">药企包揽警局全员医疗，执法公正蒙上阴影</div>
+                        <div class="text-news-meta">焦点</div>
+                        <div class="text-detail-expansion" id="text-news-1">
+                             近期，巴布曼特联邦警察局（BFPD）全面接入诺凡泰克制药专属医保保障的合作方案，引发舆论界对司法公正与政企边界的广泛质疑。批评人士指出，联邦执法机构全员医疗、用药福利完全依赖单一商业药企，存在难以规避的利益捆绑隐患。诺凡泰克制药作为辖区头部资本企业，一旦涉及违法稽查、合规调查，手握执法权的BFPD或将因福利绑定产生执法偏袒。目前双方未公开完整合作细则与隔离监管机制，行业观察员警示，执法体系接受企业全额福利供养，或将逐步瓦解执法中立性，为权力寻租、选择性执法埋下长期隐患。（记者 索恩）
+                        </div>
+                    </div>
+
+                    <!-- 【纯文本新闻 2】 -->
+                    <div class="text-only-news-card" onclick="toggleTextExpansion('text-news-2')">
+                        <div class="text-news-heading">万人期待！苏婉巡回演唱会重磅开启，赴一场盛夏听觉盛宴</div>
+                        <div class="text-news-meta">娱乐</div>
+                        <div class="text-detail-expansion" id="text-news-2">
+                            作为华语乐坛极具辨识度的实力唱将，苏婉始终以细腻动人的嗓音、极具感染力的舞台表现力征服无数听众。从治愈抒情到炸裂摇滚，多元曲风轻松驾驭，每一首单曲都传唱度拉满，沉淀无数经典舞台，积累了超高路人口碑与人气。本次巡回演唱会重磅升级舞美、灯光与编曲配置，沉浸式全景舞台打造极致视听体验。精心打磨的歌单囊括多首爆款金曲，既有温柔治愈的走心单曲，也有燃炸全场的高燃曲目，熟悉的旋律一响，便是专属粉丝的浪漫奔赴。去荧幕喧嚣，立足舞台中央。苏婉将用最纯粹的歌声、最真挚的舞台态度，回馈每一份长久的热爱。数万灯海静待点亮，滚烫声浪蓄势待发，一场属于苏婉与歌迷的音乐狂欢，即将如约而至！备好奔赴，不负等待，让我们共同期待现场的极致心动与震撼！记者 柚柚
+                        </div>
+                    </div>
+
+                    <!-- 【纯文本新闻 3】 -->
+                    <div class="text-only-news-card" onclick="toggleTextExpansion('text-news-3')">
+                        <div class="text-news-heading">3. 本周末城东部分核心枢纽路段由于管道网全线升级将实施交通管制</div>
+                        <div class="text-news-meta">Traffic · 5小时前</div>
+                        <div class="text-detail-expansion" id="text-news-3">
+                            交警支队最新公告提示：因城东大道与富民路交汇处进行夜间燃气主管道接合，本周六晚22点至次日凌晨4点将对部分支路实施临时封闭交通分流控制，请通勤的车主提前规划绕行地图。
+                        </div>
+                    </div>
+
+                    <!-- 【纯文本新闻 4】 -->
+                    <div class="text-only-news-card" onclick="toggleTextExpansion('text-news-4')">
+                        <div class="text-news-heading">顶流女星深夜密会资本大佬，贴身同行全程低调避嫌</div>
+                        <div class="text-news-meta">八卦</div>
+                        <div class="text-detail-expansion" id="text-news-4">
+                             圈内一直传闻，当红实力女歌手背后有资本强力护航，资源断层领跑同梯队艺人，近日，我们独家拍到一组深夜私密同框画面，彻底印证外界猜测。当晚深夜时分，结束高强度彩排工作的顶流女艺人并未返回艺人公寓，而是乘坐专属保姆车低调离开演艺园区，全程车辆绕路规避跟拍，最终驶入市中心高端私密商务会所地下车库。据现场画面显示，女艺人素颜低调出镜，头戴鸭舌帽、口罩遮面，全程姿态放松自然，毫无公众镜头前的紧绷感。随后，一名中年商界大佬独自现身车库等候，二人碰面后无任何生疏客套，举止亲密默契，随后共同进入专属私密包厢。知情人士透露，该商界大佬深耕生物科研领域多年，手握顶级抗衰研发资源，常年低调极少露面，极少与娱乐圈产生交集，却唯独对这位女艺人格外特殊。二人独处时长近四小时，直至凌晨两点才分批离场。为规避偷拍，两人刻意前后分开乘车离开，全程无互动、刻意避嫌，警惕性极高。从近期艺人状态也不难看出，其皮肤、体态、精神状态长期保持巅峰水准，哪怕密集彩排、连轴工作也毫无疲态，状态远超同龄艺人，背后资本加持与专属高端养护资源，不言而喻。目前双方并未对此次深夜密会做出任何回应，豪门资本与顶流女星的隐秘交集，后续更多内幕，我们将持续跟进深挖。记者 姜涵
+                        </div>
+                    </div>
+
+                    <!-- 【纯文本新闻 5】 -->
+                    <div class="text-only-news-card" onclick="toggleTextExpansion('text-news-5')">
+                        <div class="text-news-heading">内部文件披露：BFPD紧急调度台(911)存在多处运营疏漏</div>
+                        <div class="text-news-meta">焦点</div>
+                        <div class="text-detail-expansion" id="text-news-5">
+                            作为辖区紧急求助的核心枢纽，内部材料显示该调度中心长期存在管理层面的漏洞。根据多名匿名内部工作人员提供的记录，部分接线人员业务素养参差不齐，接警流程执行不到位。
+                            部分紧急报警信息在流转过程中信息传递出现缺失，关键线索未能完整同步给到一线出警单位。报道获悉，在岗期间存在个别人员工作状态涣散，出现非工作相关的私人活动，挤占应急接警资源。高峰时段呼叫等待时间拉长，部分民众的紧急诉求无法得到及时响应。
+                            报道获悉，在岗期间存在个别人员工作状态涣散，出现非工作相关的私人活动，挤占应急接警资源。高峰时段呼叫等待时间拉长，部分民众的紧急诉求无法得到及时响应。
+                            内部审计报告早已标记上述风险点，但整改推进缓慢。受访的警务专家表示，调度岗位是生命救援的第一道关口，信息漏传、人员履职松懈，有可能直接酿成严重后果。BFPD对外暂未针对该系列问题作出正式回应，本站将持续跟进后续整改进展。（记者 艾琳·索恩）
+                        </div>
+                    </div>
+
+                </div> <!-- 关闭右侧边栏 -->
+
+            </div> <!-- 关闭双网格流 -->
+        </div> <!-- 关闭大屏容器 -->
+    </section> <!-- 关闭整个列表板块 -->
+
+    <!-- 国际大牌全黑极简页脚 -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-wrap">
+                <div class="footer-brand">
+                    <h4>HUMMINGBIRD NEWS</h4>
+                    <p>新型数字化全球主流新闻媒体门户 · 权威声音 深度报道</p>
+                    <p>本平台全部图文、资讯版权归本站所有，未经可，严禁转载、摘抄、二次改编。</p>
+                    <p>版权所有，侵权必究。内容法律相关事宜，请联系本公司法务部。</p>
+                    <p>蜂鸟新闻法务部首席顾问：艾拉拉·沃斯 Elara Voss </p>
+                    
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 蜂鸟新闻门户网站 · 保留所有权利</p>
+                <p>网站郑重声明：站内所有新闻均为剧情虚构，如有雷霆，纯属巧合</p>
+                <p>特别声明：以上信息均为架空虚构内容，无任何现实映射，不存在真实对应事件与人物，一切仅服务原创解谜故事创作。</p>
+            </div>
+        </div>
+    </footer>
+    <!-- ==========================================================================
+       【全网无瑕终章大团圆大闭环引擎】0冲突、0重绘！时钟/无限次搜索/左右下拉 100% 全通配
+       ========================================================================== -->
+    <script>
+        // 🚀 1. 【时间强行暴力复活】：全通配模糊扫表，强行让状态栏时间死死跟随电脑系统一秒一动，绝不重绘网页洗掉事件
+        function bfpdAutoClockLive() {
+            // 地毯式抓取网页内所有的实体 HTML 节点
+            const allElements = document.getElementsByTagName('*');
+            
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeString = hours + ":" + minutes;
+
+            // 核心自修复：一旦在开机时成功换出了数字小槽，以后只对这个小数字槽进行秒级走字刷新，效率最高
+            const alreadyAwakeCore = document.getElementById('humming-time-core');
+            if (alreadyAwakeCore) {
+                alreadyAwakeCore.innerText = timeString;
+                return;
+            }
+
+            // 循环大盘查：无视任何中英文冒号或空格差异，只要抓到包含 GLOBAL TIME 的容器，瞬间注入
+            for (let i = 0; i < allElements.length; i++) {
+                const el = allElements[i];
+                // 核心判定：确保是文字叶子节点，且内部包含了 GLOBAL TIME 或 TIME 字样
+                if (el.children.length === 0 && el.innerText && el.innerText.toUpperCase().indexOf('TIME') !== -1) {
+                    // 强制安全局部重写：保留您写好的前缀，仅把后面的 LOADING 盲区强制开辟为一秒一走的系统数字钟
+                    el.innerHTML = 'GLOBAL TIME: <span id="humming-time-core" style="font-weight:700; color:#ffffff;">' + timeString + '</span>';
+                    break;
+                }
+            }
+        }
+        // 开启一秒一走底层时钟，死死对接电脑真实时钟
+        setInterval(bfpdAutoClockLive, 1000);
+        bfpdAutoClockLive(); 
+
+        // 🚀 2. 【左侧图文要闻卡片下拉函数】：100% 对应您卡片上的 toggleExpansion('stream-detail-4')
+        function toggleExpansion(expansionId) {
+            const targetPanel = document.getElementById(expansionId);
+            if (!targetPanel) return;
+
+            const currentDisplay = window.getComputedStyle(targetPanel).display;
+
+            // 点击某一条时，自动把左侧所有其他的图文大卡片详情全部强制合拢隐藏，防止撑破排版
+            const allTextExpansions = document.querySelectorAll('.news-detail-expansion');
+            for (let i = 0; i < allTextExpansions.length; i++) {
+                allTextExpansions[i].style.display = 'none';
+            }
+
+            // 如果刚才这条图文新闻是关着的，一戳立刻就地物理向下拉开！
+            if (currentDisplay === 'none') {
+                targetPanel.style.setProperty('display', 'block', 'important');
+                targetPanel.style.setProperty('margin-top', '12px', 'important'); 
+            } else {
+                targetPanel.style.display = 'none'; 
+            }
+        }
+
+        // 🚀 3. 【右侧纯文本长条列表下拉函数】：100% 对应您手写的 toggleTextExpansion('text-news-5')
+        function toggleTextExpansion(expansionId) {
+            const targetPanel = document.getElementById(expansionId);
+            if (!targetPanel) return;
+
+            const currentDisplay = window.getComputedStyle(targetPanel).display;
+
+            // 点击右侧某一条时，自动把右侧所有其他的纯文本长条详情全部强制合拢隐藏
+            const allTextExpansions = document.querySelectorAll('.text-detail-expansion');
+            for (let i = 0; i < allTextExpansions.length; i++) {
+                allTextExpansions[i].style.display = 'none';
+            }
+
+            if (currentDisplay === 'none') {
+                targetPanel.style.setProperty('display', 'block', 'important');
+                targetPanel.style.setProperty('margin-top', '8px', 'important'); 
+            } else {
+                targetPanel.style.display = 'none'; 
+            }
+        }
+
+        // ==========================================================================
+        // 4. 【特定跳转新闻数据库】输入4个字，只要对中任意 2 个字就瞬间换页直跳链接
+        // ==========================================================================
+        const HUMMING_FUZZY_REDIRECT_DB = [
+            {
+                standardName: "艾琳·索恩", 
+                redirectUrl: "X新闻子页索恩.html" 
+            },
+            {
+                standardName: "沈秋", 
+                redirectUrl: "X新闻子页沈秋.html" 
+            },
+            {
+                standardName: "艾拉拉·沃斯 Elara Voss 律师", 
+                redirectUrl: "X新闻子页艾拉拉·沃斯 Elara Voss.html" 
+            },
+            {
+                standardName: "顾珩 主编", 
+                redirectUrl: "X新闻子页顾珩.html" 
+            },
+            {
+                standardName: "明星 苏婉 歌手 演唱会", 
+                redirectUrl: "X新闻子页苏婉.html" 
+            },
+            {
+                standardName: "密会 八卦 偷拍 ", 
+                redirectUrl: "X新闻子页苏婉八卦.html" 
+            },
+            {
+                standardName: "#", 
+                redirectUrl: "#.html" 
+            },
+            {
+                standardName: "科技前沿", 
+                redirectUrl: "player_final.html" 
+            }
+        ];
+
+        // 🚀 5. 【无限次流式全局检索直跳主引擎】：采用动态文本抽取技术，100% 完美支持无限次连续回车检索
+        function executeHummingLiveSearch(event) {
+            if (event) event.preventDefault(); // 强力阻断表单默认的刷新冲洗页面动作
+            
+            // 实时动态抓取当前最新输入框，永不绑定僵尸死节点
+            const globalInput = document.getElementById('bfpd-keyword-input') || document.getElementById('keyword-input') || document.querySelector('input[type="text"]');
+            if (!globalInput) return;
+            const searchTerm = globalInput.value.trim();
+            if (!searchTerm) return;
+
+            let targetUrlResult = null;
+
+            for (let i = 0; i < HUMMING_FUZZY_REDIRECT_DB.length; i++) {
+                const item = HUMMING_FUZZY_REDIRECT_DB[i];
+                let matchedCharsCount = 0;
+                
+                for (let j = 0; j < searchTerm.length; j++) {
+                    const char = searchTerm.charAt(j);
+                    if (char !== "·" && char !== "•" && item.standardName.indexOf(char) !== -1) {
+                        matchedCharsCount++;
+                    }
+                }
+
+                if (matchedCharsCount >= 2) {
+                    targetUrlResult = item.redirectUrl; 
+                    break; 
+                }
+            }
+
+            if (targetUrlResult) {
+                window.location.href = encodeURI(targetUrlResult);
+            } else {
+                alert("【蜂鸟全局检索通知】\n您输入的查询词是: \"" + searchTerm + "\"\n\n系统提示：未预设该功能枢纽。您可试着在搜索框内输入“艾琳”或“索恩”测试对中两个字就 100% 瞬间无感换页直跳的特稿效果！");
+            }
+        }
+
+        // 最高级全自适应接管挂载器：死死绑定回车提交信号
+        window.addEventListener('DOMContentLoaded', function() {
+            const globalForm = document.querySelector('form') || document.querySelector('.bfpd-search-form');
+            if (globalForm) {
+                globalForm.onsubmit = executeHummingLiveSearch;
+            }
+        });
+        
+        // 💡 6. 辅助大牌重定向流：将所有新旧函数名在底层完全对齐合拢，保障100%开机绝不报红字大错
+        function executeBfpdSearch(event) { executeHummingLiveSearch(event); }
+        function executeHummingSearch(event) { executeHummingLiveSearch(event); }
+        function toggleBfpdNews(element) { return false; }
+        function toggleHummingNews(element) { return false; }
+    </script>
+
+</body>
+</html>
