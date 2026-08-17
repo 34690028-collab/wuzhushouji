@@ -2,353 +2,168 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>安全检索门户</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>解密破案系统</title>
     <style>
-        /* --- 基础样式（完全脱离外网依赖） --- */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
-        body {
-            background-color: #f3f4f6;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* --- 核心：画面比例锁定 (16:9) 与多端自适应容器 --- */
-        .aspect-locked-container {
-            aspect-ratio: 16 / 9;
-            width: 100%;
-            max-width: 1100px;
-            background-color: #ffffff; /* 严格白色背景 */
-            border-radius: 16px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e5e7eb;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 40px;
-            position: relative;
-            z-index: 10; /* 保证内容层在基础层之上 */
-        }
-
-        /* 针对超宽屏或平板的防溢出锁定 */
-        @media (min-aspect-ratio: 16/9) {
-            .aspect-locked-container {
-                height: 85vh;
-                width: auto;
-                            /* ==========================================================================
-               【分段发送 - 第 3 段：手机端返回按钮防错位微调】
-               ========================================================================== */
-            .top-back-btn {
-                position: static; /* 🛠️ 手机端取消绝对定位，使其按流式排版在最上方 */
-                align-self: flex-start; /* 让它在最左边靠齐 */
-                margin-bottom: 16px; /* 和下方的Logo拉开间距 */
-                padding: 6px 12px; /* 稍微缩小一点尺寸 */
-                font-size: 13px;
-            }
-
-            }
-        }
-
-        /* --- 顶部大 Logo 区域 --- */
-        .header-logo {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .logo-circle {
-            width: 140px;
-            height: 140px;
-            background-color: #2563eb;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
-        }
-        .logo-text {
-            color: #ffffff;
-            font-weight: 900;
-            font-size: 32px;
-            letter-spacing: 2px;
-        }
-
-        /* --- 中部 3个搜索框区域 --- */
-        .search-section {
-            margin: auto 0;
-            width: 100%;
-            max-width: 550px;
-            align-self: center;
-        }
-        .search-form {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        .input-group {
-            display: flex;
-            flex-direction: column;
-        }
-        .search-input {
-            width: 100%;
-            padding: 12px 14px;
-            border: 2px solid #d1d5db;
-            border-radius: 8px;
-            outline: none;
-            font-size: 15px;
-            transition: border-color 0.2s ease;
-            background-color: #ffffff;
-        }
-        .search-input:focus {
-            border-color: #2563eb;
-        }
-        .key-hint {
-            font-size: 12px;
-            color: #6b7280;
-            margin-top: 4px;
-            padding-left: 4px;
-        }
-        .submit-btn {
-            width: 100%;
-            background-color: #2563eb;
-            color: white;
-            font-weight: bold;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        /* --- 纯正网页尾角 --- */
-        /* ==========================================
-           【分段发送 - 第 1 段：电脑端页脚完美居中】
-           ========================================== */
-        .footer-area {
-            border-top: 1px solid #f3f4f6;
-            padding-top: 16px;
-            display: flex;
-            justify-content: center; /* 🛠️ 关键修改：由 flex-end 改为 center 确保彻底居中 */
-            align-items: center;
-            font-size: 12px;
-            color: #9ca3af;
-            text-align: center; /* 🛠️ 新增：确保多行文字时也能行行居中 */
-            width: 100%; /* 🛠️ 新增：撑满容器宽度 */
-        }
-
-
-        /* --- 水印图层：置于最上方 (z-index: 50) 且预留图标贴图位置 --- */
-        .watermark-overlay {
-            position: absolute;
-            inset: 0;
-            pointer-events: none; /* 穿透点击，不影响输入框输入 */
-            z-index: 50; 
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            gap: 80px;
-            padding: 40px;
-        }
-
-        /* 水印图标贴图核心样式 */
-        .watermark-icon-item {
-            width: 120px;   /* 预留图标贴图的宽度 */
-            height: 120px;  /* 预留图标贴图的高度 */
-            transform: rotate(-25deg);
-            user-select: none;
-            
-            /* 🔽 预留贴图位置：请将您本地的图标命名为 watermark-icon.png 并放在同级目录下 */
-            /* 如果暂时没有图片，它会默认渲染下方通过 JS 生成的灰度遮罩 */
-            background-image: url('watermark-icon.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-        }
-
-        /* --- 手机端多端流式自适应微调 --- */
-        @media (max-width: 768px) {
-            .aspect-locked-container {
-                padding: 20px;
-                aspect-ratio: auto; /* 手机端自动转为流式布局，防止内容重叠 */
-                min-height: 85vh;
-                            /* ==========================================================================
-               【分段发送 - 第 2 段：手机端页脚行行居中优化】
-               ========================================================================== */
-            .footer-area { 
-                justify-content: center; 
-                text-align: center; /* 🛠️ 确保在手机窄屏上，长文字折行后依然每行都完美居中 */
-                width: 100%;
-            }
-
-            }
-            .logo-circle { width: 100px; height: 100px; }
-            .logo-text { font-size: 24px; }
-            .footer-area { justify-content: center; }
-        }
-        /* 新增：Logo图片完美适配圆形的样式 */
-.logo-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;     /* 💡 核心：防止图片拉伸变形，自动等比例裁剪填充 */
-    border-radius: 50%;    /* 💡 核心：让图片本身也变成完美圆形 */
-}
-        /* ==========================================================================
-           【分段发送 - 第 2 段：左上角返回按钮基础样式】
-           ========================================================================== */
-        .top-back-btn {
-            position: absolute;
-            top: 24px;
-            left: 24px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: #4b5563; /* 稳重的深灰字 */
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            padding: 8px 16px;
-            background-color: #f3f4f6; /* 浅灰底色 */
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-            z-index: 60; /* 确保层级高于水印，能够正常点击 */
-        }
-
-        .top-back-btn:hover {
-            color: #2563eb; /* 悬浮时变为和你Logo一致的蓝色 */
-            border-color: #2563eb;
-            background-color: #eff6ff; /* 极浅的蓝底 */
-            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1);
-        }
-
+        /* 核心逻辑：全局强制锁定 16:9 比例响应式画布，全面兼容手机、平板、台式机 */
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body, html { width: 100%; height: 100%; background: #1a1a1a; display: flex; justify-content: center; align-items: center; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        #game-container { position: relative; width: 100vw; height: 56.25vw; max-width: 177.78vh; max-height: 100vh; background: #111; overflow: hidden; box-shadow: 0 0 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; }
     </style>
 </head>
 <body>
+    <div id="game-container">
+        <!-- 左上角返回键及返回路径预留 -->
+        <!-- 左上角返回键及返回路径预留 -->
+        <div id="nav-header" style="position: absolute; top: 3%; left: 2%; z-index: 10; display: flex; align-items: center; gap: 10px;">
+            <!-- ⬇️ 在下方将 '你的主菜单或上一页文件名.html' 替换为你实际的网页文件名或网址 ⬇️ -->
+            <a href="巴布曼特联邦警察局.html;" id="back-btn" onclick="location.href='index.html';" style="background: rgba(0,0,0,0.6); color: #fff; border: 1px solid #555; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-size: 1.4vw; cursor: pointer; transition: background 0.2s;">❮ 返回</a>
+            <span id="back-path" style="color: #aaa; font-size: 1.2vw; text-shadow: 1px 1px 2px #000;">当前路径: 案件侦破厅 / 线索分析仪</span>
+        </div>
 
-    <!-- 水印图层：牢牢锁定在最上方，内部全部为图标贴图组件 -->
-    <div id="watermark-layer" class="watermark-overlay">
-        <div class="watermark-icon-item"></div>
-        <div class="watermark-icon-item"></div>
-        <div class="watermark-icon-item"></div>
-        <div class="watermark-icon-item"></div>
-        <div class="watermark-icon-item"></div>
-        <div class="watermark-icon-item"></div>
-    </div>
 
-    <!-- 画面比例锁定主容器（白色背景） -->
-    <main class="aspect-locked-container">
-            <!-- ==========================================
-             【分段发送 - 第 1 段：左上角返回按钮结构】
-             ========================================== -->
-        <a href="巴布曼特联邦警察局.html" class="top-back-btn" title="返回上一页">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12"></line>
-                <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-            <span>返回门户</span>
-        </a>
-    
-        <!-- 顶部：大 Logo -->
-<header class="header-logo" style="flex-direction: column; gap: 12px;">
-    <div class="logo-circle">
-        <img src="巴布曼特警察局LOGO.png" alt=" " class="logo-img">
-    </div>
-    <!-- 🔽 在这里添加您的文字 -->
-    <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; letter-spacing: 2px;">巴布曼特警察局举报中心</h1>
-</header>
-      <!-- 中部：3个搜索框及下方的云盘密钥标注 -->
-        <section class="search-section">
-            <form id="search-form" class="search-form" onsubmit="event.preventDefault(); handleTripleSearch();">
-                
-                <div class="input-group">
-                    <input type="text" id="search1" placeholder="请输入检举揭发的人（***）+（***）" class="search-input">
-                    <p class="key-hint">🔑 云盘密钥：人证+人证</p>
+        <!-- 屏幕 70% 高度的核心背景与碎片展示区 -->
+            <div id="evidence-area" style="position: relative; width: 100%; height: 70%; background-image: url('案件分析版.jpg'); background-size: cover; background-position: center; border-bottom: 2px solid #333;">            <!-- 5张破碎线索纸片，预留独立贴图路径与固定比例坐标 -->
+            <div id="fragment-1" class="clue-fragment" style="position: absolute; top: 20%; left: 25%; width: 12%; height: 20%; background-image: url('碎片1.png'); background-size: contain; background-repeat: no-repeat; opacity: 0; pointer-events: none; transition: opacity 0.5s ease;"></div>
+            <div id="fragment-2" class="clue-fragment" style="position: absolute; top: 15%; left: 45%; width: 15%; height: 25%; background-image: url('碎片2.png'); background-size: contain; background-repeat: no-repeat; opacity: 0; pointer-events: none; transition: opacity 0.5s ease;"></div>
+            <div id="fragment-3" class="clue-fragment" style="position: absolute; top: 45%; left: 25%; width: 14%; height: 22%; background-image: url('碎片3.png'); background-size: contain; background-repeat: no-repeat; opacity: 0; pointer-events: none; transition: opacity 0.5s ease;"></div>
+            <div id="fragment-4" class="clue-fragment" style="position: absolute; top: 40%; left: 65%; width: 13%; height: 24%; background-image: url('碎片4.png'); background-size: contain; background-repeat: no-repeat; opacity: 0; pointer-events: none; transition: opacity 0.5s ease;"></div>
+            <div id="fragment-5" class="clue-fragment" style="position: absolute; top: 25%; left: 38%; width: 11%; height: 18%; background-image: url('碎片5.png'); background-size: contain; background-repeat: no-repeat; opacity: 0; pointer-events: none; transition: opacity 0.5s ease;"></div>
+        </div>
+        <!-- 下方 30% 对话与交互输入栏 -->
+        <div id="dialogue-area" style="width: 100%; height: 30%; background: #222; display: flex; padding: 1.5%; gap: 1.5%;">
+            <!-- 对方头像预留路径 -->
+            <div id="avatar-box" style="width: 10%; height: 100%; background-image: url('5接警.png'); background-size: cover; background-position: center; border-radius: 6px; border: 2px solid #444; flex-shrink: 0;"></div>
+            
+            <!-- 对话核心内容显示区 -->
+            <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                <div id="chat-bubble" style="color: #ddd; font-size: 1.4vw; line-height: 1.5; background: #2a2a2a; padding: 10px 15px; border-radius: 6px; height: 65%; overflow-y: auto;">
+                    加载中...
                 </div>
-
-                <div class="input-group">
-                    <input type="text" id="search2" placeholder="请输入第二个搜索词..." class="search-input">
-                    <p class="key-hint">🔑 云盘密钥：物证******</p>
+                <!-- 玩家文本输入交互行 -->
+                <div style="display: flex; gap: 10px; height: 30%;">
+                    <input type="text" id="player-input" placeholder="请输入线索编号（如 AAA***）..." style="flex-grow: 1; background: #111; border: 1px solid #444; border-radius: 4px; color: #fff; padding: 0 10px; font-size: 1.2vw;">
+                    <button id="submit-btn" onclick="handleClueSubmit()" style="background: #a91e23; color: #fff; border: none; padding: 0 20px; border-radius: 4px; font-size: 1.2vw; cursor: pointer;">提交</button>
                 </div>
-
-                <div class="input-group">
-                    <input type="text" id="search3" placeholder="请输入第三个搜索词..." class="search-input">
-                    <p class="key-hint">🔑 云盘密钥：其他证明</p>
-                </div>
-
-                <button type="submit" class="submit-btn">合并发送</button>
-            </form>
-        </section>
-
-        <!-- 底部：网页尾角 -->
-        <footer class="footer-area">
-            <div>
-                <p>© 特别声明：以上信息均为架空虚构内容，无任何现实映射，不存在真实对应事件与人物，一切仅服务原创解谜故事创作
-
-</p>
             </div>
-        </footer>
-
-    </main>
+        </div>
+        <!-- 5张碎片全部解锁后的结案弹窗（已加入返回上一步功能） -->
+        <div id="case-modal" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 100;">
+            <div style="background: #2c2c2c; border: 2px solid #a91e23; border-radius: 8px; width: 45%; padding: 4%; text-align: center; box-shadow: 0 0 20px rgba(169,30,35,0.5);">
+                <h2 style="color: #a91e23; font-size: 2.2vw; margin-bottom: 1.5vw; letter-spacing: 2px;">⚠️ 案件真相大白</h2>
+                <p style="color: #ccc; font-size: 1.3vw; margin-bottom: 2.5vw; line-height: 1.6;">所有证据链已经完整，我们即刻出动警力将它们一网打尽。</p>
+                
+                <!-- 交互按钮组 -->
+                <div style="display: flex; justify-content: center; gap: 20px;">
+                    <!-- 返回上一步按钮：隐藏弹窗 -->
+                    <button onclick="document.getElementById('case-modal').style.display = 'none';" style="background: #444; color: #fff; border: 1px solid #666; padding: 10px 24px; font-size: 1.2vw; border-radius: 4px; cursor: pointer; transition: background 0.2s;">返回上一步</button>
+                    <!-- 前往破案按钮 -->
+                    <button onclick="location.href='path/to/solved_page.html';" style="background: #a91e23; color: #fff; border: none; padding: 10px 24px; font-size: 1.2vw; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s;">点击跳转结局</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // ==========================================
-        // 🛠️ 代码控制区：您可以在这里直接调节水印图标深浅
-        // ==========================================
-        // 数值范围 0.0（完全透明隐藏） 到 1.0（100% 显现无透明）
-        // 比如 0.12 代表 12% 的视觉深浅度
-        const WATERMARK_OPACITY = 0.12; 
+        // 线索核心底层字典定义（您可以根据需要任意增删和修改特定编号）
+        const CLUE_DB = {
+            "EPT999": { id: 1, info: "【线索1】恭喜你收集到了空间实验室骇人实验的物证。" },
+            "EPT789": { id: 2, info: "【线索2】黑水镇这家的福利院问题太多，虚假的捐赠账目和大量人口失踪幕后都指向它。这些证据很关键；谢谢你的提供。" },
+            "EPT233": { id: 3, info: "【线索3】这是诺凡泰克的实验室伊特尼塔计划核心秘密，虽然不全，但这些也足以撕开它的面具，为我们后续调查起到关键作用。" },
+            "EPT760": { id: 4, info: "【线索4】监控证据显示，艾琳·索恩的死亡不是普通的交通事故，而是有人蓄意谋杀，我们已经锁定证据，即刻对他进行逮捕。" },
+            "EPT563": { id: 5, info: "【线索5】赖小花记者被抓关押的地方已经确定，已经派遣特种战术部队前往救援，感谢你的帮助。" }
+        };
 
-        // 页面加载时由系统底层代码自动渲染深浅度
-        window.addEventListener('DOMContentLoaded', () => {
-            const iconItems = document.querySelectorAll('.watermark-icon-item');
-            iconItems.forEach(item => {
-                item.style.opacity = WATERMARK_OPACITY;
-                
-                // 占位逻辑：若本地暂时没有 watermark-icon.png 贴图，代码自动用灰色块模拟贴图轮廓
-                if (!item.style.backgroundImage || item.style.backgroundImage === "url(\"watermark-icon.png\")") {
-                    item.style.backgroundColor = "rgba(156, 163, 175, 0.4)";
-                    item.style.borderRadius = "12px";
+        // 初始化玩家状态变量
+        let gameState = {
+            unlockedFragments: [], // 存储已解锁的碎片ID数组
+            currentNpcText: "请问有什么新线索可以提供？"
+        };
+    </script>
+    <script>
+        // 从 localStorage 恢复或初始化缓存，保证流程万无一失
+        function initGameState() {
+            const cached = localStorage.getItem("detective_game_cache");
+            if (cached) {
+                try {
+                    gameState = JSON.parse(cached);
+                } catch(e) {
+                    console.error("缓存数据解析失败，已自动重置");
                 }
+            }
+            renderUiByState();
+        }
+
+        // 根据最新状态数据渲染 UI 节点
+        function renderUiByState() {
+            // 恢复所有已解锁线索碎片的可见度
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById(`fragment-${i}`).style.opacity = "0";
+            }
+            gameState.unlockedFragments.forEach(fragmentId => {
+                const el = document.getElementById(`fragment-${fragmentId}`);
+                if (el) el.style.opacity = "1";
             });
-        });
 
-        // ==========================================
-        // 3个搜索框正确词条联动与本地跳转逻辑
-        // ==========================================
-        function handleTripleSearch() {
-            const val1 = document.getElementById('search1').value.trim();
-            const val2 = document.getElementById('search2').value.trim();
-            const val3 = document.getElementById('search3').value.trim();
+            // 动态输出当前的对话气泡文本
+            document.getElementById("chat-bubble").innerHTML = gameState.currentNpcText;
 
-            // 预设正确词条
-            const correctWord1 = "666";
-            const correctWord2 = "EPT999";
-            const correctWord3 = "999";
-
-            // 同时满足跳转特定本地链接
-            const targetUrl = "target_project.html";
-
-            if (val1 === correctWord1 && val2 === correctWord2 && val3 === correctWord3) {
-                window.location.href = targetUrl;
+            // 检查五张纸片是否全部集齐，触发案件完结弹窗
+            if (gameState.unlockedFragments.length === 5) {
+                setTimeout(() => {
+                    document.getElementById("case-modal").style.display = "flex";
+                }, 600);
             } else {
-                alert("校验未通过，请确认三个输入框词条是否全部正确。");
+                document.getElementById("case-modal").style.display = "none";
             }
         }
-        
+
+        // 保存当前状态至浏览器本地缓存
+        function saveToCache() {
+            localStorage.setItem("detective_game_cache", JSON.stringify(gameState));
+        }
+    </script>
+    <script>
+        // 处理玩家线索输入的主控制流
+        function handleClueSubmit() {
+            const inputEl = document.getElementById("player-input");
+            const rawVal = inputEl.value.trim();
+            inputEl.value = ""; // 提交后清空输入框
+
+            if (!rawVal) return;
+
+            // 触发高级开发者重置指令：开发者还原
+            if (rawVal === "开发者还原") {
+                gameState.unlockedFragments = [];
+                gameState.currentNpcText = "请问有什么新线索可以提供？";
+                saveToCache();
+                renderUiByState();
+                return;
+            }
+
+            // 比对线索库核心匹配
+            if (CLUE_DB[rawVal]) {
+                const item = CLUE_DB[rawVal];
+                if (!gameState.unlockedFragments.includes(item.id)) {
+                    gameState.unlockedFragments.push(item.id);
+                }
+                gameState.currentNpcText = `【线索价值分析】匹配成功！<br>${item.info}`;
+            } else {
+                // 输错编号时的反向回馈提示
+                gameState.currentNpcText = `【线索错误】警员，你提交的线索编号 "${rawVal}" 查无此项，虚假报案我们可能会起诉你哦。`;
+            }
+
+            saveToCache();
+            renderUiByState();
+        }
+
+        // 监听回车键快捷提交输入
+        document.getElementById("player-input").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") handleClueSubmit();
+        });
+
+        // 页面就绪后立即执行初始化加载
+        window.onload = initGameState;
     </script>
 </body>
 </html>
