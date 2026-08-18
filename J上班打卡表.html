@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>企业级智能考勤系统 | 员工打卡中心</title>
+    <!-- 引入高级现代商务无衬线字体线 -->
+    <link rel="stylesheet" href="#">
+    
+    <style>
+        /* ==========================================================================
+           1. 全局样式规范与高端商务色调
+           ========================================================================== */
+        :root {
+            --primary-blue: #1e3a8a;     /* 科技深蓝 */
+            --success-green: #10b981;    /* 打卡成功绿 */
+            --danger-red: #ef4444;       /* 警告/下班红 */
+            --text-dark: #1f2937;        /* 商务正文黑 */
+            --text-muted: #6b7280;       /* 严谨辅助灰 */
+            --bg-body: #f3f4f6;          /* 全局冷淡浅灰背景 */
+            --bg-card: #ffffff;          /* 纯白卡片底色 */
+            --border-thin: #e5e7eb;      /* 单像素分割线 */
+            --font-global: 'Inter', 'Noto Sans SC', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-global);
+            color: var(--text-dark);
+            background-color: var(--bg-body);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { text-decoration: none; color: inherit; }
+
+        /* 全自适应居中底座 */
+        .container {
+            width: 100%;
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        /* ==========================================================================
+           2. 顶部导航标头栏与主体响应式网格布局样式
+           ========================================================================== */
+        .site-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--border-thin);
+            padding: 14px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .brand-logo-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-box {
+            width: 34px;
+            height: 34px;
+            background-color: var(--primary-blue);
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        .site-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .btn-home {
+            background-color: transparent;
+            border: 1px solid var(--border-thin);
+            padding: 7px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-home:hover {
+            background-color: var(--bg-body);
+            color: var(--primary-blue);
+            border-color: var(--primary-blue);
+        }
+
+        /* 主体两列自适应网格 */
+        .main-layout {
+            padding: 30px 0;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 24px;
+        }
+        .card-base {
+            background: var(--bg-card);
+            border: 1px solid var(--border-thin);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+        }
+
+        /* 左侧员工个人卡 */
+        .profile-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .avatar-frame {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            overflow: hidden;
+            background-color: #e5e7eb;
+            border: 3px solid #ffffff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            margin-bottom: 16px;
+        }
+        .avatar-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .emp-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .emp-id, .emp-dept {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* 右侧考勤控制面板与动态时钟 */
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .live-clock-board {
+            text-align: center;
+            padding: 12px;
+            background: #fafafa;
+            border-radius: 8px;
+            border: 1px dashed var(--border-thin);
+            margin-bottom: 8px;
+        }
+        .live-time-digits {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary-blue);
+            font-family: monospace;
+        }
+
+        /* 上下班醒目按钮组样式 */
+        .punch-btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .btn-punch {
+            border: none;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .btn-punch-in { background-color: var(--success-green); }
+        .btn-punch-in:hover { background-color: #059669; transform: translateY(-1px); }
+        .btn-punch-out { background-color: var(--danger-red); }
+        .btn-punch-out:hover { background-color: #dc2626; transform: translateY(-1px); }
+        .btn-punch span { font-size: 11px; font-weight: 400; opacity: 0.8; }
+
+        /* 就地记录提示框流水栏 */
+        .log-box-wrapper {
+            background-color: #f9fafb;
+            border-left: 4px solid var(--primary-blue);
+            padding: 14px;
+            border-radius: 0 8px 8px 0;
+            min-height: 70px;
+        }
+        .log-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+        .log-item { font-size: 13.5px; font-weight: 500; margin-top: 4px; }
+
+        /* 细单像素分割线与固定的三个编辑框布局 */
+        .divider-line { height: 1px; background-color: var(--border-thin); margin: 12px 0; }
+        .exception-section-title { font-size: 14px; font-weight: 700; color: var(--text-dark); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        
+        .fixed-editor-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+        .editor-node { display: flex; flex-direction: column; gap: 6px; }
+        .editor-node label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+        .custom-textarea {
+            width: 100%; height: 80px; border: 1px solid var(--border-thin); border-radius: 6px; padding: 10px;
+            font-size: 13px; color: var(--text-dark); outline: none; resize: none; transition: border-color 0.2s; background-color: #fafafa;
+        }
+        .custom-textarea:focus { border-color: var(--primary-blue); background-color: #ffffff; }
+
+        /* 极致多端响应式兼容媒体查询 */
+        @media (max-width: 992px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .profile-card { flex-direction: row; text-align: left; gap: 20px; justify-content: flex-start; }
+            .avatar-frame { margin-bottom: 0; width: 90px; height: 90px; }
+        }
+        @media (max-width: 640px) {
+            .container { padding: 0 14px; }
+            .profile-card { padding: 16px; }
+            .avatar-frame { width: 70px; height: 70px; }
+            .emp-name { font-size: 18px; }
+            .fixed-editor-grid { grid-template-columns: 1fr; gap: 12px; }
+            .custom-textarea { height: 70px; }
+        }
+                /* ==========================================================================
+           🌟 极简通知栏专属商务样式（全响应式布局）
+           ========================================================================== */
+        .fixed-notice-vertical-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .notice-bar-card {
+            display: flex;
+            align-items: center; /* 极简文案居中对齐更好看 */
+            gap: 14px;
+            padding: 12px 16px;
+            background-color: #fafafa;
+            border: 1px solid var(--border-thin);
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+        .notice-bar-card:hover {
+            transform: translateX(2px);
+        }
+        .notice-badge {
+            flex-shrink: 0;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-align: center;
+            min-width: 50px;
+        }
+        .notice-content-text {
+            font-size: 13.5px;
+            color: var(--text-dark);
+            line-height: 1.4;
+        }
+        .notice-content-text strong {
+            color: var(--danger-red); /* 让1天异常字样高亮爆红 */
+        }
+
+        /* 3 种异常标签背景色与对应的左侧装饰线条 */
+        .notice-late-theme { 
+            border-left: 4px solid #ea580c !important; 
+        }
+        .notice-late-theme .notice-badge { background-color: #ea580c; } /* 迟到：警示橙 */
+
+        .notice-early-theme { 
+            border-left: 4px solid #0284c7 !important; 
+        }
+        .notice-early-theme .notice-badge { background-color: #0284c7; } /* 早退：天空蓝 */
+
+        .notice-absent-theme { 
+            border-left: 4px solid #7c3aed !important; 
+        }
+        .notice-absent-theme .notice-badge { background-color: #7c3aed; } /* 缺勤：深邃紫 */
+
+        @media (max-width: 640px) {
+            .notice-bar-card { padding: 10px 12px; gap: 10px; }
+            .notice-content-text { font-size: 13px; }
+        }
+
+    </style>
+</head>
+<body>
+    <!-- 1. 顶部导航标头栏（带LOGO、名称、返回主页） -->
+    <header class="site-header">
+        <div class="container header-flex">
+            <div class="brand-logo-group">
+                <div class="logo-box">H</div>
+                <!-- 标志性名称 -->
+                <div class="site-title">蜂鸟新闻 <span>考勤中心</span></div>
+            </div>
+            <!-- 返回主页按键：绑定就地重置刷新页面，安全不报错 -->
+            <button class="btn-home" onclick="window.location.href='mail.html';">返回主页</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- 2. 全响应式主双列网格布局底座 -->
+        <main class="main-layout">
+            
+            <!-- 左侧侧边栏：员工个人档案卡 -->
+            <section class="card-base profile-card">
+                <!-- 员工照片：1:1圆形防损锁定，配合 object-fit: cover 绝不拉伸变形 -->
+                <div class="avatar-frame">
+                    <img src="S赖小花.jpg" alt="员工赖小花个人证件照">
+                </div>
+                <div>
+                    <!-- 员工姓名与核心编号 -->
+                    <h2 class="emp-name">赖小花</h2>
+                    <p class="emp-id">工号：HNN-29899</p>
+                    <p class="emp-dept">部门：新闻部</p>
+                </div>
+            </section>
+
+            <!-- 右侧核心区：考勤控制面板与固定的三大异常编辑框 -->
+            <section class="card-base control-panel">
+                
+                <!-- 动态高亮数字时钟看板 -->
+                <div class="live-clock-board">
+                    <div id="live-time-display" class="live-time-digits">17:34:18</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">2026年8月18日 星期二</div>
+                </div>
+                <!-- 3. 强力醒目的上下班打卡按钮组 -->
+                <div class="punch-btn-group">
+                    <button class="btn-punch btn-punch-in" onclick="executePunch('IN');">
+                        打卡上班
+                        <span>PUNCH IN</span>
+                    </button>
+                    <button class="btn-punch btn-punch-out" onclick="executePunch('OUT');">
+                        打卡下班
+                        <span>PUNCH OUT</span>
+                    </button>
+                </div>
+
+                <!-- 4. 即时打卡历史流水凭证框（就地渲染、绝不跳转） -->
+                <div class="log-box-wrapper">
+                    <div class="log-title">本次考勤打卡流水凭证：</div>
+                    <div id="punch-log-output">
+                        <span style="color: var(--text-muted); font-size: 13px;">暂无今日考勤流水，请在上方点击按钮核销打卡状态。</span>
+                    </div>
+                </div>
+
+                <!-- 5. 细单像素分割线 -->
+                 <!-- 5. 细单像素分割线 -->
+                <div class="divider-line"></div>
+                
+                <!-- 6. 🌟 极简精准：个人考勤状态直核栏 -->
+                <div>
+                    <div class="exception-section-title">
+                        <span>📢</span> 个人考勤异常实时通知
+                    </div>
+                    
+                    <div class="fixed-notice-vertical-stack">
+                        
+                        <!-- 通知 1：1天迟到 -->
+                        <div class="notice-bar-card notice-late-theme">
+                            <div class="notice-badge">迟到</div>
+                            <div class="notice-content-text">
+                                <strong>赖小花：</strong>系统监测到您本月存在 <strong>7 天迟到</strong> 记录，请注意核销。
+                            </div>
+                        </div>
+                        
+                        <!-- 通知 2：1天早退 -->
+                        <div class="notice-bar-card notice-early-theme">
+                            <div class="notice-badge">早退</div>
+                            <div class="notice-content-text">
+                                <strong>赖小花：</strong>系统监测到您本月存在 <strong>3 天早退</strong> 记录，请注意核销。
+                            </div>
+                        </div>
+
+                        <!-- 通知 3：1天缺勤 -->
+                        <div class="notice-bar-card notice-absent-theme">
+                            <div class="notice-badge">缺勤</div>
+                            <div class="notice-content-text">
+                                <strong>赖小花：</strong>系统监测到您本月存在 <strong>2 天缺勤</strong> 记录，请注意核销。
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- ==========================================================================
+         7. 智能考勤底层高精准驱动引擎
+         ========================================================================== -->
+    <script>
+        // 🚀 A. 【高精准数字时钟守护】：一秒一走死死同步真实时间 [6]
+        function runLiveSystemClock() {
+            const clockNode = document.getElementById('live-time-display');
+            if (!clockNode) return;
+            const now = new Date();
+            clockNode.innerHTML = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        }
+        setInterval(runLiveSystemClock, 1000);
+        runLiveSystemClock();
+
+        // 临时本地临时状态缓存器，允许上班和下班记录在同一个框里并存渲染
+        let globalPunchRecord = { inTime: null, outTime: null };
+
+        // 🚀 B. 【核心打卡判定引擎】：就地动态更新 HTML，抛弃任何阻断式跳转 [6]
+        function executePunch(type) {
+            const now = new Date();
+            const timeString = `${String(now.getHours()).padStart(2, '0')}点${String(now.getMinutes()).padStart(2, '0')}分${String(now.getSeconds()).padStart(2, '0')}秒`;
+            const logOutput = document.getElementById('punch-log-output');
+            
+            if (!logOutput) return;
+
+            // 根据打卡类型写入数据池
+            if (type === 'IN') {
+                globalPunchRecord.inTime = timeString;
+            } else if (type === 'OUT') {
+                globalPunchRecord.outTime = timeString;
+            }
+
+            // 就地高亮渲染流水凭证
+            let htmlResult = '';
+            if (globalPunchRecord.inTime) {
+                htmlResult += `<div class="log-item" style="color: var(--success-green); margin-bottom: 4px;">🟢 上班登记成功：于 <strong>${globalPunchRecord.inTime}</strong> 完成考勤核销。</div>`;
+            }
+            if (globalPunchRecord.outTime) {
+                htmlResult += `<div class="log-item" style="color: var(--danger-red);">🔴 下班登记成功：于 <strong>${globalPunchRecord.outTime}</strong> 完成离岗核销。</div>`;
+            }
+
+            logOutput.innerHTML = htmlResult;
+        }
+    </script>
+</body>
+</html>
