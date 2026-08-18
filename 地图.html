@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>谷哥地图 - 巴布曼特联邦地图</title>
+    <style>
+        /* --- 基础与重置样式 --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #e5e3df;
+        }
+
+        /* --- 地图画布（无限画布与防留白锁边容器） --- */
+        #map-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: grab;
+            overflow: hidden;
+        }
+
+        #map-container:active {
+            cursor: grabbing;
+        }
+
+        /* 虚拟地图背景画布：尺寸 3000x3000px */
+#map-canvas {
+    width: 3000px;
+    height: 3000px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    
+    /* 👇 核心修改：在这里直接引入你的地图图片 */
+    background-image: url('地图.jpg'); 
+    background-size: 100% 100%; /* 让图片完美撑满这块 3000x3000px 的大画布 */
+    background-repeat: no-repeat;
+    background-position: center;
+    
+    transform-origin: 0 0; /* 锁边逻辑必须强制使用左上角(0,0)基准点 */
+    transition: transform 0.1s ease-out;
+}
+
+        /* 地图上的定位标记点 */
+        .map-marker {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            margin-left: -16px; /* 针尖横向精确对齐 */
+            margin-top: -32px;  /* 针尖纵向精确对齐 */
+            cursor: pointer;
+            z-index: 5;
+            transition: transform 0.2s ease;
+        }
+        .map-marker:hover {
+            transform: scale(1.2);
+            z-index: 10;
+        }
+        .map-marker svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0px 3px 4px rgba(0,0,0,0.3));
+        }
+        .marker-label {
+            position: absolute;
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #333;
+            white-space: nowrap;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            border: 1px solid #ccc;
+        }
+        /* --- 顶层UI：左侧搜索栏与侧边栏 --- */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* 让鼠标事件穿透到地图层 */
+            z-index: 20;
+        }
+
+        .interactive-ui {
+            pointer-events: auto; /* 恢复UI元素的点击事件 */
+        }
+
+        /* 搜索框容器 */
+        .search-box-container {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 390px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 24px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .search-bar {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            border-bottom: 1px solid transparent;
+        }
+        .search-bar.has-results {
+            border-bottom: 1px solid #eee;
+        }
+
+        /* 常驻返回桌面键 */
+        .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex; /* 强制常驻显示 */
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+        .search-btn:hover, .back-btn:hover {
+            background-color: #f1f3f4;
+        }
+
+        .search-input {
+            flex: 1;
+            height: 100%;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            padding: 0 8px;
+            color: #3c4043;
+        }
+
+        .search-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        /* 结果列表面板 */
+        .results-panel {
+            overflow-y: auto;
+            max-height: 400px;
+            display: none; /* 默认隐藏，搜索或触发时显示 */
+        }
+        .results-panel.active {
+            display: block;
+        }
+
+        .location-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f3f4;
+            transition: background 0.2s;
+        }
+        .location-item:hover {
+            background-color: #f8f9fa;
+        }
+        .location-icon {
+            margin-right: 14px;
+            color: #70757a;
+            display: flex;
+            align-items: center;
+        }
+        .location-info {
+            flex: 1;
+        }
+        .location-name {
+            font-size: 14px;
+            color: #1a73e8;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        .location-type {
+            font-size: 12px;
+            color: #70757a;
+        }
+        .go-link-btn {
+            color: #1a73e8;
+            padding: 6px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- 右下角缩放控制按钮 --- */
+        .zoom-controls {
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: none;
+            font-size: 22px;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .zoom-btn:first-child {
+            border-bottom: 1px solid #e4e4e4;
+        }
+        .zoom-btn:hover {
+            background-color: #eee;
+            color: #333;
+        }
+
+        /* --- 响应式断点适配 --- */
+
+        /* 平板视口 (宽度低于 768px) */
+        @media (max-width: 768px) {
+            .search-box-container {
+                width: 320px;
+            }
+        }
+
+        /* 手机视口 (宽度低于 480px)：采用全屏/底部卡片流逻辑 */
+        @media (max-width: 480px) {
+            .search-box-container {
+                top: 0;
+                left: 0;
+                width: 100%;
+                max-height: 100%;
+                border-radius: 0;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            /* 当手机端展开搜索结果时，让其占满全屏，模拟原生APP体验 */
+            .search-box-container.expanded {
+                height: 100%;
+            }
+            .search-bar {
+                height: 56px; /* 移动端增大点击区域 */
+                padding: 0 8px;
+            }
+            .results-panel {
+                max-height: calc(100vh - 56px);
+                flex: 1;
+            }
+            .zoom-controls {
+                bottom: 20px;
+                right: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. 地图渲染层 -->
+    <div id="map-container">
+        <div id="map-canvas">
+            <!-- 动态生成的标记点挂载在这里 -->
+        </div>
+    </div>
+
+    <!-- 2. 顶层UI交互层 -->
+    <div class="ui-layer">
+        <!-- 左侧搜索及面板控制 -->
+        <div class="search-box-container interactive-ui" id="search-box">
+            <div class="search-bar" id="search-bar-header">
+                <!-- 常驻返回桌面/主页按钮 -->
+                <button class="back-btn" id="btn-desktop-exit" title="返回桌面">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+                
+                <input type="text" class="search-input" id="search-input" placeholder="搜索虚拟地图场景或地名..." autocomplete="off">
+                
+                <!-- 搜索触发/重置按钮 -->
+                <button class="search-btn" id="btn-search" title="搜索">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5f6368" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                </button>
+            </div>
+            
+            <!-- 搜索结果/预设地名列表 -->
+            <div class="results-panel" id="results-panel">
+                <!-- 地点条目通过JS动态渲染 -->
+            </div>
+        </div>
+
+        <!-- 右下角放大缩小控件 -->
+        <div class="zoom-controls interactive-ui">
+            <button class="zoom-btn" id="btn-zoom-in" title="放大">+</button>
+            <button class="zoom-btn" id="btn-zoom-out" title="缩小">−</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 预设的30个虚拟地名数据（包含坐标及外部跳转链接） ---
+        const locationsData = [
+            { id: 1, name: "天幕购物中心", type: "巴布曼特联邦", x: 1300, y: 1400, url: "#" },
+            { id: 2, name: "诺凡泰克实验室", type: "巴布曼特联邦", x: 1200, y: 1600, url: "#" },
+            { id: 3, name: "诺凡泰克制药", type: "巴布曼特联邦", x: 1100, y: 1700, url: "#" },
+            { id: 4, name: "兰纳街", type: "巴布曼特联邦", x: 1450, y: 1350, url: "#" },
+            { id: 5, name: "先锋路", type: "巴布曼特联邦", x: 1950, y: 1100, url: "#" },
+            { id: 6, name: "证劵交易中心", type: "巴布曼特联邦", x: 1050, y: 1150, url: "#" },
+            { id: 7, name: "领航道公园", type: "巴布曼特联邦", x: 1600, y: 1900, url: "#" },
+            { id: 8, name: "翡翠湾御玺半岛", type: "顶级豪庭区", x: 800, y: 2200, url: "#" },
+            { id: 9, name: "巴布曼特联邦警察局", type: "巴布曼特联邦", x: 900, y: 800, url: "#" },
+            { id: 10, name: "皇家花园广场", type: "巴布曼特联邦", x: 2200, y: 1500, url: "#" },
+            { id: 11, name: "FASA联邦航空与太空管理局", type: "巴布曼特联邦", x: 2500, y: 1800, url: "#" },
+            { id: 12, name: "数字绿洲8号院", type: "巴布曼特联邦", x: 1650, y: 1000, url: "#" },
+            { id: 13, name: "黑水镇福利院", type: "巴布曼特联邦", x: 1750, y: 2100, url: "#" },
+            { id: 14, name: "传媒大街", type: "娱乐产业", x: 1200, y: 1550, url: "#" },
+            { id: 15, name: "红枫酒店", type: "巴布曼特联邦", x: 1400, y: 1650, url: "#" },
+            { id: 16, name: "方舟大道", type: "巴布曼特联邦", x: 2100, y: 1300, url: "#" },
+            { id: 17, name: "回音壁街", type: "巴布曼特联邦", x: 1350, y: 1100, url: "#" },
+            { id: 18, name: "时空路", type: "巴布曼特联邦", x: 1500, y: 1500, url: "#" },
+            { id: 19, name: "货运码头", type: "巴布曼特联邦", x: 2000, y: 550, url: "#" },
+            { id: 20, name: "灯塔", type: "巴布曼特联邦", x: 2300, y: 900, url: "#" },
+            { id: 21, name: "帝国荣光广场", type: "政治与财阀中心", x: 1500, y: 1200, url: "#" },
+            { id: 22, name: "方圆大道", type: "老牌公馆区", x: 1150, y: 950, url: "#" },
+            { id: 23, name: "铁血方阵街", type: "重工安保区", x: 2600, y: 1400, url: "#" },
+            { id: 24, name: "新罗盘悬浮街", type: "上层高空轨", x: 1700, y: 1380, url: "#" },
+            { id: 25, name: "多巴胺工坊巷", type: "网红创意园", x: 950, y: 1300, url: "#" },
+            { id: 26, name: "流光浮影画廊", type: "巴布曼特联邦", x: 1050, y: 1500, url: "#" },
+            { id: 27, name: "极光新能源街", type: "未来试验场", x: 1850, y: 850, url: "#" },
+            { id: 28, name: "蜂鸟新闻大厦", type: "巴布曼特联邦", x: 300, y: 600, url: "#" },
+            { id: 29, name: "新潘多拉霓虹港", type: "不夜贸易码头", x: 1900, y: 2400, url: "#" },
+            { id: 30, name: "联信商业银行", type: "巴布曼特联邦", x: 1500, y: 1650, url: "#" }
+        ];
+
+        // --- 2. 状态变量声明与DOM缓存 ---
+        let zoomScale = 1.0;
+        const minScale = 0.4;
+        const maxScale = 2.0;
+
+        let posX = 0;
+        let posY = 0;
+
+        let isDragging = false;
+        let startX, startY;
+
+        const mapContainer = document.getElementById('map-container');
+        const mapCanvas = document.getElementById('map-canvas');
+        const searchInput = document.getElementById('search-input');
+        const resultsPanel = document.getElementById('results-panel');
+        const searchBox = document.getElementById('search-box');
+        const searchBarHeader = document.getElementById('search-bar-header');
+        // --- 3. 地图初始化渲染与红针跳转事件声明 ---
+        function initMap() {
+            posX = 0;
+            posY = 0;
+            zoomScale = 1.0;
+            updateMapTransform();
+            
+            // 循环遍历 30 个地点，动态往画布上插标
+            locationsData.forEach(loc => {
+                const marker = document.createElement('div');
+                marker.className = 'map-marker';
+                marker.style.left = `${loc.x}px`;
+                marker.style.top = `${loc.y}px`;
+                marker.setAttribute('data-id', loc.id);
+                
+                marker.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="#ea4335">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                    </svg>
+                    <div class="marker-label">${loc.name}</div>
+                `;
+                
+                // 【核心分步逻辑】：只有在地图上二次手动点击红针，才会触发新窗口跳转
+                marker.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 阻止触发底层的地图拖拽
+                    if (loc.url && loc.url !== "#") {
+                        window.open(loc.url, '_blank');
+                    } else {
+                        // 若为演示占位符 "#"，则弹出自定义动作
+                        alert(`您点击了地图上的标针：[${loc.name}]\n分类：${loc.type}\n坐标：(${loc.x}, ${loc.y})\n此处已成功挂载您的外部二次跳转事件！`);
+                    }
+                });
+
+                mapCanvas.appendChild(marker);
+            });
+
+            renderList(locationsData);
+        }
+
+        // 更新画布矩阵样式（带全视口边界防漏白锁死算法）
+        function updateMapTransform() {
+            const containerWidth = window.innerWidth;
+            const containerHeight = window.innerHeight;
+            
+            // 计算当前缩放比例下，3000x3000px 画布在屏幕上的实际物理尺寸
+            const mapRealWidth = 3000 * zoomScale;
+            const mapRealHeight = 3000 * zoomScale;
+
+            // 计算允许移动的上下左右极限剪裁边界
+            let minX = containerWidth - mapRealWidth;
+            let maxX = 0;
+            let minY = containerHeight - mapRealHeight;
+            let maxY = 0;
+
+            // 如果地图缩小后比屏幕还小，则强制居中以防背景漏白
+            if (mapRealWidth < containerWidth) {
+                posX = (containerWidth - mapRealWidth) / 2;
+            } else {
+                posX = Math.max(minX, Math.min(maxX, posX));
+            }
+
+            if (mapRealHeight < containerHeight) {
+                posY = (containerHeight - mapRealHeight) / 2;
+            } else {
+                posY = Math.max(minY, Math.min(maxY, posY));
+            }
+
+            // 应用左上角对齐标准与矩阵位移
+            mapCanvas.style.transformOrigin = "0 0"; 
+            mapCanvas.style.left = `${posX}px`;
+            mapCanvas.style.top = `${posY}px`;
+            mapCanvas.style.transform = `scale(${zoomScale})`;
+        }
+
+        // --- 4. 跨端地图拖拽响应逻辑（支持PC鼠标与移动设备单指滑动） ---
+        const startDrag = (clientX, clientY) => {
+            isDragging = true;
+            startX = clientX - posX;
+            startY = clientY - posY;
+        };
+
+        const moveDrag = (clientX, clientY) => {
+            if (!isDragging) return;
+            posX = clientX - startX;
+            posY = clientY - startY;
+            updateMapTransform();
+        };
+
+        const stopDrag = () => { isDragging = false; };
+
+        // 鼠标监听到画布组件
+        mapContainer.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+        window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+        window.addEventListener('mouseup', stopDrag);
+
+        // 触摸屏单指滑屏监听到画布组件
+        mapContainer.addEventListener('touchstart', (e) => {
+            if(e.touches.length === 1) startDrag(e.touches[0].clientX, e.touches[0].clientY);
+        });
+        window.addEventListener('touchmove', (e) => {
+            if(e.touches.length === 1) moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+        });
+        window.addEventListener('touchend', stopDrag);
+
+        // --- 5. 无损视口中心矩阵缩放算法 ---
+        function zoom(direction) {
+            const oldScale = zoomScale;
+            if (direction === 'in') zoomScale = Math.min(maxScale, zoomScale + 0.2);
+            if (direction === 'out') zoomScale = Math.max(minScale, zoomScale - 0.2);
+            
+            // 锁定浏览器视口中央进行无偏差放大缩小补偿
+            const viewCenterX = window.innerWidth / 2;
+            const viewCenterY = window.innerHeight / 2;
+            
+            posX = viewCenterX - (viewCenterX - posX) * (zoomScale / oldScale);
+            posY = viewCenterY - (viewCenterY - posY) * (zoomScale / oldScale);
+
+            updateMapTransform();
+        }
+
+        document.getElementById('btn-zoom-in').addEventListener('click', () => zoom('in'));
+        document.getElementById('btn-zoom-out').addEventListener('click', () => zoom('out'));
+
+        // 绑定鼠标滚轮或笔记本触控板手势缩放
+        mapContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            zoom(e.deltaY < 0 ? 'in' : 'out');
+        }, { passive: false });
+        // --- 6. 搜索、列表渲染与平滑聚焦控制逻辑 ---
+        function renderList(data) {
+            resultsPanel.innerHTML = '';
+            if(data.length === 0) {
+                resultsPanel.innerHTML = `<div style="padding:16px;color:#70757a;text-align:center;font-size:14px;">未找到匹配的虚拟地点</div>`;
+                return;
+            }
+
+            data.forEach(loc => {
+                const item = document.createElement('div');
+                item.className = 'location-item';
+                item.innerHTML = `
+                    <div class="location-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </div>
+                    <div class="location-info">
+                        <div class="location-name">${loc.name}</div>
+                        <div class="location-type">${loc.type} · 虚拟区域</div>
+                    </div>
+                    <div class="go-link-btn" title="查看地名定位">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                `;
+
+                // 点击左侧列表项：只触发地图平移和镜头聚焦，不再自动弹窗跳转
+                item.addEventListener('click', (e) => {
+                    focusLocation(loc);
+                });
+
+                resultsPanel.appendChild(item);
+            });
+        }
+
+        // 让地图视野平滑聚焦到指定的坐标点上（左上角基准边界兼容版）
+        function focusLocation(loc) {
+            zoomScale = 1.4; // 设定一个放大的聚焦倍率
+            
+            // 坐标对齐计算：使用屏幕中心点减去（标记点本身的原始坐标 * 放大倍率）
+            posX = (window.innerWidth / 2) - (loc.x * zoomScale);
+            posY = (window.innerHeight / 2) - (loc.y * zoomScale);
+            
+            // 启用平滑过渡动画
+            mapCanvas.style.transition = "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
+            updateMapTransform(); // 内部会自动运行防留白锁死逻辑，确保边缘完美对齐
+            
+            // 动画结束后移除过渡属性，避免影响后续用户手动拖拽地图时的即时流畅度
+            setTimeout(() => { mapCanvas.style.transition = "transform 0.1s ease-out"; }, 500);
+
+            // 在窄屏手机端，聚焦后需要收起全屏列表，向用户露出地图和红针
+            if (window.innerWidth <= 480) {
+                searchBox.classList.remove('expanded');
+            }
+        }
+
+        // 输入框获取焦点时：展开包含 30 个完整地名的结果面板，并在手机端撑满全屏
+        searchInput.addEventListener('focus', () => {
+            resultsPanel.classList.add('active');
+            searchBarHeader.classList.add('has-results');
+            searchBox.classList.add('expanded');
+        });
+
+        // 输入框键入字符时：执行多字段动态过滤模糊搜索
+        searchInput.addEventListener('input', (e) => {
+            const keyword = e.target.value.trim().toLowerCase();
+            const filtered = locationsData.filter(loc => 
+                loc.name.toLowerCase().includes(keyword) || loc.type.toLowerCase().includes(keyword)
+            );
+            renderList(filtered);
+        });
+
+        // 统一“重置搜索栏”界面逻辑：清空并收起面板
+        function resetToMainView() {
+            searchInput.value = '';
+            renderList(locationsData);
+            resultsPanel.classList.remove('active');
+            searchBarHeader.classList.remove('has-results');
+            searchBox.classList.remove('expanded');
+            searchInput.blur();
+        }
+
+        // 点击地图空白盲区时，自动收起 PC 端的下拉列表面板
+        mapContainer.addEventListener('click', () => {
+            if (window.innerWidth > 480) {
+                resultsPanel.classList.remove('active');
+                searchBarHeader.classList.remove('has-results');
+            }
+        });
+
+        // 监听设备视口尺寸变化（如手机横竖屏切换、浏览器拖拽改变大小），实时修正防留白边界
+        window.addEventListener('resize', () => {
+            updateMapTransform();
+        });
+
+        // 👇 【新增】：点击搜索栏最左侧常驻的（←）返回键，直接退出地图系统，返回您的主页面/桌面
+        document.getElementById('btn-desktop-exit').addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            // 📝 配置说明：请把下方的 '#' 替换成您真实的系统桌面文件路径或网址
+            // 例如本地桌面文件：const desktopUrl = 'desktop.html';
+            // 例如外部网站首页：const desktopUrl = 'https://yourdomain.com';
+            const desktopUrl = '#'; 
+            
+            if (desktopUrl === '#') {
+                alert("您触发了【返回桌面】动作！\n\n请在 index.html 底部代码中，将 'desktopUrl' 变量修改为您真实的桌面网页路径（例如：desktop.html），即可实现一键退出地图。");
+            } else {
+                window.location.href = desktopUrl;
+            }
+        });
+
+        // 执行全局系统初始化
+        window.onload = initMap;
+    </script>
+</body>
+</html>
