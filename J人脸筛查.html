@@ -7,7 +7,65 @@
         <style>
         /* ==========================================================================
            1. 全局变量与基础重置
-           ========================================================================== */
+/* ===============================
+   页面图片加载动画
+================================ */
+
+#pageLoader {
+    position: fixed;
+    inset: 0;
+    background: #0a0f1d;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity .6s ease;
+}
+
+
+.loader-box {
+    text-align: center;
+    color: #00d2ff;
+    letter-spacing: 2px;
+}
+
+
+.loader-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 3px solid rgba(0,210,255,.2);
+    border-top-color:#00d2ff;
+    animation: loadingRotate 1s linear infinite;
+    margin:auto auto 25px;
+}
+
+
+.loader-text {
+    font-size:14px;
+    line-height:25px;
+}
+
+
+@keyframes loadingRotate {
+
+    from{
+        transform:rotate(0deg);
+    }
+
+    to{
+        transform:rotate(360deg);
+    }
+
+}
+
+
+.page-loaded {
+
+    opacity:0;
+    pointer-events:none;
+
+}       
         * {
             margin: 0;
             padding: 0;
@@ -377,6 +435,18 @@
 
 </head>
 <body>
+ 
+
+<!-- 图片预加载遮罩 -->
+<div id="pageLoader">
+    <div class="loader-box">
+        <div class="loader-circle"></div>
+        <div class="loader-text">
+            SYSTEM INITIALIZING...<br>
+            正在加载数据库资源
+        </div>
+    </div>
+</div>
 
     <!-- 左上角返回按钮 -->
     <a href="巴布曼特联邦警察局.html" class="back-btn" title="返回上一页">
@@ -459,12 +529,103 @@
     </div>
 
         <script>
-        /**
-         * ==========================================================================
-         * 1. 本地虚拟人像图片库与预设数据配置
-         * ==========================================================================
-         */
+// =================================
+// 页面启动图片预加载系统
+// =================================
 
+
+const preloadImages = [
+
+    'S1.png','S2.png','S3.png','S4.png',
+    'S5.png','S6.png','S7.png','S8.png',
+    'S9.png','S51.png','S52.png',
+    'S53.png','S54.png','S55.png',
+    'S56.png','S57.png','S58.png',
+    'S59.png','S60.png',
+
+    'SSX.png',
+    'SSXX.png',
+    'SS1.png',
+    'SS11.png',
+    'SS2.png',
+    'SS22.png',
+    'SS3.png',
+    'SS33.png',
+    'SS4.png',
+    'SS44.png',
+    'SS5.png',
+    'SS55.png',
+    'SS7.png',
+    'SS77.png',
+    'SS8.png',
+    'SS88.png'
+
+];
+
+
+let loadedCount = 0;
+
+
+function preload(){
+
+    preloadImages.forEach(src=>{
+
+        const img=new Image();
+
+        img.onload=()=>{
+
+            loadedCount++;
+
+            if(loadedCount >= preloadImages.length){
+
+                finishLoading();
+
+            }
+
+        };
+
+
+        img.onerror=()=>{
+
+            loadedCount++;
+
+            if(loadedCount >= preloadImages.length){
+
+                finishLoading();
+
+            }
+
+        };
+
+
+        img.src=src;
+
+
+    });
+
+}
+
+
+
+function finishLoading(){
+
+    const loader=document.getElementById("pageLoader");
+
+    loader.classList.add("page-loaded");
+
+
+    setTimeout(()=>{
+
+        loader.remove();
+
+    },700);
+
+
+}
+
+
+
+window.addEventListener("load",preload);
         // 5秒动画期间，左右两侧同时快速高频轮播闪烁的 20 张本地图片路径
         const DB_LOOP_IMAGES = [
             'S1.png', 'S2.png', 'S3.png', 'S4.png', 'S5.png',
@@ -505,6 +666,11 @@
                 note: '蜂鸟新闻网调查记者。',
                 targetImg: 'SS4.png', dbImg: 'SS44.png'
             },
+            '8377': {
+                name: '沈秋', gender: '男', matchRate: '95.2%',
+                note: '秋野烤摊老板。',
+                targetImg: 'SS2.png', dbImg: 'SS22.png'
+            },
             '0055': {
                 name: '苏婉', gender: '女', matchRate: '95.2%',
                 note: '歌手，演员。',
@@ -514,12 +680,7 @@
                 name: '霍特', gender: '男', matchRate: '95.2%',
                 note: 'FASA联邦航空与太空管理局/负责人。',
                 targetImg: 'SS8.png', dbImg: 'SS88.png'
-            },                        
-            '8377': {
-                name: '沈秋', gender: '男', matchRate: '95.2%',
-                note: '秋野烤摊老板。',
-                targetImg: 'SS2.png', dbImg: 'SS22.png'
-            },
+            },            
             '9499': {
                 name: '振邦', gender: '男', matchRate: '91.5%',
                 note: '巴布曼特联邦警察局警员，警号94748',
