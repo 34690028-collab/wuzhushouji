@@ -161,7 +161,7 @@ body,html{
             <!-- ⬇️ 在下方将 '你的主菜单或上一页文件名.html' 替换为你实际的网页文件名或网址 ⬇️ -->
             <a href="巴布曼特联邦警察局.html" id="back-btn" style="background: rgba(0,0,0,0.6); color: #fff; border: 1px solid #555; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-size: 1.4vw; cursor: pointer; transition: background 0.2s;">❮ 返回</a>
 
-            <span id="back-path" style="color: #aaa; font-size: 1.2vw; text-shadow: 1px 1px 2px #000;">当前路径: 案件侦破厅 / 线索分析仪</span>
+            <span id="back-path" style="color: #aaa; font-size: 1.2vw; text-shadow: 1px 1px 2px #000;">当前路径: 案件情报室 / 线索分析</span>
         </div>
 
 
@@ -199,7 +199,7 @@ body,html{
                 <!-- 交互按钮组 -->
                 <div style="display: flex; justify-content: center; gap: 20px;">
                     <!-- 返回上一步按钮：隐藏弹窗 -->
-                    <button onclick="document.getElementById('case-modal').style.display = 'none';" style="background: #444; color: #fff; border: 1px solid #666; padding: 10px 24px; font-size: 1.2vw; border-radius: 4px; cursor: pointer; transition: background 0.2s;">上一步</button>
+                    <button onclick="document.getElementById('case-modal').style.display = 'none';" style="background: #444; color: #fff; border: 1px solid #666; padding: 10px 24px; font-size: 1.2vw; border-radius: 4px; cursor: pointer; transition: background 0.2s;">返回</button>
                     <!-- 前往破案按钮 -->
                     <button onclick="location.href='404.html';" style="background: #a91e23; color: #fff; border: none; padding: 10px 24px; font-size: 1.2vw; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s;">结局</button>
                 </div>
@@ -293,7 +293,7 @@ body,html{
                 gameState.currentNpcText = `【线索价值分析】匹配成功！<br>${item.info}`;
             } else {
                 // 输错编号时的反向回馈提示
-                gameState.currentNpcText = `【线索错误】警员，你提交的线索编号 "${rawVal}" 查无此项，虚假报案我们可能会起诉你哦。`;
+                gameState.currentNpcText = `警员：【线索错误】，你提交的线索编号 "${rawVal}" 查无此项，虚假报案我们可能会起诉你哦。`;
             }
 
             saveToCache();
