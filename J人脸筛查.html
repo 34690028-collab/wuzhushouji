@@ -59,13 +59,107 @@
 
 }
 
+.progress-bar{
 
+    width:260px;
+    height:6px;
+    background:#182338;
+    margin-top:20px;
+    overflow:hidden;
+
+}
+
+
+#progress{
+
+    width:0%;
+    height:100%;
+    background:#00d2ff;
+    transition:width .5s;
+
+}
+
+
+#countdown{
+
+    font-size:40px;
+    font-weight:bold;
+    color:#00d2ff;
+
+}
 .page-loaded {
 
     opacity:0;
     pointer-events:none;
 
-}       
+}   
+/* 科技扫描线背景 */
+
+#pageLoader::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+    repeating-linear-gradient(
+        0deg,
+        rgba(0,210,255,.05) 0px,
+        rgba(0,210,255,.05) 1px,
+        transparent 2px,
+        transparent 4px
+    );
+
+    animation:scanBG 4s linear infinite;
+
+    pointer-events:none;
+
+}
+
+
+
+@keyframes scanBG{
+
+    from{
+        transform:translateY(-100%);
+    }
+
+
+    to{
+        transform:translateY(100%);
+    }
+
+}#pageLoader{
+
+animation:
+policeFlash 3s infinite;
+
+}
+
+
+
+@keyframes policeFlash{
+
+
+0%,100%{
+
+box-shadow:
+inset 80px 0 120px rgba(0,80,255,.15);
+
+}
+
+
+50%{
+
+box-shadow:
+inset -80px 0 120px rgba(255,0,0,.18);
+
+}
+
+
+}    
         * {
             margin: 0;
             padding: 0;
@@ -441,10 +535,65 @@
 <div id="pageLoader">
     <div class="loader-box">
         <div class="loader-circle"></div>
-        <div class="loader-text">
-            SYSTEM INITIALIZING...<br>
-            正在加载数据库资源
-        </div>
+<div class="loader-text">
+
+
+FASA SECURITY SYSTEM
+
+<br>
+
+
+SYSTEM INITIALIZING...
+
+<br><br>
+
+
+DATABASE INDEX:
+<span id="databaseNumber">
+000000000
+</span>
+
+
+<br>
+
+
+CPU LOAD:
+<span id="cpu">
+0%
+</span>
+
+
+<br>
+
+
+FACE DATABASE:
+<span id="facePercent">
+0%
+</span>
+
+
+<br><br>
+
+
+剩余时间
+
+<br>
+
+
+<span id="countdown">
+30
+</span>
+
+
+</div>    SYSTEM INITIALIZING...<br>
+    正在加载数据库资源<br><br>
+
+    <span id="countdown">5</span>
+</div>
+
+<div class="progress-bar">
+    <div id="progress"></div>
+</div>
     </div>
 </div>
 
@@ -609,16 +758,122 @@ function preload(){
 
 function finishLoading(){
 
-    const loader=document.getElementById("pageLoader");
 
-    loader.classList.add("page-loaded");
+    let time = 5;
 
 
-    setTimeout(()=>{
+    const countdown =
+    document.getElementById("countdown");
 
-        loader.remove();
 
-    },700);
+    const progress =
+    document.getElementById("progress");
+
+
+    countdown.innerHTML=time;
+setInterval(()=>{
+
+
+let db =
+Math.floor(
+Math.random()*900000000
++
+100000000
+);
+
+
+
+document.getElementById(
+"databaseNumber"
+).innerHTML=db;
+
+
+
+let cpu =
+Math.floor(
+Math.random()*35+55
+);
+
+
+
+document.getElementById(
+"cpu"
+).innerHTML=
+cpu+"%";
+
+
+
+},300);
+
+    let timer=setInterval(()=>{
+
+
+        time--;
+
+
+        countdown.innerHTML=time;
+
+
+        progress.style.width =
+        ((5-time)/5*100)+"%";
+
+
+
+        if(time<=0){
+
+
+            clearInterval(timer);
+
+
+
+            countdown.innerHTML="ACCESS";
+
+
+let percent =
+Math.floor(
+((30-time)/30)*100
+);
+
+
+document.getElementById(
+"facePercent"
+).innerHTML=
+percent+"%";
+
+
+progress.style.width=
+percent+"%";
+
+
+
+            setTimeout(()=>{
+
+
+                const loader=
+                document.getElementById("pageLoader");
+
+
+                loader.classList.add("page-loaded");
+
+
+
+                setTimeout(()=>{
+
+                    loader.remove();
+
+                },700);
+
+
+
+            },500);
+
+
+
+        }
+
+
+    },1000);
+
 
 
 }
