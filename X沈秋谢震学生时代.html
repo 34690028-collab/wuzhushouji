@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻详情 | 大学院系动态</title>
+    <style>
+        /* CSS 变量：保持与主页绝对一致的哈佛绯红学院风色彩体系 */
+        :root {
+            --primary-color: #A51C30;   /* 哈佛绯红 */
+            --primary-dark: #7F1223;    /* 暗绯红 */
+            --text-dark: #222222;       /* 主要文字 */
+            --text-light: #555555;      /* 次要文字 */
+            --bg-gray: #F8F9FA;         /* 浅灰背景 */
+            --border-color: #E5E5E5;    /* 边框颜色 */
+        }
+
+        /* 基础样式重置 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            color: var(--text-dark);
+            background-color: var(--bg-gray);
+            line-height: 1.8;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px; /* 详情页采用更适合文本阅读的紧凑宽度 */
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* ================= Header 导航区 ================= */
+        header {
+            border-bottom: 3px solid var(--primary-color);
+            background: #fff;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+        .header-wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 返回主页按钮样式 */
+        .back-home-btn {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.2s;
+        }
+
+        .back-home-btn:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        /* ================= Main 文章主体区 ================= */
+        .article-wrapper {
+            margin: 40px 0 60px 0;
+            background: #ffffff;
+            padding: 50px 40px;
+            border-radius: 4px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+
+        /* 文章分类面包屑 */
+        .article-category {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        /* 文章大标题 */
+        .article-title {
+            font-size: 32px;
+            line-height: 1.3;
+            color: #111111;
+            margin-bottom: 20px;
+            font-family: Georgia, serif; /* 沿用哈佛古典沉稳字体 */
+            font-weight: 700;
+        }
+
+        /* 文章元数据（发布时间、作者、来源） */
+        .article-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: #888888;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        /* 新闻主图锁定 16:9 比例 */
+        .article-image-box {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 严格锁定 16:9 比例 */
+            background-color: #e5e5e5;
+            margin-bottom: 35px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .article-image-box img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .image-placeholder-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 15px;
+        }
+
+        /* 正文段落排版 */
+        .article-content p {
+            font-size: 16px;
+            color: #333333;
+            margin-bottom: 25px;
+            text-align: justify;
+        }
+
+        /* 专门引用的重点粗体样式 */
+        .article-content p strong {
+            color: #000000;
+            font-weight: 700;
+        }
+
+        /* 侧边学术引用框效果 */
+        .article-blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding: 15px 20px;
+            background-color: var(--bg-gray);
+            margin: 30px 0;
+            font-style: italic;
+            color: var(--text-light);
+            font-size: 15px;
+        }
+
+        /* ================= Footer 脚部 ================= */
+        footer {
+            background-color: #111111;
+            color: #aaaaaa;
+            padding: 30px 0;
+            font-size: 13px;
+            text-align: center;
+            border-top: 5px solid var(--primary-dark);
+        }
+        /* 🕶️ 单字专属机密涂黑块 */
+.secret-char {
+    display: inline-block;
+    width: 1em;               /* 严格锁定宽度为1个字的大小 */
+    height: 1.2em;            /* 锁定高度，完美覆盖字高 */
+    line-height: 1.2em;
+    background-color: #000000; /* 纯黑涂墨 */
+    color: #000000;           /* 文字本身也是黑色 */
+    text-align: center;
+    cursor: help;
+    user-select: none;        /* 禁止鼠标划选，防止机密被直接复制 */
+    transition: background-color 0.15s, color 0.15s;
+}
+
+/* 🖱️ 鼠标悬停时，单字显影 */
+.secret-char:hover {
+    background-color: transparent;
+    color: inherit;
+}
+
+
+        /* ================= 媒体查询自适应断点 ================= */
+        @media (max-width: 600px) {
+            .article-wrapper {
+                padding: 30px 20px; /* 手机端缩小内边距 */
+                margin: 20px 0 40px 0;
+            }
+            .article-title {
+                font-size: 24px; /* 手机端标题字体缩小 */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航区 -->
+    <header>
+        <div class="container header-wrap">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 18px; font-weight: 700; color: var(--primary-color); font-family: Georgia, serif;">
+                    UNIVERSITY NEWS
+                </span>
+            </div>
+            <!-- 返回主页的预留本地链接 -->
+            <a href="J校.html" class="back-home-btn">← 返回大学首页</a>
+        </div>
+    </header>
+
+    <!-- 新闻详情内容主体 -->
+    <div class="container">
+        <article class="article-wrapper">
+            
+            <!-- 分类与标题 -->
+            <div class="article-category">前沿科研动态 / Research</div>
+            <h1 class="article-title">我校学子深耕前沿 率先开展转基因生物课题研究</h1>
+            
+            <!-- 发布元数据 -->
+            <div class="article-meta">
+                <span>发布时间：2020年 </span>
+                <span>来源：校园历史追溯</span>
+                <span>作者：校刊小组</span>
+            </div>
+
+            <!-- 16:9 锁定比例的新闻详情大图预留（可直接将 src 改为你本地的图片名字） -->
+            <div class="article-image-box">
+                <!-- 临时在线哈佛红砖建筑图用于测试，本地开发请修改 src="你的图片.jpg" -->
+                <img src="3沈秋谢震.jpg" alt="新闻详情配图">
+            </div>
+
+            <!-- 正文区域 -->
+            <div class="article-content">
+                <p><strong>上世纪八十年代我校生物实验室：谢震 沈秋 </strong></p>
+             <div class="article-blockquote">
+                    上世纪八十年代，分子生物学与重组DNA技术迎来全球起步浪潮。我校生命科学系在读学子谢震、沈秋，依托校内初创生物实验室，率先投身转基因生物技术探索研究，成为校内最早一批深耕基因改造课题的学生科研团队。彼时国际转基因技术刚刚落地雏形，国内高校相关研究尚属空白。谢震与沈秋搭档协作，自主摸索重组基因剪切、外源基因植入、生物载体培育等基础实验流程，大胆尝试早期生物基因改造试验。
+                    二人利用课余时间反复调试实验参数，克服设备简陋、资料匮乏等诸多难题，成功搭建起实验室初代生物研究模型，填补了我校早期基因生物研究的空白。作为本校实验室初代创建者与核心研发人员，二人敢于突破时代科研局限，积极探索前沿生物领域，为学校后续生命科学研究体系搭建奠定了重要的基础，充分展现了青年学子敢为人先的科研探索精神。
+
+                </div>
+    
+            </div>
+
+        </article>
+    </div>
+
+    <!-- 脚部版权 -->
+    <footer>
+        <div class="container">
+            <p>© 2026 University Administration. 保留所有权利。新闻详情板面。</p>
+        </div>
+    </footer>
+
+</body>
+</html>
