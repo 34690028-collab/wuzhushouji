@@ -101,8 +101,8 @@
         .headline-sub-excerpt { font-size: 15px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
         
         /* 巨幅头条大图硬性尺寸固定，防止页面布局抖动 */
-        .giant-photo-frame { width: 100% !important; height: 400px !important; overflow: hidden; background-color: var(--bg-light); cursor: pointer; }
-        .giant-photo-frame img { width: 100% !important; height: 100% !important; object-fit: cover !important; transition: transform 0.5s; }
+        .giant-photo-frame { width: 100%; overflow: hidden; background-color: var(--bg-light); cursor: pointer; }
+        .giant-photo-frame img { display: block; width: 100%; height: auto; object-fit: contain; transition: transform 0.5s; }
         .giant-photo-frame:hover img { transform: scale(1.02); }
         .photo-caption-bar { font-size: 11px; color: var(--text-muted); padding: 6px 0; border-bottom: 1px solid var(--border-thin); margin-bottom: 20px; }
 
@@ -110,8 +110,8 @@
         .secondary-hot-column { display: flex; flex-direction: column; gap: 24px; }
         .section-mini-title { font-size: 14px; font-weight: 900; text-transform: uppercase; border-bottom: 2px solid var(--global-black); padding-bottom: 6px; margin-bottom: 8px; }
         .sub-news-card { display: flex; flex-direction: column; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--border-thin); cursor: pointer; }
-        .sub-card-thumb { width: 100% !important; height: 150px !important; overflow: hidden; }
-        .sub-card-thumb img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+        .sub-card-thumb { width: 100%; overflow: hidden; background-color: var(--bg-light); }
+        .sub-card-thumb img { display: block; width: 100%; height: auto; object-fit: contain; }
         .sub-news-card h3 { font-size: 15px; font-weight: 700; line-height: 1.4; }
         .sub-news-card h3 a:hover { color: var(--bbc-red); }
 
@@ -123,8 +123,8 @@
         /* 预设5个图文新闻卡片及点击就地展开框 */
         .news-list-card { display: flex; flex-direction: column; padding-bottom: 20px; border-bottom: 1px solid var(--border-thin); }
         .card-main-row { display: flex; gap: 20px; cursor: pointer; }
-        .card-image-box { width: 220px !important; height: 140px !important; flex-shrink: 0; overflow: hidden; background-color: var(--bg-light); }
-        .card-image-box img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+        .card-image-box { width: 220px; flex-shrink: 0; overflow: hidden; background-color: var(--bg-light); }
+        .card-image-box img { display: block; width: 100%; height: auto; object-fit: contain; }
         .card-text-box { display: flex; flex-direction: column; justify-content: flex-start; flex-grow: 1; }
         .search-filter-badge { display: inline-block; background-color: #121212; color: #fff; font-size: 10px; font-weight: 900; padding: 2px 6px; margin-right: 8px; text-transform: uppercase; vertical-align: middle; }
         .news-list-card h2 { font-size: 18px; font-weight: 700; display: inline; line-height: 1.35; vertical-align: middle; }
@@ -177,7 +177,7 @@
         /* 极致多端响应式兼容媒体查询（支持手机、电脑、平板） */
         @media (max-width: 992px) {
             .hero-layout-grid, .stream-layout-grid { grid-template-columns: 1fr; }
-            .giant-photo-frame { height: 320px !important; }
+            .giant-photo-frame { height: auto; }
         }
         @media (max-width: 768px) {
             .main-brand-header .container { flex-direction: column; align-items: flex-start; }
@@ -185,7 +185,7 @@
             .nav-links-container { flex-wrap: wrap; }
             .nav-link-node a { padding: 8px 14px; font-size: 12px; }
             .card-main-row { flex-direction: column; }
-            .card-image-box { width: 100% !important; height: 160px !important; }
+            .card-image-box { width: 100%; height: auto; }
         }
 
     </style>
@@ -276,31 +276,29 @@
 
                 <!-- 右侧：时效强手突闻（包含第 2 和第 3 张高清配图，点击同样就地展开） -->
                 <div class="secondary-hot-column">
-                    <h2 class="section-mini-title">Trending / 24H强手</h2>
+                    <h2 class="section-mini-title">Trending / 24H热点</h2>
                     
                     <!-- 次级图文 1 -->
                     <div class="sub-news-card" onclick="toggleExpansion('hero-sub-1')">
                         <div class="sub-card-thumb">
                             <img src="3火箭.jpg" alt="新闻图">
                         </div>
-                        <h3><a href="javascript:void(0);">重型星戟运载火箭点火升空，完成第100次升空记录</a></h3>
+                        <h3><a href="javascript:void(0);">全复用重型运载系统成功完成静力点火与轨道级首飞测试</a></h3>
                         <p class="news-card-desc">搭载三十二台猛禽引擎奔赴星海，为星际移民与太空生命科研筑牢根基(点击详情)</p>
                         <div class="text-detail-expansion" id="hero-sub-1">
-                            本报科技组讯：联邦航空与太空管理局FASA的“星戟”重型运载火箭顺利完成发射任务。该火箭搭载三十二台改良版MQ系列发动机，全箭不锈钢可回收技术，大幅降低轨道发射成本。（特派记者 慕竹）
+                            本报科技组讯：联邦航空与太空管理局FASA研制的“星际开拓者”全复用重型运载系统，在沿海低纬度航天发射场顺利完成全推力地面静力点火（Static Fire）并成功实施轨道级首飞。该型火箭采用奥氏体不锈钢（Austenitic Stainless Steel）冷轧工艺打造箭体主结构，具备极佳的深冷拉伸强度与再入大气层热防护性能。其一级助推器搭载了数台采用全流量分级燃烧循环（Full-Flow Staged Combustion Cycle）的液氧甲烷发动机。点火瞬间，地平面推力瞬间飙升，产生的超音速马赫环（Mach Diamonds）与巨量蒸汽减振系统（Water Deluge System）激发的烟雾席卷发射台。本次发射成功验证了多机并联动力冗余管理、气动翼面高空高动态俯仰偏航控制以及闭式循环热力学推进系统的稳定性。该箭旨在通过双级完全重复使用（Fully Reusable）技术，将近地轨道（LEO）有效载荷提升至150吨级，彻底打破传统单次使用火箭的每公斤轨道运载成本（Cost-per-kg to Orbit）底线。这标志着人类在构建高频次近地空间物流网络与深空地外开拓进程中，取得了关键性里程碑。。（特派记者 慕竹）
                         </div>
                     </div>
 
                     <!-- 次级图文 2 -->
                     <div class="sub-news-card" onclick="toggleExpansion('hero-sub-2')">
                         <div class="sub-card-thumb">
-                            <img src="3太空实验室.jpg" alt="新闻图">
+                            <img src="3空间站.jpg" alt="新闻图">
                         </div>
-                        <h3><a href="javascript:void(0);">联邦航空与太空管理局FASA轨道太空生物实验室，已平稳在轨安全运行一年。</a></h3>
+                        <h3><a href="javascript:void(0);">联邦航空与太空管理局FASA巨型旋轮空间站完成最后组装。</a></h3>
                         <p class="news-card-desc">秉求索寰宇之初心，践深空研析之使命(点击详情)</p>
                         <div class="text-detail-expansion" id="hero-sub-2">
-                            本报科技直击组讯：联邦航空与太空管理局FASA与诺凡泰克制药Novatech Pharma太空生物实验室，已平稳在轨安全运行满一年。
-                            整套舱内科研设备运转稳定，微重力环境下的生物、药剂相关实验持续开展。科研人员身着舱内科研服，在站内完成多组射线基因排序、制剂对照试验，依托太空特殊环境挖掘抗衰药物全新研发方向。
-                            一年来，平台经受住轨道环境多重考验，数据回传完整可靠，为地面新一代注射抗衰药剂研发提供关键实验依据。航天局FASA局长戴维表示，后续会继续拓展太空实验项目，进一步推进与诺凡泰克制合作，加速延寿类药物的技术迭代。（主编：顾珩）
+                            本报科技直击组讯：全新一代巨型旋轮太空站，已成功部署于地球高空轨道并完成最后组装。该空间站采用先进的环形重力仿真设计，通过平稳旋转为常驻科研人员提供接近地球的重力环境，标志着人类长期太空生存技术取得历史性突破。从轨道传回的画面中，巨大的旋轮结构在浩瀚星空与蔚蓝地球的宏伟弧线间交相辉映，其表面密布的现代化模块舱室与太阳能翼板熠熠生辉。该空间站在过去一年的组装过程中，也已完成了许多实验，并拢组装后在轨实验室研发能力更是成几何翻倍。全面投入运营的空间站，将聚焦人类基因生物制药研发，深空探测中转及前沿微重力科学实验等，开启地轨道空间探索的新纪元。
                         </div>
                     </div>
 
@@ -414,10 +412,10 @@
 
                     <!-- 【纯文本新闻 3】 -->
                     <div class="text-only-news-card" onclick="toggleTextExpansion('text-news-3')">
-                        <div class="text-news-heading">3. 本周末城东部分核心枢纽路段由于管道网全线升级将实施交通管制</div>
-                        <div class="text-news-meta">Traffic · 5小时前</div>
+                        <div class="text-news-heading">巴布曼特核电站举行落成投产仪式</div>
+                        <div class="text-news-meta">新闻</div>
                         <div class="text-detail-expansion" id="text-news-3">
-                            交警支队最新公告提示：因城东大道与富民路交汇处进行夜间燃气主管道接合，本周六晚22点至次日凌晨4点将对部分支路实施临时封闭交通分流控制，请通勤的车主提前规划绕行地图。
+                            近日，巴布曼特核电站举行落成投产仪式，项目正式进入商业试运行阶段。该电站采用新一代核电安全技术，多重安全防护体系全面落地，多项关键设备完成调试，各项运行指标达到设计标准。为东城区商业用电特别是FASA联邦航空与太空管理局提供了安全用电保障。
                         </div>
                     </div>
 
@@ -576,8 +574,8 @@
                 redirectUrl: "X新闻子页苏婉八卦.html" 
             },
             {
-                standardName: "#", 
-                redirectUrl: "#.html" 
+                standardName: "核电站", 
+                redirectUrl: "X核电站.html" 
             },
             {
                 standardName: "科技前沿", 
