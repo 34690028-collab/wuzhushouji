@@ -5,7 +5,134 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MATRIX-矩阵四路监控综合云台</title>
     <style>
-        /* 全局样式与系统主题自适应 */
+        /* =========================
+   夜间红外监控效果
+/* =========================
+   蜂鸟科技监控夜视系统
+   红外模式
+========================= */
+
+
+/* 夜间摄像头画面 */
+body.night-mode .cctv-feed {
+
+    filter:
+    brightness(0.55)
+    contrast(1.3)
+    saturate(0.35)
+    hue-rotate(65deg);
+
+}
+
+
+/* 夜间时间戳 */
+body.night-mode .live-timestamp,
+body.night-mode .channel-name {
+
+    color:#00ff66;
+
+    text-shadow:
+    0 0 6px #00ff66,
+    1px 1px 3px #000;
+
+}
+
+
+
+/* 红外扫描线 */
+body.night-mode .cctv-channel::after {
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    pointer-events:none;
+
+    background:
+
+    repeating-linear-gradient(
+        0deg,
+        rgba(0,255,100,0.08) 0px,
+        rgba(0,255,100,0.08) 1px,
+        transparent 2px,
+        transparent 4px
+    );
+
+
+    z-index:7;
+
+}
+
+
+
+/* CCD摄像头噪点 */
+body.night-mode .cctv-channel::before {
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+
+    background-image:url("noise.png");
+
+
+    opacity:0.12;
+
+
+    pointer-events:none;
+
+
+    animation:
+    noiseMove .15s infinite;
+
+
+    z-index:6;
+
+}
+
+
+
+@keyframes noiseMove {
+
+
+    0%{
+        transform:translate(0,0);
+    }
+
+
+    25%{
+        transform:translate(-2px,1px);
+    }
+
+
+    50%{
+        transform:translate(2px,-1px);
+    }
+
+
+    75%{
+        transform:translate(1px,2px);
+    }
+
+
+    100%{
+        transform:translate(0,0);
+    }
+
+}
+
+
+
+/* 隐藏测试点击区域 */
+#secretSwitch{
+
+    cursor:pointer;
+
+}
         :root {
             --bg-color: #f0f3f6;
             --panel-bg: #ffffff;
@@ -227,7 +354,7 @@
         <button class="back-btn" onclick="window.location.href='J暗网.html'">⬅ 返回</button>
         <div class="panel-title">
             <div class="live-dot"></div>
-            <span>蜂鸟科技高清多维监控云台</span>
+            <span id="secretSwitch">蜂鸟科技高清多维监控云台</span>
         </div>
     </div>
 
@@ -236,7 +363,11 @@
         
         <!-- 通道 01：别墅门前 -->
         <div class="cctv-channel">
-            <img class="cctv-feed" src="CCTV1.jpg" alt="CH-01">
+<img class="cctv-feed"
+     src="CCTV1.jpg"
+     data-day="CCTV1.jpg"
+     data-night="CCTV1-night.jpg"
+     alt="CH-01">
             <!-- 全幅画面右侧 50% 完美盲操盲点选区：触发解锁汽车 -->
             <div class="cctv-hotspot" onclick="clickCar(event)"></div>
             <div class="feed-overlay">
@@ -247,7 +378,12 @@
 
         <!-- 通道 02：别墅客厅 (第2路未埋设线索，点击只有标准的放大缩小) -->
         <div class="cctv-channel">
-            <img class="cctv-feed" src="CCTV2.jpg" alt="CH-02">
+<img class="cctv-feed"
+     src="CCTV2.jpg"
+     data-day="CCTV2.jpg"
+     data-night="CCTV2-night.jpg"
+     alt="CH-02">
+
             <div class="feed-overlay">
                 <div class="channel-name">CAM-02 // 别墅一层大厅</div>
                 <div class="live-timestamp" id="time-ch2">0000/00/00 00:00:00.000</div>
@@ -256,7 +392,11 @@
 
         <!-- 通道 03：主卧私密 -->
         <div class="cctv-channel">
-            <img class="cctv-feed" src="CCTV3.jpg" alt="CH-03">
+<img class="cctv-feed"
+     src="CCTV3.jpg"
+     data-day="CCTV3.jpg"
+     data-night="CCTV3-night.jpg"
+     alt="CH-03">
             <!-- 全幅画面右侧 50% 完美盲操盲点选区：触发解锁保险柜 -->
             <div class="cctv-hotspot" onclick="clickSafe(event)"></div>
             <div class="feed-overlay">
@@ -267,7 +407,11 @@
 
         <!-- 通道 04：核心书房 -->
         <div class="cctv-channel">
-            <img class="cctv-feed" src="CCTV4.jpg" alt="CH-04">
+<img class="cctv-feed"
+     src="CCTV4.jpg"
+     data-day="CCTV4.jpg"
+     data-night="CCTV4-night.jpg"
+     alt="CH-04">
             <!-- 全幅画面右侧 50% 完美盲操盲点选区：触发解锁电脑 -->
             <div class="cctv-hotspot" onclick="clickPC(event)"></div>
             <!-- 5秒脱机数据下载进度条 -->
@@ -283,6 +427,235 @@
 
     </div>
 <script>
+    // ================================
+// 蜂鸟科技监控昼夜系统
+// ================================
+
+let debugNightMode = false;
+
+
+// 自动昼夜切换
+function updateCctvTimeMode(){
+
+
+    // 如果开启隐藏测试，则跳过自动时间
+
+    if(debugNightMode){
+        return;
+    }
+
+
+    const hour = new Date().getHours();
+
+
+    const isDay = hour >= 6 && hour < 18;
+
+
+
+    document.querySelectorAll(".cctv-feed").forEach(img=>{
+
+
+        if(isDay){
+
+            img.src = img.dataset.day;
+
+        }else{
+
+            img.src = img.dataset.night;
+
+        }
+
+
+    });
+
+
+
+    if(isDay){
+
+        document.body.classList.remove("night-mode");
+
+    }else{
+
+        document.body.classList.add("night-mode");
+
+    }
+
+}
+
+
+
+// 强制夜间测试
+
+function enableNightTest(){
+
+
+    debugNightMode = true;
+
+
+    document.body.classList.add("night-mode");
+
+
+
+    document.querySelectorAll(".cctv-feed").forEach(img=>{
+
+        img.src = img.dataset.night;
+
+    });
+
+
+}
+
+
+
+// 强制白天测试
+
+function enableDayTest(){
+
+
+    debugNightMode = true;
+
+
+    document.body.classList.remove("night-mode");
+
+
+
+    document.querySelectorAll(".cctv-feed").forEach(img=>{
+
+        img.src = img.dataset.day;
+
+    });
+
+
+}
+// ================================
+// 隐藏开发者模式
+// 标题点击10次切换昼夜
+// ================================
+
+
+let secretClickCount = 0;
+
+let secretTimer = null;
+
+
+
+document.addEventListener("DOMContentLoaded",()=>{
+
+
+    const secret = document.getElementById("secretSwitch");
+
+
+
+    if(!secret) return;
+
+
+
+    secret.addEventListener("click",()=>{
+
+
+        secretClickCount++;
+
+
+
+        clearTimeout(secretTimer);
+
+
+
+        secretTimer=setTimeout(()=>{
+
+            secretClickCount=0;
+
+        },2000);
+
+
+
+
+        if(secretClickCount>=10){
+
+
+            secretClickCount=0;
+
+
+
+            if(document.body.classList.contains("night-mode")){
+
+
+                enableDayTest();
+
+
+                showSecretMessage(
+                "☀ DAY CAMERA SYSTEM ONLINE"
+                );
+
+
+            }else{
+
+
+                enableNightTest();
+
+
+                showSecretMessage(
+                "🌙 NIGHT VISION SYSTEM ONLINE"
+                );
+
+
+            }
+
+
+        }
+
+
+
+    });
+
+
+
+});
+
+
+
+
+//隐藏提示
+
+function showSecretMessage(text){
+
+
+    const tip=document.createElement("div");
+
+
+    tip.innerHTML=text;
+
+
+    tip.style.cssText=
+    `
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:rgba(0,0,0,.85);
+    color:#00ff66;
+    padding:20px 30px;
+    border:1px solid #00ff66;
+    border-radius:6px;
+    font-family:monospace;
+    z-index:99999;
+    letter-spacing:2px;
+    `;
+
+
+
+    document.body.appendChild(tip);
+
+
+
+    setTimeout(()=>{
+
+        tip.remove();
+
+    },1200);
+
+
+}
     // 1. 【高精密时钟】：驱动4路监控表面的年/月/日 时:分:秒.毫秒(MS)飞速狂飙
     function startCctvClock() {
         const channels = ["time-ch1", "time-ch2", "time-ch3", "time-ch4"];
@@ -444,7 +817,95 @@ function clickPC(event) {
         
         box.style.display = "flex"; // 展现进度条容器
         setTimeout(() => { bar.style.width = "100%"; }, 50); // 启动进度条平滑延伸动画
+        // ==================================
+// 隐藏测试模式
+// 标题点击10次切换昼夜
+// ==================================
 
+let secretClickCount = 0;
+let secretTimer = null;
+let debugNightMode = false;
+
+
+document.getElementById("secretSwitch").addEventListener("click",()=>{
+
+
+    secretClickCount++;
+
+
+    // 2秒内点击累计
+    clearTimeout(secretTimer);
+
+    secretTimer=setTimeout(()=>{
+
+        secretClickCount=0;
+
+    },2000);
+
+
+
+    if(secretClickCount >= 10){
+
+
+        secretClickCount=0;
+
+
+        debugNightMode=!debugNightMode;
+
+
+
+        if(debugNightMode){
+
+            enableNightTest();
+
+        }else{
+
+            enableDayTest();
+
+        }
+
+
+    }
+
+
+});
+
+
+
+
+// 强制夜间模式
+function enableNightTest(){
+
+
+    document.body.classList.add("night-mode");
+
+
+    document.querySelectorAll(".cctv-feed").forEach(img=>{
+
+        img.src=img.dataset.night;
+
+    });
+
+
+}
+
+
+
+// 强制白天模式
+function enableDayTest(){
+
+
+    document.body.classList.remove("night-mode");
+
+
+    document.querySelectorAll(".cctv-feed").forEach(img=>{
+
+        img.src=img.dataset.day;
+
+    });
+
+
+}
         let progress = 0;
         let countInterval = setInterval(() => {
             progress += 10;
@@ -480,7 +941,60 @@ function clickPC(event) {
 
 // 6. 系统自动化加载与跨端解耦监听器
 window.addEventListener("DOMContentLoaded", () => {
-    // 唤醒小时分秒毫秒超高频微秒狂飙时钟
+// ================================
+// 自动昼夜监控贴图切换
+// 06:00 - 18:00 白天
+// 18:00 - 06:00 夜晚
+// ================================
+function updateCctvTimeMode(){
+
+    const hour = new Date().getHours();
+
+    const isDay = hour >= 6 && hour < 18;
+
+
+    document.querySelectorAll(".cctv-feed").forEach(img=>{
+
+
+        if(isDay){
+
+            img.src = img.dataset.day;
+
+
+        }else{
+
+
+            img.src = img.dataset.night;
+
+
+        }
+
+
+    });
+
+
+
+    //切换整个监控系统模式
+
+    if(isDay){
+
+        document.body.classList.remove("night-mode");
+
+    }else{
+
+        document.body.classList.add("night-mode");
+
+    }
+
+}
+
+
+// 页面加载立即判断一次
+updateCctvTimeMode();
+
+
+// 每分钟检查一次时间
+setInterval(updateCctvTimeMode,60000);    // 唤醒小时分秒毫秒超高频微秒狂飙时钟
     startCctvClock();
     
     // 动态校正：为所有大卡片注入防冲突的事件指针，彻底支持“不触发剧情任意处点击还原”
