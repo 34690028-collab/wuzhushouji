@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻详情 - 蜂鸟新闻 Hummingbird News Network</title>
+    <!-- 引入 BBC/CNN 最爱的现代硬朗无衬线黑体与深度阅读宋体 -->
+    <link href="#" rel="stylesheet">
+    <!-- FontAwesome 极简国际图标库 -->
+    <link rel="stylesheet" href="#">
+    
+        <!-- ==========================================================================
+       【第 2 部分】详情页 BBC/CNN 极致国际美学样式表
+       ========================================================================== -->
+    <style>
+        :root {
+            --bbc-red: #bb1919;         /* BBC 经典正红 */
+            --cnn-red: #cc0000;         /* CNN 经典亮红 */
+            --global-black: #070707;    /* 国际大牌通用的暗黑底色 */
+            --text-dark: #050505;       /* 核心正文灰黑 */
+            --text-muted: #555555;      /* 副标题与引言灰 */
+            --border-thin: #e2e2e2;     /* 极细的单像素分割线 */
+            --bg-light: #f6f6f6;        /* 标志性冷淡浅灰背景 */
+            --font-global: 'Inter', 'Noto Sans SC', sans-serif;
+            --font-editorial: 'Noto Serif SC', serif; /* 深度阅读采用大牌社论宋体 */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-global);
+            color: var(--text-dark);
+            background-color: #ffffff;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { text-decoration: none; color: inherit; transition: all 0.2s ease; }
+        
+        .container {
+            width: 100%;
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* 顶部全球状态栏 */
+        .top-mini-bar {
+            background-color: var(--global-black);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* 主品牌头部区域 */
+/* 主品牌头部区域（已加装 BBC/CNN 风格红隔离细线） */
+        .main-brand-header { 
+            background-color: var(--global-black); 
+            padding: 20px 0; 
+            
+            /* 👇👇👇 【核心红隔离线调节器】 👇👇👇 */
+            border-bottom: 3px solid var(--bbc-red); /* 3px 代表线的粗细，var(--bbc-red) 是我们的国际正红 */
+            
+            /* 如果您以后想尝试 CNN 的那种更亮的鲜红，可以把上面这行替换为下面这行： */
+            /* border-bottom: 3px solid var(--cnn-red); */
+        }
+        
+        /* 纯图片 LOGO 预留尺寸控制（靠左对齐，不带多余文字） */
+        .brand-logo-zone { display: flex; align-items: center; }
+        .custom-uploaded-logo { display: block !important; max-height: 44px; width: auto; object-fit: contain; }
+
+        /* BBC 风格双返回键功能导航条 */
+        .back-navigation-bar {
+            background-color: var(--bg-light);
+            border-bottom: 1px solid var(--border-thin);
+            padding: 10px 0;
+        }
+        .back-navigation-bar .container {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .back-link-node {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--global-black);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .back-link-node i { color: var(--bbc-red); }
+        .back-link-node:hover { color: var(--bbc-red); }
+
+        /* 详情页双栏网格排版布局（左侧正文，右侧热门） */
+        .detail-layout-grid {
+            display: grid;
+            grid-template-columns: 2.2fr 1fr;
+            gap: 40px;
+            padding: 32px 0;
+        }
+
+        /* 文章头部元数据区域 */
+        .article-header {
+            border-bottom: 1px solid var(--border-thin);
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+        }
+        .article-category-badge {
+            display: inline-block;
+            background-color: var(--cnn-red);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 900;
+            padding: 2px 8px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+        .article-header h1 {
+            font-size: 36px;
+            font-weight: 900;
+            color: var(--global-black);
+            line-height: 1.25;
+            letter-spacing: -0.5px;
+            margin-bottom: 16px;
+        }
+        .article-meta-info {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 700;
+            display: flex;
+            gap: 20px;
+            text-transform: uppercase;
+        }
+
+        /* 详情页通栏大图硬性尺寸固定控制 */
+/* 详情页通栏大图比例死锁控制 */
+.article-giant-frame {
+    width: 100% !important;       /* 宽度随父级容器自适应填满 */
+    aspect-ratio: 9 / 16 !important; /* 🔴 核心修改：死锁 16:9 比例（你也可以改成 4/3 或其他） */
+    height: auto !important;      /* 🔴 核心修改：解除硬性高度，让高度根据比例自动计算 */
+    overflow: hidden;
+    background-color: var(--bg-light);
+    margin-bottom: 8px;
+}
+.article-giant-frame img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important; /* 核心：图片自动居中裁剪填满，绝不拉伸变形 */
+}
+
+        .article-photo-caption {
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 8px 0 24px 0;
+            border-bottom: 1px solid var(--border-thin);
+            margin-bottom: 24px;
+        }
+
+        /* 深度阅读权威正文样式 */
+        .article-body-content p {
+            font-family: var(--font-global);
+            font-size: 16px;
+            color: var(--text-dark);
+            line-height: 1.75;
+            margin-bottom: 20px;
+            text-align: justify;
+        }
+        /* BBC 式大牌核心导读块 */
+        .article-editorial-lead {
+            font-family: var(--font-editorial);
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--global-black);
+            line-height: 1.6;
+            margin-bottom: 24px;
+            padding-left: 16px;
+            border-left: 4px solid var(--bbc-red);
+        }
+
+        /* 右侧侧边栏热门排行样式 */
+        .sidebar-panel-hot {
+            border-top: 3px solid var(--global-black);
+            padding-top: 15px;
+        }
+        .sidebar-panel-hot h4 { font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 16px; }
+        .sidebar-hot-card { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-thin); }
+        .sidebar-hot-card:last-child { border-bottom: none; }
+        .sidebar-hot-thumb { width: 100px !important; height: 65px !important; flex-shrink: 0; overflow: hidden; }
+        .sidebar-hot-thumb img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+        .sidebar-hot-card h5 { font-size: 13px; font-weight: 700; line-height: 1.35; }
+        .sidebar-hot-card h5 a:hover { color: var(--bbc-red); }
+
+        /* 页脚样式 */
+        .site-footer { background-color: var(--global-black); color: #888888; padding: 40px 0 20px 0; font-size: 12px; border-top: 4px solid var(--bbc-red); margin-top: 40px; }
+        .footer-wrap { display: flex; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .footer-bottom { text-align: center; padding-top: 20px; color: #555555; }
+
+/* 极致多端自适应兼容媒体查询 */
+@media (max-width: 992px) {
+    .detail-layout-grid { grid-template-columns: 1fr; gap: 30px; }
+    /* 🔴 已删掉：.article-giant-frame { height: 320px !important; } */
+}
+@media (max-width: 768px) {
+    .article-header h1 { font-size: 26px; }
+    /* 🔴 已删掉：.article-giant-frame { height: 220px !important; } */
+    .back-navigation-bar .container { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+
+    </style>
+
+    
+</head>
+<body>
+
+        <!-- ==========================================================================
+       【第 3 部分】HNN 纯图片 Logo 预留、双返回导航与重磅文章标题
+       ========================================================================== -->
+    <!-- 顶部全球状态栏 -->
+    <div class="top-mini-bar">
+        <div class="container">
+            <div>
+                <span class="live-badge">LIVE</span>
+                <span id="detail-clock-ticker">2026年08月07日 19:29:32 星期五</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主品牌头部区域（大牌专属深黑底，与主页绝对呼应） -->
+    <header class="main-brand-header">
+        <div class="container">
+            <div class="brand-logo-zone">
+                <!-- 【后台配置区】：请在 src="" 内部填入您的图片 Logo 路径（例如 src="logo.png"） -->
+                <img src="蜂鸟新闻LOGO.png" alt="HNN 蜂鸟新闻 LOGO" id="brand-logo-custom" class="custom-uploaded-logo">
+            </div>
+        </div>
+    </header>
+
+    <!-- BBC 风格双返回键核心功能导航条 -->
+    <nav class="back-navigation-bar">
+        <div class="container">
+            <!-- 预留链接 1：返回整个新闻主页 -->
+            <a href="新闻.html" class="back-link-node">
+                <i class="fa-solid fa-house"></i> 返回新闻主页
+            </a>
+            <!-- 预留链接 2：返回特定的新闻板块或上级列表（如：时政/民生列表） -->
+            <a href="浏览器.html" class="back-link-node">
+                <i class="fa-solid fa-arrow-left"></i> 返回蜂鸟门户
+            </a>
+        </div>
+    </nav>
+
+    <!-- 详情页大牌响应式双栏网格 -->
+    <main class="container">
+        <div class="detail-layout-grid">
+            
+            <!-- 左侧核心正文区域 -->
+            <article class="main-article-wrapper">
+                
+                <!-- 文章头部元数据 -->
+                <div class="article-header">
+                    <span class="article-category-badge">World</span>
+                    <h1>高档公寓坠亡疑案：唯一证人嫌疑重大，终判无罪留悬案</h1>
+                    <div class="article-meta-info">
+                        <span><i class="fa-regular fa-user"></i> 蜂鸟新闻</span>
+                        <span id="article-pub-date">发布时间：25年前</span>
+                    </div>
+                </div>
+
+
+                    <!-- ==========================================================================
+                   【第 4 部分】固定尺寸通栏大图、权威正文与右侧热门网格排表
+                   ========================================================================== -->
+                <!-- 👇👇👇【详情页主图更换位置】：硬性尺寸固定控制，防止拉伸变形 👇👇👇 -->
+                <div class="article-giant-frame">
+                    <!-- 【后台配置】：请直接修改 src="" 内部的地址。可以换成您的本地图片路径（如 src="images/detail1.webp"） -->
+                    <img src="X坠楼.jpg" alt="新闻核心大图">
+                </div>
+                <!-- 👆👆👆 详情页主图更换结束位置 👆👆👆 -->
+                <div class="article-photo-caption">
+                    <i class="fa-solid fa-camera"></i>诺凡高档花园公寓
+                </div>
+
+                <!-- 权威深度阅读正文（100%删除任何外网加载依赖，文字排版大气整齐） -->
+                <div class="article-body-content">
+                 <div class="article-body-content">
+
+                    <div class="article-editorial-lead">
+                     蜂鸟导读：凌晨核心地段高档公寓小区发生一起离奇高空坠亡命案，案件疑点重重、争议极大，时至今日仍是当地知名悬案。
+                    </div>
+                    <p>案发当晚，公寓突发巨响，随后发现一名女性当事人从高层住宅坠落，当场身亡。警方第一时间封锁案发现场，勘查确认死者8楼住户卧室落地窗玻璃大面积破碎，符合室内冲突、外力破窗坠亡特征，排除意外失足坠落可能。。</p>
+                    <p>案发全程仅有一名现场目击证人李某。警方走访取证、痕迹比对、证词核验后，多项间接证据、现场细节均指向李某存在重大作案嫌疑。结合现场破碎玻璃痕迹、时间线吻合度、无第三人在场等关键线索，警方依法对李某立案调查（案件编号963），移送司法起诉。</p>
+                    <p>案件庭审阶段出现巨大反转：嫌疑人李某聘请顶尖豪华律师团队，针对案件间接证据、取证流程、现场疑点逐一辩驳，利用证据链瑕疵、无法100%锁定直接作案事实的法律漏洞，完成无罪辩护。</p>
+                    <p>本案最令人唏嘘的是，遇害女子离世时，家中留有一名年仅五岁的幼童。母亲意外身亡、案件悬而未决、无直系亲属照料，这名年幼孩童后续被福利部门送入公立福利院寄养，身世孤苦，成为该案最令人揪心的遗留遗憾。</p>
+                    <p>记者：葡欧</p>
+                </div>
+            </article>
+
+            <!-- 右侧侧边栏：预设 24H 热门直击（包含 2 张固定尺寸的小配图，防变形） -->
+            <aside class="sidebar-right-wrapper">
+                <div class="sidebar-panel-hot">
+                    <h4>Most Read / 详情页热门追踪</h4>
+                    
+                    <!-- 热门图文卡片 1 -->
+                    <div class="sidebar-hot-card">
+                        <div class="sidebar-hot-thumb">
+                            <!-- 【后台配置】：请直接修改 src="" 内部为您的本地路径（如 src="images/hot1.webp"） -->
+                             <img src="3火箭.jpg" alt="热门新闻图">
+                        </div>
+                        <h5><a href="#">重型星戟运载火箭点火升空，完成第100次升空记录</a></h5>
+                    </div>
+
+                    <!-- 热门图文卡片 2 -->
+                    <div class="sidebar-hot-card">
+                        <div class="sidebar-hot-thumb">
+                            <!-- 【后台配置】：请直接修改 src="" 内部为您的本地路径（如 src="images/hot2.webp"） -->
+                            <img src="3太空实验室.jpg" alt="热门新闻图">
+                        </div>
+                        <h5><a href="#">联邦航空与太空管理局FASA轨道太空生物实验室，已平稳在轨安全运行一年</a></h5>
+                    </div>
+
+                </div>
+            </aside>
+
+        </div>
+    </main>
+
+    <!-- 国际大牌全黑极简页脚 -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-wrap">
+                <div class="footer-brand">
+                    <h4>HUMMINGBIRD NEWS Network</h4>
+                    <p>新型数字化全球主流新闻媒体门户 · 权威声音 深度报道</p>
+                    <p>特别声明：以上信息均为架空虚构内容，无任何现实映射，不存在真实对应事件与人物，一切仅服务原创解谜故事创作。</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 蜂鸟新闻门户网站 · 保留所有权利</p>
+                <p>此页面内容服务于虚拟故事剧情，与真实世界无关</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==========================================================================
+       【核心 JavaScript 控制引擎】全中文原生动态走字时钟
+       ========================================================================== -->
+    <script>
+        // 动态刷新：复刻主流大报风格的纯中文权威时钟引擎
+        function updateDetailClock() {
+            const now = new Date();
+            
+            // 精准提取年、月、日、时、分、秒
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            // 将数字星期转换为纯中文
+            const weekArray = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+            const dayOfWeek = weekArray[now.getDay()];
+            
+            // 完美拼接出高公信力的中文时间长条
+            const chineseTimeStr = `${year}年${month}月${date}日 ${hours}:${minutes}:${seconds} ${dayOfWeek}`;
+            
+            // 渲染到详情页挂载点
+            const clockEl = document.getElementById('detail-clock-ticker');
+            if(clockEl) {
+                clockEl.innerText = chineseTimeStr;
+            }
+        }
+        // 保持一秒一闪一刷新，确保时间精准走动
+        setInterval(updateDetailClock, 1000);
+        updateDetailClock();
+    </script>
+
+
+</body>
+</html>
