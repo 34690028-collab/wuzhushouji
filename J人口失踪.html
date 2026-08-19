@@ -159,9 +159,62 @@
             .modal-case-grid { grid-template-columns: 1fr; justify-items: center; }
             .modal-avatar-frame { width: 110px !important; height: 110px !important; }
         }
+    
+        /* ================= 页面进入100%图片加载条 ================= */
+        #page-loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #050E2A;
+            z-index: 9999999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            transition: opacity .5s ease, visibility .5s ease;
+        }
+        #page-loading-screen.loaded {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .loading-title {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            color: #D4AF37;
+        }
+        .loading-bar-box {
+            width: min(420px,80vw);
+            height: 10px;
+            border: 1px solid #D4AF37;
+            background: rgba(255,255,255,.1);
+            overflow: hidden;
+        }
+        #loading-progress-bar {
+            width: 0%;
+            height: 100%;
+            background: #D4AF37;
+            transition: width .2s ease;
+        }
+        #loading-percent {
+            margin-top: 12px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
     </style>
 </head>
-<body>
+<body>\n
+    <!-- 页面首次进入资源加载层 -->
+    <div id="page-loading-screen">
+        <div class="loading-title">BFPD SYSTEM INITIALIZING</div>
+        <div class="loading-bar-box">
+            <div id="loading-progress-bar"></div>
+        </div>
+        <div id="loading-percent">0%</div>
+    </div>
+
 
     <!-- ==========================================================================
        【第 4 部分】全站背景半透明 Logo 水印挂载区与双语威严主标头 HTML
@@ -331,7 +384,6 @@
             'S8.png',
             'S9.png',
             'S10.png',
-            'S11.png',
             'S12.png',
             'S13.png',
             'S14.png',
@@ -340,6 +392,7 @@
             'S17.png',
             'S18.png',
             'S19.png',
+            'S11.png',
             'S20.png'
         ];
 
@@ -471,6 +524,88 @@
         });
 
         renderMatrix('M'); renderMatrix('F'); renderPager();
+        setTimeout(()=>{
+    startPageLoading();
+},500);
+    
+        // ================= 图片全部加载完成后进入页面 =================
+function startPageLoading() {
+
+    const screen = document.getElementById('page-loading-screen');
+    const bar = document.getElementById('loading-progress-bar');
+    const percent = document.getElementById('loading-percent');
+
+    const images = Array.from(document.querySelectorAll(
+        '#lapd-bg-watermark img, .case-avatar-box img'
+    ));
+
+    let total = images.length;
+    let loaded = 0;
+
+
+    function update(){
+
+        loaded++;
+
+        let value = Math.min(
+            100,
+            Math.round((loaded / total) * 100)
+        );
+
+        bar.style.width = value + "%";
+        percent.innerText = value + "%";
+
+
+        if(value >= 100){
+
+            setTimeout(()=>{
+
+                screen.classList.add('loaded');
+
+            },500);
+
+        }
+
+    }
+
+
+    if(total === 0){
+
+        screen.classList.add('loaded');
+        return;
+
+    }
+
+
+    images.forEach(img=>{
+
+
+        if(img.complete){
+
+            update();
+
+        }else{
+
+            img.onload = update;
+            img.onerror = update;
+
+
+            // 防止图片错误卡死
+
+            setTimeout(()=>{
+
+                update();
+
+            },2000);
+
+        }
+
+
+    });
+
+
+}
+
     </script>
 </body>
 </html>
