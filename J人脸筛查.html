@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 人脸比对系统</title>
         <style>
-        /* ==========================================================================
-           1. 全局变量与基础重置
-/* ===============================
-   页面图片加载动画
-================================ */
+/*
+1. 全局变量与基础重置
+*/
 
+/* ===============================
+页面图片加载动画
+=============================== */
 #pageLoader {
     position: fixed;
     inset: 0;
@@ -525,6 +526,14 @@ inset -80px 0 120px rgba(255,0,0,.18);
             .user-details { flex-direction: column; align-items: center; text-align: center; }
             .result-info { align-items: center; }
         }
+        @media(max-width:600px){
+
+.result-avatar{
+width:90px;
+height:120px;
+}
+
+}
     </style>
 
 </head>
@@ -580,11 +589,6 @@ FACE DATABASE:
 <br>
 
 
-<span id="countdown">
-30
-</span>
-
-
 </div>    SYSTEM INITIALIZING...<br>
     正在加载数据库资源<br><br>
 
@@ -615,7 +619,7 @@ FACE DATABASE:
             <h1 class="system-title">AI人脸比对数据库</h1>
             <p class="system-subtitle">请输入照片编号信息进行数据库比对</p>
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="请输入照片编号 (例如: ****)" autocomplete="off">
+                <input type="text" id="searchInput" placeholder="请输入4位编号（0000）" autocomplete="off">
                 <button id="searchBtn">开始比对</button>
             </div>
             <div class="tip-info">提示：在游戏中出现的照片边角如有（照片编号）可输入编号比对</div>
@@ -713,97 +717,77 @@ const preloadImages = [
 
 
 let loadedCount = 0;
-
+let loadingFinished = false;
 
 function preload(){
 
+    let total = preloadImages.length;
+
     preloadImages.forEach(src=>{
 
-        const img=new Image();
+        const img = new Image();
 
-        img.onload=()=>{
-
+        img.onload = ()=>{
             loadedCount++;
-
-            if(loadedCount >= preloadImages.length){
-
-                finishLoading();
-
-            }
-
+            checkLoad();
         };
 
-
-        img.onerror=()=>{
-
+        img.onerror = ()=>{
             loadedCount++;
-
-            if(loadedCount >= preloadImages.length){
-
-                finishLoading();
-
-            }
-
+            checkLoad();
         };
 
-
-        img.src=src;
-
+        img.src = src;
 
     });
+
+
+    // 最大等待保护 1秒
+    setTimeout(()=>{
+        finishLoading();
+    },1000);
 
 }
 
 
+function checkLoad(){
+
+    let percent = Math.floor(
+        loadedCount / preloadImages.length * 100
+    );
+
+    document.getElementById("progress").style.width =
+    percent+"%";
+
+
+    document.getElementById("facePercent").innerHTML =
+    percent+"%";
+
+
+    if(loadedCount >= preloadImages.length){
+        finishLoading();
+    }
+
+}
+
 
 function finishLoading(){
 
-
     let time = 5;
-
 
     const countdown =
     document.getElementById("countdown");
-
 
     const progress =
     document.getElementById("progress");
 
 
+    const face =
+    document.getElementById("facePercent");
+
+
     countdown.innerHTML=time;
-setInterval(()=>{
 
-
-let db =
-Math.floor(
-Math.random()*900000000
-+
-100000000
-);
-
-
-
-document.getElementById(
-"databaseNumber"
-).innerHTML=db;
-
-
-
-let cpu =
-Math.floor(
-Math.random()*35+55
-);
-
-
-
-document.getElementById(
-"cpu"
-).innerHTML=
-cpu+"%";
-
-
-
-},300);
 
     let timer=setInterval(()=>{
 
@@ -814,8 +798,16 @@ cpu+"%";
         countdown.innerHTML=time;
 
 
+        let percent =
+        ((5-time)/5)*100;
+
+
         progress.style.width =
-        ((5-time)/5*100)+"%";
+        percent+"%";
+
+
+        face.innerHTML =
+        Math.floor(percent)+"%";
 
 
 
@@ -825,36 +817,22 @@ cpu+"%";
             clearInterval(timer);
 
 
-
             countdown.innerHTML="ACCESS";
 
+            progress.style.width="100%";
 
-let percent =
-Math.floor(
-((30-time)/30)*100
-);
-
-
-document.getElementById(
-"facePercent"
-).innerHTML=
-percent+"%";
-
-
-progress.style.width=
-percent+"%";
+            face.innerHTML="100%";
 
 
 
             setTimeout(()=>{
 
 
-                const loader=
+                const loader =
                 document.getElementById("pageLoader");
 
 
                 loader.classList.add("page-loaded");
-
 
 
                 setTimeout(()=>{
@@ -868,17 +846,12 @@ percent+"%";
             },500);
 
 
-
         }
 
 
     },1000);
 
-
-
 }
-
-
 
 window.addEventListener("load",preload);
         // 5秒动画期间，左右两侧同时快速高频轮播闪烁的 20 张本地图片路径
