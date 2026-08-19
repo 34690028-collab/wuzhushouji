@@ -231,11 +231,11 @@
                 <p> </p>
             </div>
             
-            <div class="grid-card" onclick="handleBlockLink('财经前沿')">
-                <h3>📊 宇航员信息查询</h3>
-                <p> </p>
-            </div>
-        </div>
+<div class="grid-card" onclick="window.location.href='J航天员介绍html.html'">
+    <h3>📊 宇航员信息查询</h3>
+    <p>宇航员档案</p>
+</div>
+
     </main>
 
 <script>
@@ -244,11 +244,11 @@
     // 使用 encodeURIComponent 确保中文路径在所有浏览器中都能正确解析
     const BACK_LINK_URL = encodeURIComponent(TARGET_PAGE); 
 
-    // 2. 定义返回跳转函数
-    function triggerBackLink() {
-        alert('【系统提示】\n已触发返回键Z主页跳转。');
-        window.location.href = BACK_LINK_URL; // 执行跳转到 内部.html
-    }
+ // 2. 定义返回跳转函数
+function triggerBackLink() {
+    // 删除了 alert 提示，直接执行跳转到 内部.html
+    window.location.href = BACK_LINK_URL; 
+}
 
     // 3. 拦截浏览器/手机物理返回键
     // 页面加载时，向历史记录隐式添加一个状态
