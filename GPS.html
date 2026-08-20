@@ -119,9 +119,9 @@
 
             <!-- 数据输入验证交互层 -->
             <div class="input-section" id="inputSection">
-                <label style="font-size: 14px; color: #00f2fe; font-weight: bold; letter-spacing: 1px;">GPS 编码</label>
+                <label style="font-size: 14px; color: #00f2fe; font-weight: bold; letter-spacing: 1px;">蜂鸟GPS定位系统</label>
                 <div class="input-group">
-                    <input type="text" id="gpsInput" placeholder="请输入正确的GPS编码...">
+                    <input type="text" id="gpsInput" placeholder="请输入正确的5位数GPS编码">
                     <button id="submitBtn">确认</button>
                 </div>
                 <p class="error-tip" id="errorTip">安全密码校验失败，请重试</p>
@@ -154,6 +154,7 @@
             </div>
             <div class="modal-footer">
                 <button class="modal-back-btn" id="modalBackBtn">返回地图</button>
+                <button class="modal-back-btn" id="modalBackBtn" onclick="window.location.href='J地面监控.html'">地面接管</button>
             </div>
         </div>
     </div>
