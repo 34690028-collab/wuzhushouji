@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模拟监控系统</title>
+    
+    <!-- ==========================================
+         【第 1 段 结束】
+         衔接说明：下方紧接着放入【第 2 段】的 CSS 样式代码。
+         ========================================== -->
+    <!-- ==========================================
+         【第 2 段 开始】
+         位置：紧跟在第 1 段下方，负责页面视觉、贴图绝对叠加和比例锁定。
+         ========================================== -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body { background-color: #0b0f19; font-family: sans-serif; color: #e2e8f0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        .hidden { display: none !important; }
+
+        /* 加载界面 */
+        .loading-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #05070f; z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        .loader-container { text-align: center; width: 80%; max-width: 400px; }
+        .loader-circle { width: 50px; height: 50px; border: 4px solid #1e293b; border-top: 4px solid #38bdf8; border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite; }
+        .loading-text { font-size: 1rem; color: #38bdf8; margin-bottom: 15px; }
+        .loader-bar-bg { width: 100%; height: 6px; background-color: #1e293b; border-radius: 3px; overflow: hidden; }
+        .loader-bar { width: 0%; height: 100%; background: #38bdf8; transition: width 0.1s linear; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 主界面 */
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100%; padding: 15px; }
+        .monitor-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #1e293b; margin-bottom: 15px; }
+        .back-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+        .back-btn:hover { color: #fff; }
+
+        /* 核心16比9容器 */
+        .monitor-container { flex: 1; display: flex; justify-content: center; align-items: center; width: 100%; overflow: hidden; }
+        .aspect-ratio-box { position: relative; width: 100%; max-width: 100%; max-height: 100%; aspect-ratio: 16 / 9; background-color: #000; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden; }
+        .monitor-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; visibility: hidden; transition: opacity 0.4s; }
+        .monitor-layer.active { opacity: 1; visibility: visible; }
+        .layer-img { width: 100%; height: 100%; object-fit: fill; display: block; }
+        
+        /* PNG红外热感人影叠加层 */
+        .thermal-overlay { position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; }
+
+        /* 红色闪光点 */
+        .target-point { position: absolute; top: 52%; left: 48%; width: 20px; height: 20px; background-color: #ef4444; border-radius: 50%; cursor: pointer; transform: translate(-50%, -50%); animation: pulse 1.5s infinite; z-index: 20; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); } 70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        /* 控制台 */
+        .monitor-controls { padding-top: 15px; display: flex; justify-content: center; }
+        .control-group { display: flex; gap: 15px; width: 100%; max-width: 550px; }
+        .control-btn { flex: 1; background: #111827; border: 1px solid #334155; color: #64748b; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+        .control-btn.ready-state { color: #e2e8f0; border-color: #475569; }
+        .control-btn.ready-state:hover { border-color: #38bdf8; color: #38bdf8; }
+        .control-btn.active-state { background: #0369a1; border-color: #38bdf8; color: #fff; }
+        .control-btn.disabled-state { background: #0f172a; border-color: #1e293b; color: #334155; cursor: not-allowed; opacity: 0.4; }
+
+        /* 弹窗 */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.8); z-index: 10000; display: flex; justify-content: center; align-items: center; }
+        .modal-content { background-color: #111827; border: 2px solid #ef4444; border-radius: 12px; width: 90%; max-width: 400px; padding: 25px; text-align: center; }
+        .modal-body { color: #d1d5db; font-size: 1.1rem; margin: 15px 0 25px; }
+        .modal-footer { display: flex; gap: 12px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; text-decoration: none; border: none; text-align: center; }
+        .btn-alarm { background-color: #ef4444; color: white; }
+        .btn-back { background-color: #374151; color: #d1d5db; }
+    </style>
+    <!-- ==========================================
+         【第 2 段 结束】
+         衔接说明：下方闭合了 </head> 并开启了 <body>，紧接着放入【第 3 段】的 HTML 结构。
+         ========================================== -->
+</head>
+<body>
+    <!-- ==========================================
+         【第 3 段 开始】
+         位置：紧跟在第 2 段下方，构建页面骨架组件，并声明贴图资源。
+         ========================================= -->
+    <!-- 百分比加载界面 -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loader-container">
+            <div class="loader-circle"></div>
+            <div id="loadingText" class="loading-text">系统初始化... 0%</div>
+            <div class="loader-bar-bg"><div id="loaderBar" class="loader-bar"></div></div>
+        </div>
+    </div>
+
+    <!-- 监控主页面 -->
+    <div id="mainContent" class="main-content hidden">
+        <header class="monitor-header">
+            <button class="back-btn" onclick="window.location.href=' '">返回地图</button>
+            <h2>区域模拟监控系统</h2>
+            <div style="width: 10px;"></div> <!-- 占位撑开标头 -->
+        </header>
+
+        <main class="monitor-container">
+            <div class="aspect-ratio-box">
+                <!-- 图层1：卫星地图 -->
+                <div id="layerSatellite" class="monitor-layer active">
+                    <img src="a地面监控画面.jpg" alt="卫星地图" class="layer-img">
+                    <div id="targetPoint" class="target-point"></div>
+                </div>
+
+                <!-- 图层2与图层3：监控与PNG热感叠加 -->
+                <div id="layerMonitor" class="monitor-layer">
+                    <img id="monitorBg" src="" alt="监控底图" class="layer-img">
+                    <!-- 【图层覆盖机制】：红外热感人影 PNG 格式，打开开关后直接平铺覆盖在背景图之上 -->
+                    <img id="layerThermalOverlay" src="a红外模式.png" alt="热感覆盖人影" class="layer-img thermal-overlay hidden">
+                </div>
+            </div>
+        </main>
+
+        <footer class="monitor-controls">
+            <div class="control-group">
+                <!-- 红外热感应开关（左边）：初始状态硬性强制禁用 -->
+                <button id="btnThermal" class="control-btn disabled-state" disabled>红外热感应</button>
+                <!-- 开启夜间红外模式选项（右边） -->
+                <button id="btnNightMode" class="control-btn disabled-state" disabled>开启夜间红外模式</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 联动警告弹窗 -->
+    <div id="alarmModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>目标识别提示</h2>
+            <p class="modal-body">总要线索证据<strong>EPT563</strong></p>
+            <div class="modal-footer">
+            <a href="巴布曼特联邦警察局.html" class="modal-btn btn-alarm">选择报警</a>
+                <button id="btnModalBack" class="modal-btn btn-back">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 【贴图全局配置文件】：此处完美绑定了你的本地图片文件名
+        const IMAGES = {
+            satellite: 'a地面监控画面.jpg',
+            night: 'a地面监控画面夜.jpg',
+            nightInfrared: 'a地面监控画面红外.jpg',
+            thermalOverlay: 'a红外模式.png'
+        };
+
+        let alarmTimer = null; // 记录红外热感应3秒延迟弹窗的计时器指针
+
+        // ==========================================
+        // 【第 4 段 开始】
+        // 位置：紧跟在第 3 段下方，负责图片资源下载与100%后的页面自动跳转。
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            const urls = Object.values(IMAGES);
+            let loaded = 0;
+
+            urls.forEach(url => {
+                const img = new Image();
+                img.onload = img.onerror = () => {
+                    loaded++;
+                    const percent = Math.floor((loaded / urls.length) * 100);
+                    document.getElementById('loaderBar').style.width = percent + '%';
+                    document.getElementById('loadingText').innerText = '系统初始化... ' + percent + '%';
+
+                    // 当网页图片内容加载完（100%）以后，执行跳转
+                    if (loaded >= urls.length) {
+                        setTimeout(() => {
+                            document.getElementById('loadingScreen').style.opacity = '0';
+                            setTimeout(() => {
+                                document.getElementById('loadingScreen').classList.add('hidden');
+                                document.getElementById('mainContent').classList.remove('hidden');
+                                
+                                // 【跳转流衔接点】：页面跳转成功，无缝激活运行第 5 段的业务控制中心
+                                startMonitorSystem(); 
+                            }, 400);
+                        }, 400);
+                    }
+                };
+                img.src = url;
+            });
+        });
+        // ==========================================
+        // 【第 4 段 结束】
+        // 衔接说明：下方直接紧接着放入最后的【第 5 段】逻辑控制与交互收尾。
+        // ==========================================
+        // ==========================================
+        // 【第 5 段 开始】
+        // 位置：紧跟在第 4 段下方，负责流水线控制、3秒延迟警报以及所有标签的闭合。
+        // ==========================================
+        function startMonitorSystem() {
+            const targetPoint = document.getElementById('targetPoint');
+            const layerSatellite = document.getElementById('layerSatellite');
+            const layerMonitor = document.getElementById('layerMonitor');
+            const monitorBg = document.getElementById('monitorBg');
+            const btnNightMode = document.getElementById('btnNightMode');
+            const btnThermal = document.getElementById('btnThermal');
+
+            // 5.1 点击卫星地图上的红色闪光点，跳转切入监控层
+            targetPoint.addEventListener('click', () => {
+                layerSatellite.classList.remove('active');
+                layerMonitor.classList.add('active');
+
+                // 砍掉时间效果后，初始默认加载夜晚贴图底图
+                monitorBg.src = IMAGES.night;
+
+                // 线性逻辑初始化：“开启夜间红外模式”按键亮起激活，变为可用状态
+                btnNightMode.className = "control-btn ready-state";
+                btnNightMode.removeAttribute('disabled');
+
+                // 核心控制：“红外热感应”按键此时必须保持禁用死锁
+                btnThermal.className = "control-btn disabled-state";
+                btnThermal.setAttribute('disabled', 'true');
+            });
+
+            // 5.2 “开启夜间红外模式”选项的点击切换与线性逻辑解锁机制
+            btnNightMode.addEventListener('click', () => {
+                if (btnNightMode.classList.contains('active-state')) {
+                    // 如果用户主动【关闭】了夜间红外模式：
+                    btnNightMode.classList.remove('active-state');
+                    monitorBg.src = IMAGES.night; // 切回夜晚基础底图
+
+                    // ⚠️ 流水线强制回退：必须同步把左边的“红外热感应”强制关闭、清空隐藏贴图、并重新锁定禁用
+                    btnThermal.className = "control-btn disabled-state";
+                    btnThermal.setAttribute('disabled', 'true');
+                    btnThermal.classList.remove('active-state');
+                    document.getElementById('layerThermalOverlay').classList.add('hidden');
+                    if (alarmTimer) {
+                        clearTimeout(alarmTimer);
+                        alarmTimer = null;
+                    }
+                } else {
+                    // 如果用户【开启】了夜间红外模式：
+                    btnNightMode.classList.add('active-state');
+                    monitorBg.src = IMAGES.nightInfrared; // 切换夜晚红外贴图底图
+
+                    // ⚠️ 核心逻辑解锁：此时，左边的“红外热感应”键立刻解除禁用、亮起允许点击！
+                    btnThermal.className = "control-btn ready-state";
+                    btnThermal.removeAttribute('disabled');
+                }
+            });
+
+            // 触发热感和弹窗
+            setupThermalPopup(btnThermal);
+        }
+
+        // 5.3 红外热感应 PNG 覆盖与 3 秒延迟联动警报交互
+        function setupThermalPopup(btnThermal) {
+            const layerThermalOverlay = document.getElementById('layerThermalOverlay');
+            const alarmModal = document.getElementById('alarmModal');
+            const btnModalBack = document.getElementById('btnModalBack');
+
+            btnThermal.addEventListener('click', () => {
+                // 如果热感键当前处于锁定禁用状态，直接拦截不作响应
+                if (btnThermal.hasAttribute('disabled')) return;
+
+                if (!btnThermal.classList.contains('active-state')) {
+                    btnThermal.classList.add('active-state');
+                    layerThermalOverlay.classList.remove('hidden'); // 显示PNG格式覆盖层
+
+                    // 核心要求：当打开红外热感贴图 3 秒后，产生系统联动弹窗提示
+                    alarmTimer = setTimeout(() => {
+                        alarmModal.classList.remove('hidden');
+                    }, 3000);
+
+                } else {
+                    btnThermal.classList.remove('active-state');
+                    layerThermalOverlay.classList.add('hidden'); // 隐藏PNG覆盖层
+                    if (alarmTimer) clearTimeout(alarmTimer);
+                }
+            });
+
+            // 联动弹窗内部选择“返回”
+            btnModalBack.addEventListener('click', () => {
+                alarmModal.classList.add('hidden'); // 隐藏弹窗
+                
+                // 将热感按钮重置为未开启状态（因为夜间红外模式依然开着，所以它仍保持就绪亮起，不需要被重新禁用）
+                btnThermal.classList.remove('active-state');
+                layerThermalOverlay.classList.add('hidden');
+                if (alarmTimer) clearTimeout(alarmTimer);
+            });
+        }
+    </script>
+</body>
+</html>
