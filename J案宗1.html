@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- 全响应式布局视窗：完美适配手机、平板、笔记本、台式电脑屏幕 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>古风卷宗系统</title>
+
+    <!-- 📌【样式拼接位置】 -->
+    <!-- 之后收到的【第二部分】和【第三部分】代码，需要复制粘贴到下面 <style> 到 </style> 的中间 -->
+    <style>
+                /* ==========================================
+           2-1. 全局设计变量与复古卷宗基调
+           ========================================== */
+        :root {
+            --bg-paper: #f4edd9;        /* 传统卷宗牛皮纸淡黄色 */
+            --bg-paper-dark: #e8dfc5;   /* 稍深的纸张阴影色 */
+            --text-ink: #1a1a1a;        /* 浓墨黑 */
+            --text-muted: #555555;      /* 褪色碳黑 */
+            --accent-red: #8b0000;      /* 绝密印章红 */
+            --border-color: #2c2c2c;    /* 档案线框色 */
+            --font-serif: "Noto Serif SC", "Georgia", "Source Han Serif", serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-paper);
+            color: var(--text-ink);
+            font-family: var(--font-serif);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ==========================================
+           2-2. 加载百分比界面样式（全屏自适应黑色遮罩）
+           ========================================== */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #111111; /* 未加载完时保持神秘黑 */
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-box {
+            text-align: center;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--accent-red);
+            margin: 0 auto 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        #loading-text {
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        .loading-bar-container {
+            width: 100%;
+            height: 2px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        #loading-bar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--accent-red);
+            transition: width 0.1s linear;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ==========================================
+           2-3. 全响应式页眉导航（顶栏自适应电脑/手机）
+           ========================================== */
+        .dossier-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 4%;
+            border-bottom: 2px solid var(--border-color);
+            background-color: var(--bg-paper-dark);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: none;
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: var(--text-ink);
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background-color: var(--text-ink);
+            color: var(--bg-paper);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-placeholder {
+            font-size: 1.5rem;
+            color: var(--accent-red);
+        }
+
+        .header-title {
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .header-right-space {
+            width: 75px; /* 与左侧返回键等宽，确保标题绝对居中 */
+        }
+        /* ==========================================
+           3-1. 主体内容布局（自适应手机/平板/台式机）
+           ========================================== */
+        .dossier-content {
+            width: 100%;
+            max-width: 1200px; /* 限制大屏最大宽度 */
+            margin: 0 auto;
+            padding: 30px 4%;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        @media (min-width: 1024px) {
+            .dossier-content {
+                padding: 50px 2%;
+                gap: 50px;
+            }
+        }
+
+        /* ==========================================
+           3-2. 图片视窗区（严格锁定16:9比例，坚决不拉伸拉扁）
+           ========================================== */
+        /* ==========================================
+           5. 自由尺寸区（完全跟随图片真实比例，自动缩放不裁剪）
+           ========================================== */
+        .image-viewer-section {
+            width: 100%;
+            background-color: #0d0d0d;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: center; /* 如果在大屏上图片不够宽，让它水平居中 */
+            align-items: center;
+        }
+
+        /* 核心：控制图片自由尺寸的关键样式 */
+        .image-viewer-section img {
+            width: 100%;          /* 在手机或小屏幕上，图片会自动缩小到100%宽度 */
+            height: auto;         /* ⚠️核心：高度完全根据图片的真实比例自动计算 */
+            max-width: 100%;      /* 保证图片绝对不会撑破外部的边框线 */
+            display: block;       /* 消除图片底部的幽灵空白间隙 */
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        /* ==========================================
+           3-3. 下滑文字内容区（卷宗复古风格排版）
+           ========================================== */
+        .text-document-section {
+            width: 100%;
+            background-color: #faf6eb;
+            border: 1px solid var(--border-color);
+            padding: 30px;
+        }
+
+        .dossier-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px 30px;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            border-bottom: 1px dashed var(--border-color);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .meta-item strong {
+            color: var(--accent-red);
+        }
+
+        .document-title {
+            font-size: 1.6rem;
+            margin-bottom: 25px;
+            line-height: 1.3;
+            font-weight: 700;
+            border-left: 4px solid var(--accent-red);
+            padding-left: 12px;
+        }
+
+        .document-p {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            text-align: justify;
+            text-indent: 2em; /* 首行缩进两个字符 */
+            letter-spacing: 0.5px;
+        }
+
+        /* ==========================================
+           3-4. 移动端响应式屏幕适配
+           ========================================== */
+        @media (max-width: 600px) {
+            .dossier-header { padding: 10px 15px; }
+            .header-title { font-size: 1rem; }
+            .header-right-space { display: none; }
+            .text-document-section { padding: 20px; }
+            .document-title { font-size: 1.3rem; }
+            .document-p { font-size: 0.95rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 1. 加载百分比界面（全屏纯黑遮罩层） -->
+    <div id="loading-overlay">
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
+            <!-- 百分比文字提示 -->
+            <div id="loading-text">卷宗调阅中... 0%</div>
+            <!-- 进度条横线 -->
+            <div class="loading-bar-container">
+                <div id="loading-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 全局网页容器（核心图片完全加载完之前，处于 display: none 隐藏状态） -->
+    <div id="app-container" style="display: none;">
+        
+        <!-- 3. 页眉导航栏（包含返回键、Logo、标头） -->
+        <header class="dossier-header">
+            <!-- 返回键：点击自动退回上一页 -->
+                <button class="back-btn" onclick="location.href='巴布曼特联邦警察局.html';"
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                <span>返回</span>
+            </button>
+            <div class="header-brand">
+                <div class="logo-placeholder">✉</div> <!-- 这里的 ✉ 可以直接换成您自己的 Logo 图标 -->
+                <h1 class="header-title">巴布曼特联邦警察局卷宗档案库</h1>
+            </div>
+            <div class="header-right-space"></div> <!-- 右侧占位块，确保标题在桌面端绝对居中 -->
+        </header>
+
+        <!-- 4. 主体卷宗内容区 -->
+        <main class="dossier-content">
+            
+            <!-- 5. 图片展示区（严格锁定16:9比例，没有任何乱七八糟的放大、滚轮干扰代码） -->
+<section class="image-viewer-section">
+    <!-- 抛弃锁死容器，直接放图片 -->
+    <img src="案件编号963.jpg" alt="卷宗图片" id="dossier-img">
+</section>
+
+
+            <!-- 6. 下滑可查看的复古文字卷宗内容区 -->
+            <section class="text-document-section">
+                <article class="dossier-article">
+                    <div class="dossier-meta">
+                        <span class="meta-item"><strong>文件编号：</strong> 963</span>
+                        <span class="meta-item"><strong>保密等级：</strong> 一般</span>
+                    </div>
+                    
+                    <h2 class="document-title">关于诺凡高档公寓坠亡调查纪要</h2>
+                    
+                    <p class="document-p">
+                        <p><strong>案件编号：</strong>963</p>
+                        <p><strong>案由：</strong>高层建筑坠亡死亡事件</p>
+                        <p><strong>时间：</strong>19XX‑07‑22 凌晨02:00</p>
+                        <p><strong>地点：</strong>诺凡高档公寓802室</p>
+                        <p><strong>案件律师：</strong>艾拉拉·沃斯 Elara Voss</p>
+                        <p><strong>案件警官：</strong>94748</p>
+                        <p><strong>嫌疑人：</strong>李.埃利奥特</p>
+                        <p><strong>受害者：</strong>林曼罗</p>
+                        <p><strong>最终结果：</strong>意外事故</p>
+                        <p><strong>详情：</strong>讯问笔录‑嫌疑人：李某
+                           <p><strong>问：</strong>请你陈述案发当晚全部经过。</p>
+                           <p><strong>答：</strong>当晚我在公寓卧室睡觉，睡着睡着，听见“哐”的一声巨响，玻璃碎裂的动静。我一下子惊醒，转头看见我的女友林某站在落地窗边。我们刚刚发生争吵，情绪吵得很凶，我以为只是口角拌嘴，没料到她突然冲破落地窗玻璃，直接从窗口跳了出去。
+                           <p><strong>问：</strong>你有无上前阻拦？</p>
+                           <p><strong>答：</strong>事情发生太快，我还没从床上起身，人就已经翻出去了。我距离很远，来不及伸手拉住。问：事发前后屋内是否还有其他人在场？</p>
+                           <p><strong>答：</strong>整套房子就只有我和林某两个人，没有第三者。</p>
+                           <p><strong>问：</strong>对于林某坠亡这件事，你作何解释？</p>
+                           <p><strong>答：</strong>跟我没有关系。是她自己情绪激动，主动破窗跳下，我没有动手，没有推搡，我完全没有伤害她。</p>
+                           <p><strong>现场勘查摘要</strong>
+                           <p>1. 主卧落地玻璃窗大面积向内碎裂，窗框边缘留有人体磕碰痕迹。</p>
+                           <p>2. 死者林某，当场确认死亡，尸体位于公寓楼下地面绿化带。</p>
+                           <p>3. 全屋除两名当事人，未检出第三人指纹、足迹。</p>
+                           <p>4. 唯一现场相关人员为李某，全部间接证据指向李某存在重大作案嫌疑，但缺少直接物理证据证实人为推坠。</p>
+                        <p><strong>卷宗备注：</strong>
+                        <p>死者林某留有一名5周岁幼子，无其他直系亲属，后续由福利部送入黑水镇福利院安置。本案经庭审，辩护方律师团队对证据链漏洞进行抗辩，因直接证据不足，法院判决李某无罪。</p>
+                
+                </article>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- 📌【脚本拼接位置】 -->
+    <!-- 之后收到的【第四部分】和【第五部分】代码，需要复制粘贴到下面 <script> 到 </script> 的中间 -->
+    <script>
+                // ==========================================
+        // 4-1. 资源加载百分比动态监控核心系统
+        // ==========================================
+        document.addEventListener("DOMContentLoaded", () => {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const appContainer = document.getElementById('app-container');
+            const loadingText = document.getElementById('loading-text');
+            const loadingBar = document.getElementById('loading-bar');
+            const dossierImg = document.getElementById('dossier-img');
+
+            let progress = 0;
+            let fakeProgressInterval;
+
+            // 动态更新界面百分比显示的函数
+            function updateProgress(value) {
+                progress = Math.min(value, 100);
+                loadingText.innerText = `卷宗调阅中... ${Math.floor(progress)}%`;
+                loadingBar.style.width = `${progress}%`;
+
+                // 核心控制：当进度刚好完全达到 100% 时，启动后续显现与下一阶段代码
+                if (progress >= 100) {
+                    clearInterval(fakeProgressInterval);
+                    
+                    // 1. 让全屏黑色加载遮罩平滑变透明
+                    loadingOverlay.style.opacity = '0';
+                    appContainer.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        // 2. 彻底移除黑色遮罩，展示卷宗正文
+                        loadingOverlay.style.display = 'none';
+                        
+                        // 3. 触发核心联动：通知自动跳转函数执行（该函数由第五部分提供）
+                        if (typeof triggerAutoRedirect === 'function') {
+                            triggerAutoRedirect();
+                        }
+                    }, 500); // 等待淡出动画走完
+                }
+            }
+
+            // A. 模拟前置基础代码与字体的基础加载（前 70% 自动平滑推进）
+            fakeProgressInterval = setInterval(() => {
+                if (progress < 70) {
+                    updateProgress(progress + Math.random() * 15);
+                }
+            }, 150);
+
+            // B. 动态、精确地监控主图片资源的真实网络下载进度
+            if (dossierImg.complete) {
+                // 如果图片之前被浏览器缓存过，直接将进度拉满
+                updateProgress(100);
+            } else {
+                // 首次访问或图片未加载完，监听下载成功事件
+                dossierImg.addEventListener('load', () => {
+                    updateProgress(100);
+                });
+
+                // 网络容错处理：万一图片路径写错了或加载失败，也强行拉满到 100%，保证页面不卡死
+                dossierImg.addEventListener('error', () => {
+                    console.error("图片资源调阅遇到阻碍，系统启动安全放行...");
+                    updateProgress(100);
+                });
+            }
+
+            // C. 强力安全兜底：如果用户网络极度缓慢，5秒钟后强行推进到100%放行，提升用户体验
+            setTimeout(() => {
+                if (progress < 100) {
+                    updateProgress(100);
+                }
+            }, 5000);
+        });
+
+
+
+    </script>
+
+</body>
+</html>
