@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>大画幅视觉 · 核心成员主页</title>
+    <title>驾驶员介绍</title>
 <style>
 /* ==========================================================================
    深空蓝主题 · 全局初始化
@@ -1107,7 +1107,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const drawer = document.getElementById("detail-drawer");
     const drawerBody = document.getElementById("drawer-dynamic-body");
     const closeBtn = document.getElementById("close-drawer");
-
     const images = document.querySelectorAll(".preload-img");
     const triggers = document.querySelectorAll(".member-trigger");
 
@@ -1116,98 +1115,85 @@ document.addEventListener("DOMContentLoaded", function () {
        3. 图片预加载
        ============================== */
 
-    let loadedCount = 0;
-    const totalImages = images.length;
-    let loaderHidden = false;
+let loadedCount = 0;
+const totalImages = images.length;
+let loaderHidden = false;
+function hideLoader() {
+    if (loaderHidden) return;
+
+    loaderHidden = true;
+
+    if (loaderScreen) {
+        loaderScreen.style.opacity = "0";
+
+        setTimeout(function () {
+            loaderScreen.style.display = "none";
+        }, 400);
+    }
+}
+
+function updateProgress(){
+
+    loadedCount++;
+
+    if(loadedCount > totalImages){
+        loadedCount = totalImages;
+    }
+
+    const percentage = totalImages > 0
+        ? Math.floor((loadedCount / totalImages) * 100)
+        : 100;
 
 
-    function hideLoader() {
-
-        if (loaderHidden) {
-            return;
-        }
-
-        loaderHidden = true;
-
-        if (loaderText) {
-            loaderText.textContent = "100%";
-        }
-
-        if (loaderScreen) {
-            loaderScreen.style.opacity = "0";
-            loaderScreen.style.visibility = "hidden";
-            loaderScreen.style.pointerEvents = "none";
-        }
+    if(loaderText){
+        loaderText.textContent = percentage + "%";
     }
 
 
-    function updateProgress() {
-
-        loadedCount++;
-
-        if (loadedCount > totalImages) {
-            loadedCount = totalImages;
-        }
-
-        const percentage = totalImages > 0
-            ? Math.floor((loadedCount / totalImages) * 100)
-            : 100;
-
-        if (loaderText) {
-            loaderText.textContent = percentage + "%";
-        }
-
-        if (loadedCount >= totalImages) {
-            hideLoader();
-        }
-    }
-
-
-    /* 没有图片，直接关闭加载界面 */
-
-    if (totalImages === 0) {
-
+    if(loadedCount >= totalImages){
         hideLoader();
-
-    } else {
-
-        images.forEach(function (img) {
-
-            /* 已经加载完成 */
-
-            if (img.complete) {
-
-                updateProgress();
-
-            } else {
-
-                /* 图片加载成功 */
-
-                img.addEventListener("load", function () {
-                    updateProgress();
-                }, { once: true });
-
-
-                /* 图片加载失败 */
-
-                img.addEventListener("error", function () {
-
-                    console.warn(
-                        "图片加载失败，已跳过：",
-                        img.getAttribute("src")
-                    );
-
-                    updateProgress();
-
-                }, { once: true });
-
-            }
-
-        });
-
     }
 
+}
 
+
+
+if(totalImages === 0){
+
+    hideLoader();
+
+}else{
+
+
+images.forEach(function(img){ 
+
+    const preload = new Image(); 
+
+    preload.onload = function(){ 
+
+        img.src = preload.src; 
+
+        updateProgress(); 
+
+    }; 
+
+
+    preload.onerror = function(){ 
+
+        console.warn( 
+            "图片加载失败，已跳过：", 
+            img.src 
+        ); 
+
+        updateProgress(); 
+
+    }; 
+
+
+    preload.src = img.src;
+
+});
+}
     /* ==============================
        4. 5秒安全保护
        ============================== */
