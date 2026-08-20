@@ -65,18 +65,70 @@
             object-fit: contain;
             opacity: 0.12;      /* 强制压低为 12% 极淡微显防伪纹路 */
         }
+        .bfpd-header-layout{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+}
 
         /* 置顶功能性返回导航条 */
-        .bfpd-top-nav {
-            background-color: #ffffff;
-            border-bottom: 1px solid var(--border-thin);
-            padding: 8px 0;
-        }
-        .bfpd-top-nav .container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+/* 顶部返回导航 */
+
+
+.bfpd-top-nav .container{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    align-items:center;
+
+    height:100%;
+
+}
+/* 右侧返回按钮 */
+
+.bfpd-header-back{
+
+    display:flex;
+    align-items:center;
+    gap:6px;
+
+    color:#ffffff;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    padding:8px 18px;
+
+    border:1px solid rgba(197,160,89,.8);
+
+    background:rgba(255,255,255,.05);
+
+    transition:.25s;
+
+}
+
+
+.bfpd-header-back svg{
+
+    width:15px;
+    height:15px;
+    fill:currentColor;
+
+}
+
+
+.bfpd-header-back:hover{
+
+    background:#A6192E;
+
+    border-color:#A6192E;
+
+}
         .bfpd-back-trigger {
             font-size: 13px;
             font-weight: 700;
@@ -95,12 +147,7 @@
             padding: 20px 0;
             border-bottom: 4px solid var(--bfpd-gold);
         }
-        .bfpd-header-panel .container {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-        }
-        
+       
         /* 官方纯图片 LOGO 挂载区域控制（方便后续一键添加彩色图） */
         .bfpd-logo-zone {
             display: flex;
@@ -117,22 +164,15 @@
        【第 3 部分】置顶功能性双返回条与 BFPD 官方纯图片 Logo 预留主标头 HTML
        ========================================================================== -->
     <!-- 置顶功能性返回导航条（100%全离线，内联矢量 SVG 绘图） -->
-    <nav class="bfpd-top-nav">
-        <div class="container">
-            <!-- 预留超链接 1：点击直跳回您的蜂鸟新闻门户主页面 -->
-            <a href="浏览器.html" class="bfpd-back-trigger">
-                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg> 返回
-            </a>
-            <!-- 预留超链接 2：点击安全返回上一级公安厅或警局目录 -->
-            <a href="主页.html" class="bfpd-back-trigger">
-                <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 15l-4-4 1.41-1.41L10 13.17l5.59-5.59L17 9l-7 7z"/></svg> 返回桌面
-            </a>
-        </div>
-    </nav>
+<!-- 单一返回导航 -->
+<nav class="bfpd-top-nav">
+
+    </div>
+</nav>
 
     <!-- BFPD 官方双语威严深徽蓝主标头 -->
-    <header class="bfpd-header-panel">
-        <div class="container">
+<header class="bfpd-header-panel"> 
+    <div class="container bfpd-header-layout">
 <div class="bfpd-logo-zone" style="display: flex; align-items: center; gap: 16px;">
                 <!-- 左侧：纯图片 LOGO 卡槽（保持 52px 黄金高度硬硬固定，决不拉伸变形） -->
                 <img src="巴布曼特警察局LOGO.png" alt="BFPD 局徽 LOGO" id="bfpd-logo-custom" class="bfpd-custom-logo-img">
@@ -141,7 +181,16 @@
                 <div class="bfpd-brand-text-block" style="border-left: 1px solid rgba(197, 160, 89, 0.4); padding-left: 16px; display: flex; flex-direction: column; justify-content: center;">
                     <span style="font-size: 16px; font-weight: 900; color: #ffffff; letter-spacing: 1px; line-height: 1.2;">巴布曼特联邦警察局</span>
                     <span style="font-size: 10px; font-weight: 700; color: var(--bfpd-gold); letter-spacing: 0.5px; margin-top: 3px; font-family: 'Inter', sans-serif;">BABUMANTE FEDERAL POLICE DEPARTMENT</span>
-                </div>
+                   </div>
+                   <a href="浏览器.html" class="bfpd-header-back">
+
+    <svg viewBox="0 0 24 24">
+        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+    </svg>
+
+    退出
+
+</a>
             </div>
     </header>
 
@@ -393,46 +442,16 @@
         // 您可以在此自由修改或增加匹配词条。当用户在首页检索框输入对应的特定词（如：张伟）时，
         // 系统会自动拦截并精准抽取出对应的本地照片与立案卷宗，通过毛玻璃中央遮罩大弹窗威严呼出。
         const BFPD_PRESET_LEXICON = {
-            "张伟": { 
-                id: "BFPD-CASE-2026-991", 
-                traits: "男 / 28岁 / 175cm", 
-                date: "2026年03月12日", 
-                loc: "巴布曼特中央核心自贸区", 
-                desc: "【BFPD 联邦绝密级立案案卷】该协查人员于前述日期在核心自贸区附近失去移动轨迹。离家时身穿深灰色连帽卫衣，随身携带一个牛皮公文包。家属已向总指挥部备案。若有线索，请就地联系警方。",
-                photo: "S16.png" // 👈 【本地真人照片配置点】：已精准绑定您的本地大牌圆形头像 S16.png！
+            "963": { 
+
             },
-            "词条二": { 
-                id: "BFPD-CASE-2026-992", 
-                traits: "男 / 31岁 / 182cm", 
-                date: "2026年05月04日", 
-                loc: "联邦北环高新技术园区", 
-                desc: "【预留协查词条二】该立案案卷属于您未来的特定词条预留占位。您后期可以直接在最底层的数据库中随意修改中文词名、更换特征信息以及配置属于您的本地特定肖像大图。",
-                photo: "images/photo2.jpg" // 👈 支持批量统一配置到 images/ 本地文件夹下
+            "553": { 
+               
             },
-            "词条三": { 
-                id: "BFPD-CASE-2026-993", 
-                traits: "女 / 24岁 / 162cm", 
-                date: "2026年04月20日", 
-                loc: "巴布曼特第一联邦大学城", 
-                desc: "【预留协查词条三】该立案案卷属于您未来的特定词条预留占位。系统底层已锁定 100% 离线自主控制，所有新图片在加载和变幻时，毫秒级响应，绝对没有半点卡顿或外部拦截冲突。",
-                photo: "images/photo3.jpg" 
-            },
-            "词条四": { 
-                id: "BFPD-CASE-2026-994", 
-                traits: "男 / 34岁 / 178cm", 
-                date: "2026年02月15日", 
-                loc: "西海岸沿海货运物流港", 
-                desc: "【预留协查词条四】该立案案卷属于您未来的特定词条预留占位。前端已自动将其层级调配到防伪水印和卡片的更上层，确保弹出时线条锐利清晰，公信力及权威质感瞬间爆表。",
-                photo: "images/photo4.jpg" 
-            },
-            "词条五": { 
-                id: "BFPD-CASE-2026-995", 
-                traits: "女 / 29岁 / 166cm", 
-                date: "2026年06月01日", 
-                loc: "中心城东路联邦金融大厦", 
-                desc: "【预留协查词条五】该立案案卷属于您未来的特定词条预留占位。全站已 100% 连根拔除了任何外部服务器的网链束缚，无论您后续将网页放到任何无网内网环境，都能实现一键闭环秒开运行。",
-                photo: "images/photo5.jpg" 
+            "773": { 
+            
             }
+
         };
         // ==========================================================================
         // 【第 6 部分 - B 部分】高级弹窗组件、新闻就地展开与检索拦截交互引擎
@@ -487,7 +506,6 @@
                 @media (max-width: 600px) { .modal-case-grid { grid-template-columns: 1fr; justify-items: center; } .modal-avatar-frame { width: 110px !important; height: 110px !important; } }
             </style>
         `;
-        document.body.insertAdjacentHTML('beforeend', bfpdModalHtml);
 
         // 2. 3条突发新闻就地优雅下拉舒展/折叠控制器
         function toggleBfpdNews(cardElement) {
@@ -511,40 +529,36 @@
             if (!searchTerm) return;
 
             // 2. 完美的条件判定：判断用户输入的检索词是否精准命中了我们的词条大库
-            if (BFPD_PRESET_LEXICON[searchTerm]) {
-                const caseData = BFPD_PRESET_LEXICON[searchTerm];
-                
-                // 3. 毫秒级无感注入：将大库里的特定数据完美注入到中央遮罩大面板中
-                document.getElementById('modal-case-name').innerText = searchTerm;
-                document.getElementById('modal-case-id').innerText = caseData.id;
-                document.getElementById('modal-case-traits').innerText = caseData.traits;
-                document.getElementById('modal-case-date').innerText = caseData.date;
-                document.getElementById('modal-case-loc').innerText = caseData.loc;
-                document.getElementById('modal-case-desc').innerText = caseData.desc;
-                
-                // 4. 图片联动：直接将您的本地圆形大头像（如 S16.png）注入挂载点
-                document.getElementById('modal-case-photo').src = caseData.photo; 
-                
-                // 5. 最高死命令：激活 active 类名，唤醒全屏毛玻璃弹窗组件
-                const modalEl = document.getElementById('bfpd-search-modal');
-                if (modalEl) modalEl.classList.add('active');
-            } else {
-                // 6. 如果是普通日常搜索词，给出高档大牌的政务消息中转提示
-                alert(`【BFPD 联邦检索通知】\n您输入的查询词是: "${searchTerm}"\n\n系统提示：未命中5个真实预设词条。您可试着在首页搜索框内输入“张伟”测试精准拦截弹出带真人圆形照片的中央高档案卷效果！`);
-            }
-        }
+if (BFPD_PRESET_LEXICON[searchTerm]) {
 
-        // 4. 弹窗专门关闭控制器
-        function closeBfpdModal() {
-            const modalEl = document.getElementById('bfpd-search-modal');
-            if(modalEl) modalEl.classList.remove('active');
-        }
+    // 根据搜索词跳转对应页面
+    const pageLinks = {
 
-        // 5. 支持键盘 ESC 键快捷退出中央弹窗
-        window.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeBfpdModal();
-        });
-    </script>
+        "963": "J案宗1.html",
+        "553": "J词条三档案.html",
+        "773": "J词条五档案.html"
+    };
+
+    // 获取对应页面
+    const targetPage = pageLinks[searchTerm];
+
+    if (targetPage) {
+        window.location.href = targetPage;
+    }
+
+}
+
+else {
+
+    alert(`【BFPD 联邦检索通知】
+您输入的查询词是: "${searchTerm}"
+
+系统提示：未找到对应档案信息，请确认案件编号或人员姓名。`);
+
+}
+
+}
+</script>
 
 
 </body>
