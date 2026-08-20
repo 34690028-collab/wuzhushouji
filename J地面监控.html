@@ -21,28 +21,35 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* 主界面 */
+/* 1. 让主内容容器按顺序排列，取消内部撑满 */
 .main-content { 
     flex: 1;
     display: flex;
     flex-direction: column;
     height: 100vh;
     padding: 10px;
-    overflow: hidden;
+    overflow-y: auto; /* 允许纵向滚动（如果内容超出） */
 }
-        .monitor-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #1e293b; margin-bottom: 15px; }
-        .back-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-        .back-btn:hover { color: #fff; }
 
-        /* 核心16比9容器 */
+/* 2. 修改容器，让它紧包裹 16:9 的盒子，不再强制垂直居中撑大空间 */
 .monitor-container { 
-    flex: 1;
-    min-height: 0;
+    width: 100%;
     display: flex;
     justify-content: center;
-    align-items: center;
-    width: 100%;
-    overflow: hidden;
+    align-items: flex-start; /* 改为靠上对齐，紧贴头部 */
+    margin-bottom: 15px;     /* 与下方按钮保持 15px 的间距 */
 }    
+
+/* 3. 控制台保持居中 */
+.monitor-controls { 
+    padding-top: 6px;
+    padding-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 100%;
+}
+
 .aspect-ratio-box { 
     position: relative;
     width: 100%;
