@@ -223,12 +223,16 @@
         /* ==========================================
            3. 主宣传图核心样式 (精准锁定 16:9 比例)
            ========================================== */
+        /* ==========================================
+           3. 核心大图与交互控制面板样式 (完美防挤压版)
+           ========================================== */
         .main-content {
             max-width: 1200px;
             margin: 30px auto;
             padding: 0 20px;
         }
 
+        /* 核心图的大外框，大屏下相对定位 */
         .hero-section {
             position: relative;
             width: 100%;
@@ -237,7 +241,7 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            margin-bottom: 40px;
+            margin-bottom: 25px; /* 留出一点外边距给手机端下方的内容 */
         }
 
         .hero-image-wrapper {
@@ -254,59 +258,35 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover; /* 保证图片不变形 */
+            object-fit: cover;
         }
 
-        /* 底层图：空碗 */
-        .base-layer {
-            z-index: 1;
-        }
-
-        /* 上层图：满碗（精准内缩裁切，彻底消灭外圈白边） */
+        .base-layer { z-index: 1; }
         .overlay-layer {
             z-index: 2;
-            opacity: 0; /* 默认完全透明隐藏 */
-            transition: opacity 0.8s ease-in-out; /* 顺滑淡入淡出过渡 */
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
             pointer-events: none;
-            
-            /* 【核心核心修复：强制向内缩小3%的范围，把白边直接切掉】 */
-            transform: scale(1.0); 
-            transform-origin: center center; /* 确保以正中心为基准向内缩 */
-            
-            /* 精准微调羽化：让最外圈被切掉的地方呈现一丝微弱的阴影感 */
-            -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 95%);
-            mask-image: radial-gradient(circle, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 95%);
+            clip-path: circle(96% at center); 
+            transform: scale(0.96) translate(-0.5%, -0.5%); 
+            transform-origin: center center;
+            -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 90%, rgba(0,0,0,0) 100%);
+            mask-image: radial-gradient(circle, rgba(0,0,0,1) 90%, rgba(0,0,0,0) 100%);
         }
+        .overlay-layer.filled { opacity: 1; }
 
-        /* 激活满碗状态时的透明度 */
-        .overlay-layer.filled {
-            opacity: 1; 
-        }
-
-
-        /* 激活满碗状态时的透明度：必须为 1，确保食物是实心的 */
-        .overlay-layer.filled {
-            opacity: 1; 
-        }
-
-
-        /* 触发满碗时的状态类 */
-        .overlay-layer.filled {
-            opacity: 1;
-        }
-        /* ==========================================
-           4. 浮动在主图之上的交互控制面板 CSS
-           ========================================== */
+        /* 【核心改动】：大屏电脑下，控制面板采用绝对定位，浮动在图片底部 */
         .interaction-overlay {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%);
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%);
             z-index: 3;
             padding: 40px 30px 30px;
             display: flex;
             align-items: flex-end;
+            transition: all 0.3s ease;
         }
 
         .info-card {
@@ -348,23 +328,17 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 160, 233, 0.4);
             transition: all 0.2s ease;
         }
 
         .btn-donate:hover {
-            background-color: #f4511e;
+            background-color: #008cd1;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 87, 34, 0.6);
         }
 
-        .btn-donate:active {
-            transform: translateY(1px);
-        }
-
-        .btn-icon {
-            font-size: 1.3rem;
-        }
+        .btn-donate:active { transform: translateY(1px); }
+        .btn-icon { font-size: 1.3rem; }
 
         .counter-box {
             background-color: rgba(255, 255, 255, 0.15);
@@ -388,6 +362,81 @@
             font-weight: 700;
             color: #ffd54f;
         }
+
+        /* ==========================================
+           【终极救星】：大适配手机端自适应逻辑
+           ========================================== */
+        @media (max-width: 768px) {
+            /* 1. 强制解除大图的 overflow 限制，允许文字卡片自动掉下来 */
+            .hero-section {
+                height: auto !important;
+                overflow: visible !important;
+                background-color: transparent !important;
+                box-shadow: none !important;
+                margin-bottom: 20px !important;
+            }
+            
+            /* 2. 让包裹两张大图的盒子，继续保持 16:9 比例在上方规整显示 */
+            .hero-image-wrapper {
+                position: relative !important;
+                width: 100% !important;
+                aspect-ratio: 16 / 9 !important;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            }
+
+            /* 3. 【核心修复】强制剥离绝对悬浮定位！让控制面板变成一个独立的卡片，乖乖掉在图片下方 */
+            .interaction-overlay {
+                position: relative !important; /* 升级为普通相对流式定位 */
+                background: #ffffff !important; /* 改为纯白底色卡片 */
+                border: 1px solid var(--border-color);
+                border-radius: 12px;
+                padding: 20px 16px !important;
+                margin-top: 15px; /* 留出与上方大图的间距 */
+                box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            }
+
+            /* 4. 既然底色变白了，把原本在黑色阴影背景上的白字改写为高对比度的深色字，保证完美阅读 */
+            .info-card { color: var(--text-dark) !important; }
+            .slogan-title {
+                font-size: 1.25rem !important;
+                color: var(--primary-color) !important; /* 标题使用深海蓝 */
+                text-shadow: none !important;
+                margin-bottom: 6px !important;
+            }
+            .slogan-sub {
+                font-size: 0.85rem !important;
+                color: #555555 !important;
+                text-shadow: none !important;
+                margin-bottom: 15px !important;
+            }
+
+            /* 5. 手机端按钮和累计框 100% 撑满宽度，垂直整齐排列，绝对不再乱挤 */
+            .action-group {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+            }
+            .btn-donate {
+                width: 100% !important;
+                justify-content: center;
+                padding: 12px 20px !important;
+                font-size: 1rem !important;
+            }
+            .counter-box {
+                width: 100% !important;
+                background-color: var(--bg-gray) !important; /* 浅微蓝底色衬托 */
+                border: 1px solid var(--border-color) !important;
+                text-align: center;
+                padding: 10px !important;
+            }
+            .counter-value {
+                color: #e65100 !important; /* 白底上黄色看不清，自动切换为高对比度爱心橙深色数字 */
+                font-size: 1.2rem !important;
+            }
+        }
+
 
         @media (max-width: 992px) {
             .slogan-title { font-size: 1.5rem; }
@@ -544,7 +593,7 @@
             </a>
             
             <!-- Logo贴图 -->
-            <img src="福利院LOGO.png" alt="Logo" class="site-logo-img" style="width: 98px; height: 98px; object-fit: contain; flex-shrink: 0; padding-top: 2px;">
+            <img src="福利院LOGO.png" alt="Logo" class="site-logo-img" style="width: 68px; height: 68px; object-fit: contain; flex-shrink: 0; padding-top: 2px;">
             
             <!-- 大包装盒子：名字、链接、搜索框纵向靠左排列 -->
             <div class="branding-and-nav-box" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px; flex-grow: 1; min-width: 0;">
