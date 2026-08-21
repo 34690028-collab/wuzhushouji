@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爱心留言板 - 黑水镇社会福利院</title>
+    <style>
+        /* ==========================================
+           1. 基础重置、全局变量与统一导航样式
+           ========================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* ==========================================
+           统一更新：BTWC 蓝丝带官方标准配色变量
+           ========================================== */
+        :root {
+            --primary-color: #005ca9; /* 提取自Logo主体的经典深海蓝，代替原咖啡色 */
+            --accent-color: #00a0e9;  /* 提取自Logo亮部的活力天际蓝，代替原暖橙色 */
+            --text-dark: #005ca9;     /* 优化后的深灰文字色，比纯黑更显高端 */
+            --text-light: #ffffff;
+            --bg-gray: #f5f7fa;       /* 略带微蓝的高级中性背景底色 */
+            --border-color: #e2e8f0;  /* 贴合蓝色调的淡色边框 */
+        }
+
+
+        html, body {
+            height: 100%;
+            min-height: 100dvh;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-gray);
+            color: var(--text-dark);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .site-header {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            width: 100%;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+        }
+
+        .back-btn {
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            padding-top: 3px;
+            flex-shrink: 0;
+        }
+
+        .back-btn:hover { color: var(--accent-color); }
+
+        .site-branding {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .site-logo-img {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .title-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            line-height: 1.25;
+            min-width: 0;
+        }
+
+        .site-name { font-size: 1.15rem; font-weight: 700; color: #005ca9; }
+        .page-subtitle { font-size: 0.8rem; color: #005ca9; font-weight: 600; letter-spacing: 1px; margin-top: 1px; }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            flex: 1 0 auto;
+            width: 100%;
+        }
+        /* ==========================================
+           2. 留言卡片、输入框与全功能翻页 CSS 样式
+           ========================================== */
+        .message-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            padding: 24px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid rgba(121, 85, 72, 0.1);
+            padding-bottom: 10px;
+            justify-content: space-between;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .input-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-control:focus {
+            border-color: var(--primary-color);
+        }
+
+        textarea.input-control {
+            height: 100px;
+            resize: none;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-submit {
+            background-color: var(--accent-color);
+            color: var(--text-light);
+            box-shadow: 0 4px 10px rgba(255, 87, 34, 0.2);
+        }
+
+        .btn-submit:hover { background-color: #f4511e; }
+
+        .btn-reset {
+            background: none;
+            border: 1px dashed #d32f2f;
+            color: #d32f2f;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+        }
+
+        .btn-reset:hover {
+            background-color: #ffebee;
+        }
+
+        .message-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 400px;
+        }
+
+        .message-item {
+            padding: 16px;
+            background-color: rgba(121, 85, 72, 0.02);
+            border: 1px solid rgba(121, 85, 72, 0.06);
+            border-radius: 8px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #777;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .msg-user { color: var(--primary-color); font-weight: 700; }
+        .msg-text { font-size: 0.95rem; color: var(--text-dark); word-break: break-all; }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            padding: 8px 14px;
+            border: 1px solid var(--border-color);
+            background-color: #ffffff;
+            color: var(--text-dark);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #555;
+            margin: 0 5px;
+        }
+
+        .site-footer {
+            background-color: #212121;
+            color: #a0a0a0;
+            padding: 25px 20px;
+            text-align: center;
+            border-top: 4px solid var(--primary-color);
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .message-card { padding: 16px; }
+            .pagination { gap: 6px; }
+            .page-btn { padding: 6px 10px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 1. 顶部统一样式导航栏 -->
+    <header class="site-header">
+        <div class="header-container">
+            <a href="J黑水.html" class="back-btn" aria-label="返回首页">
+                <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+            </a>
+            <div class="site-branding">
+                <img src="福利院LOGO.png" alt="Logo" class="site-logo-img">
+                <div class="title-group">
+                    <span class="site-name">黑水镇社会福利院</span>
+                    <span class="page-subtitle">LOVE MESSAGE BOARD / 爱心留言板</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. 主体留言板容器 -->
+    <main class="main-content">
+        
+        <!-- 表单录入区域 -->
+        <section class="message-card">
+            <div class="card-title">
+                <span>✍️ 留下您的温暖寄语</span>
+                <button id="dev-reset-btn" class="btn btn-reset">⚙️ 开发者还原功能</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">您的爱心昵称</label>
+                <input type="text" id="user-input" class="input-control" placeholder="输入昵称（如：热心市民张先生）" maxlength="15">
+            </div>
+            <div class="form-group">
+                <label class="form-label">留言寄语内容</label>
+                <textarea id="content-input" class="input-control" placeholder="你的一杯咖啡，他们的一天温饱。请留下你的真挚祝愿..." maxlength="200"></textarea>
+            </div>
+            <div class="btn-group">
+                <span style="font-size: 0.8rem; color: #888;">提示：您的留言将保存在本地浏览器缓存中。</span>
+                <button id="submit-msg-btn" class="btn btn-submit">发布留言</button>
+            </div>
+        </section>
+
+        <!-- 留言动态显示列表 -->
+        <section class="message-card">
+            <h2 class="card-title">💬 实时爱心寄语展示</h2>
+            
+            <div id="message-list-box" class="message-list"></div>
+
+            <div class="pagination">
+                <button id="btn-first" class="page-btn">一页到头</button>
+                <button id="btn-prev" class="page-btn">上页</button>
+                <span id="page-display" class="page-info">第 1 / 1800 页</span>
+                <button id="btn-next" class="page-btn">下页</button>
+                <button id="btn-last" class="page-btn">一页到底</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>特别声明：以上信息均为架空虚构内容，无任何现实映射，不存在真实对应事件与人物，一切仅服务原创解谜故事创作
+</p>
+    </footer>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        // 1. 系统原始保留的 20 条温情留言库
+        const originalData = [
+            { name: "阳光小筑", text: "少喝一杯摩卡，能给山区孤儿买整整两袋沉甸甸的大米，这个活动真棒！ ", time: "2026-08-21 10:15" },
+            { name: "咖啡中毒患者", text: "今天少喝一杯，已经打卡，希望孩子们今天都能吃得饱饱的、开开心心！ ", time: "2026-08-21 09:40" },
+            { name: "张大爷", text: "很真实的公益，财务公开透明。用一杯咖啡的钱改写一整天饥饿，支持福利院！ ", time: "2026-08-20 18:22" },
+            { name: "暖冬行动义工", text: "上周去现场发粮食了，铁碗装满热饭那一刻，孩子的笑脸真的很治愈，大家冲！ ", time: "2026-08-20 15:10" },
+            { name: "匿名爱心网友", text: "少喝一杯咖啡不影响我提神，但能让他们多活一天！功德无量！  ", time: "2026-08-20 11:05" },
+            { name: "蓝天白云", text: "看到了满碗食物的切图高光，做得真逼真，已经分享到朋友圈了。 ", time: "2026-08-19 23:45" },
+            { name: "独立咖啡馆主", text: "我们店已经加入了买一捐一活动，顾客每买一杯，我们就给福利院捐一餐熟食！ ", time: "2026-08-19 16:30" },
+            { name: "小莉学姐", text: "少点外卖、少喝奶茶和咖啡，多做点有意义的公益，世界会更温暖！ ", time: "2026-08-19 14:12" },
+            { name: "微光成炬", text: "涓涓细流终汇成江海，每个人省下指尖的温度，就能温暖他们的寒冬。 ", time: "2026-08-18 19:55" },
+            { name: "热心肠李姐", text: "每个季度独立合规的财务审计声明让人放心，会一直长期坚持支持的！  ", time: "2026-08-18 08:20" },
+            { name: "风中的蒲公英", text: "只要人人奉献一点爱，世界将变成美好的人间，支持黑水镇社会福利院！ ", time: "2026-08-17 17:40" },
+            { name: "大山的孩子", text: "感谢每一位少喝了一杯咖啡的城市哥哥姐姐，谢谢你们送来的干净饮用水！ ", time: "2026-08-17 11:15" },
+            { name: "平安喜乐", text: "用一杯日常咖啡，点亮困境孩子的一整天。非常棒的互动反馈设计！ ", time: "2026-08-16 21:04" },
+            { name: "程序员阿强", text: "动态计数器自增逻辑真不错，每一分钟都在记录善意的增加，代码有温度！ ", time: "2026-08-16 15:30" },
+            { name: "晨曦微露", text: "少喝一杯咖啡的钱微不足道，聚少成多就能改写饥饿。赞一个！ ", time: "2026-08-15 13:22" },
+            { name: "爱喝燕麦拿铁", text: "今天上班果断没点拿铁，把预算捐给空碗。看它变满的时候好有成就感。 ", time: "2026-08-15 09:05" },
+            { name: "慈善宣传员", text: "网页非常精美，响应式完全不会被手机自带菜单栏挡住，体验好极了！ ", time: "2026-08-14 18:40" },
+            { name: "老白", text: "踏踏实实做救济的民办福利院，致敬所有长期奋战在山区的爱心义工团队！ ", time: "2026-08-14 14:15" },
+            { name: "小猫喵喵", text: "我已经把网页分享给室友了，大家一起省下零食钱来帮偏远困境儿童。 ", time: "2026-08-13 22:10" },
+            { name: "终点站", text: "愿天下再无饥饿与寒冷，愿每一个孩子都能幸福、饱腹、快乐地健康成长！ ", time: "2026-08-13 10:02" }
+        ];
+
+        // 2. 核心变量初始化
+        let userMessages = JSON.parse(localStorage.getItem('welfare_user_messages')) || [];
+        let currentPage = 1;
+        const totalPages = 1800; 
+        const itemsPerPage = 10; 
+
+        const listBox = document.getElementById('message-list-box');
+        const pageDisplay = document.getElementById('page-display');
+        
+        const btnFirst = document.getElementById('btn-first');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const btnLast = document.getElementById('btn-last');
+
+        // 强制隐藏原本右上角的实体功能按钮
+        const oldDevBtn = document.getElementById('dev-reset-btn');
+        if (oldDevBtn) { oldDevBtn.style.display = 'none'; }
+
+        // 3. 随机洗牌翻页算法
+        function shuffleArray(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // 4. 留言渲染输出
+        function renderMessages() {
+            listBox.innerHTML = '';
+            let allData = [...userMessages, ...originalData];
+            let displayData = [];
+
+            if (currentPage === 1 && userMessages.length > 0) {
+                displayData = allData.slice(0, itemsPerPage);
+                if (displayData.length < itemsPerPage) {
+                    let needed = itemsPerPage - displayData.length;
+                    let shuffled = shuffleArray(originalData);
+                    displayData = displayData.concat(shuffled.slice(0, needed));
+                }
+            } else {
+                displayData = shuffleArray(originalData).slice(0, itemsPerPage);
+            }
+
+            displayData.forEach(item => {
+                const msgItem = document.createElement('div');
+                msgItem.className = 'message-item';
+                msgItem.innerHTML = `
+                    <div class="msg-meta">
+                        <span class="msg-user">${escapeHTML(item.name)}</span>
+                        <span>${item.time}</span>
+                    </div>
+                    <div class="msg-text">${escapeHTML(item.text)}</div>
+                `;
+                listBox.appendChild(msgItem);
+            });
+
+            pageDisplay.textContent = `第 ${currentPage} / ${totalPages} 页`;
+            btnFirst.disabled = (currentPage === 1);
+            btnPrev.disabled = (currentPage === 1);
+            btnNext.disabled = (currentPage === totalPages);
+            btnLast.disabled = (currentPage === totalPages);
+        }
+
+        // 5. 翻页按钮监听
+        btnFirst.addEventListener('click', () => { currentPage = 1; renderMessages(); });
+        btnPrev.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderMessages(); } });
+        btnNext.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; renderMessages(); } });
+        btnLast.addEventListener('click', () => { currentPage = totalPages; renderMessages(); });
+
+        // 6. 发布留言逻辑、暗号拦截与强制后缀追加
+        const userInput = document.getElementById('user-input');
+        const contentInput = document.getElementById('content-input');
+        const submitBtn = document.getElementById('submit-msg-btn');
+
+        submitBtn.addEventListener('click', function() {
+            const userName = userInput.value.trim();
+            const messageText = contentInput.value.trim();
+
+            // 拦截特权暗号进行还原（处于安全机制，此处的安全确认弹窗继续保留）
+            if (userName === "开发者还原") {
+                if (confirm("✨ 成功唤醒隐藏彩蛋：检测到开发者特权指令。\n\n确定要一键格式化、清空所有本地新增的缓存数据吗？")) {
+                    localStorage.removeItem('welfare_user_messages');
+                    userMessages = [];
+                    currentPage = 1;
+                    userInput.value = '';
+                    contentInput.value = '';
+                    renderMessages();
+                    alert("⚙️ 开发者还原成功。本地所有真实缓存已安全格式化。");
+                }
+                return; 
+            }
+
+            // 【空内容校验】：如果没打字，仍保留警示弹窗，防止用户提交空盒子
+            if (userName === "" || messageText === "") {
+                alert("请输入您的爱心昵称和寄语内容后再进行发布。");
+                return;
+            }
+
+            // 强制在用户输入的文本最后面，加上规定的后缀“ :56”
+            const finalMessageText = messageText + "";
+
+            const now = new Date();
+            const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+            const newMsg = { name: userName, text: finalMessageText, time: timeStr };
+            userMessages.unshift(newMsg);
+
+            localStorage.setItem('welfare_user_messages', JSON.stringify(userMessages));
+
+            // 清空输入框并强制跳回第1页刷新展示
+            userInput.value = '';
+            contentInput.value = '';
+            currentPage = 1;
+            renderMessages();
+            
+            // 【核心修改】：彻底删除了原本在这里的 alert 成功弹窗代码，现在点击按钮后会原地瞬间无缝显示！
+        });
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag] || tag));
+        }
+
+        renderMessages();
+    });
+
+
+    </script>
+</body>
+</html>

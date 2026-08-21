@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>财务透明公开 - 黑水镇社会福利院</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        :root {
+            --primary-color: #795548; 
+            --accent-color: #ff5722;  
+            --text-dark: #333333;
+            --text-light: #ffffff;
+            --bg-gray: #f8f9fa;
+            --border-color: #e0e0e0;
+            --success-color: #2e7d32; 
+            --danger-color: #c62828;  
+        }
+
+        html, body {
+            height: 100%;
+            min-height: 100dvh;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-gray);
+            color: var(--text-dark);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .site-header {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            width: 100%;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+        }
+
+        .back-btn {
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            padding-top: 3px;
+            flex-shrink: 0;
+        }
+
+        .back-btn:hover {
+            color: var(--accent-color);
+        }
+
+        .site-branding {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .site-logo-img {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .title-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            line-height: 1.25;
+            min-width: 0;
+        }
+
+        .site-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #005ca9;
+        }
+
+        .page-subtitle {
+            font-size: 0.8rem;
+            color: #005ca9;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-top: 1px;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            flex: 1 0 auto;
+            width: 100%;
+        }
+        /* ==========================================
+           2. 核心财务卡片与自适应数据图表样式
+           ========================================== */
+        .transparency-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            padding: 24px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid rgba(20, 14, 54, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .metric-item {
+            padding: 16px;
+            border-radius: 8px;
+            background-color: var(--bg-gray);
+            border-left: 4px solid #999;
+        }
+
+        .metric-item.income { border-left-color: var(--success-color); }
+        .metric-item.expense { border-left-color: var(--danger-color); }
+        .metric-item.balance { border-left-color: #ffd54f; }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: #666666;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .metric-item.income .metric-value { color: var(--success-color); }
+        .metric-item.expense .metric-value { color: var(--danger-color); }
+
+        .chart-box {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .bar-item {
+            width: 100%;
+        }
+
+        .bar-label-group {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .bar-track {
+            width: 100%;
+            height: 10px;
+            background-color: var(--bg-gray);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 5px;
+            transition: width 1s ease-out;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .ledger-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+            min-width: 500px;
+        }
+
+        .ledger-table th, .ledger-table td {
+            padding: 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .ledger-table th {
+            background-color: rgba(121, 85, 72, 0.05);
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .ledger-table tr:hover {
+            background-color: rgba(0,0,0,0.01);
+        }
+
+        .type-tag {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .type-tag.in { background-color: #e8f5e9; color: var(--success-color); }
+        .type-tag.out { background-color: #ffebee; color: var(--danger-color); }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: var(--primary-color);
+            color: var(--text-light);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(72, 99, 121, 0.3);
+            transition: all 0.2s;
+        }
+
+        .download-btn:hover {
+            background-color: #37405d;
+            transform: translateY(-1px);
+        }
+
+        .site-footer {
+            background-color: #212121;
+            color: #a0a0a0;
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 4px solid var(--primary-color);
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        .site-footer p { font-size: 0.85rem; }
+
+        @media (max-width: 768px) {
+            .transparency-card { padding: 16px; }
+            .metric-value { font-size: 1.3rem; }
+            .main-content { margin: 15px auto; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 1. 顶部统一配色的导航栏 -->
+    <header class="site-header">
+        <div class="header-container">
+            <!-- 点击返回主网页 index.html -->
+            <a href="J黑水.html" class="back-btn" aria-label="返回首页">
+                <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+            </a>
+            
+            <div class="site-branding">
+                <img src="福利院LOGO.png" alt="Logo" class="site-logo-img">
+                <div class="title-group">
+                    <span class="site-name">黑水镇社会福利院</span>
+                    <span class="page-subtitle">FINANCIAL TRANSPARENCY / 财务公开透明</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. 财务透明主内容区 -->
+    <main class="main-content">
+        
+        <!-- 看板板块 -->
+        <section class="transparency-card">
+            <h2 class="card-title">📊 2026年度募集收支动态统计</h2>
+            <div class="metrics-grid">
+                <div class="metric-item income">
+                    <div class="metric-label">累计咖啡募捐收入</div>
+                    <div class="metric-value">￥148,920.00</div>
+                </div>
+                <div class="metric-item expense">
+                    <div class="metric-label">已落实儿童粮食采购支出</div>
+                    <div class="metric-value">￥132,538.80</div>
+                </div>
+                <div class="metric-item balance">
+                    <div class="metric-label">项目留存待执行爱心资金</div>
+                    <div class="metric-value" style="color: #b58100;">￥16,381.20</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 比例条板块 -->
+        <section class="transparency-card">
+            <h2 class="card-title">📈 募集咖啡资金使用流向比例</h2>
+            <div class="chart-box">
+                <div class="bar-item">
+                    <div class="bar-label-group">
+                        <span>🍚 核心营养口粮与大米面粉采购</span>
+                        <span>89.0%</span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill" style="width: 89%; background-color: var(--success-color);"></div></div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label-group">
+                        <span>🚚 偏远山区山区跨区域爱心仓储物流</span>
+                        <span>11.0%</span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill" style="width: 11%; background-color: #ffd54f;"></div></div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar-label-group">
+                        <span>👔 机构行政人员及志愿者管理费用</span>
+                        <span>0.0%</span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill" style="width: 0%; background-color: var(--danger-color);"></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 细账明细表格 -->
+        <section class="transparency-card">
+            <h2 class="card-title">🗒 院内最新财务收支明细账本</h2>
+            <div class="table-responsive">
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>入账/记账日期</th>
+                            <th>款项流水摘要及详细用途</th>
+                            <th>交易类型</th>
+                            <th>记账金额</th>
+                            <th>当前经办状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>2026-08-20</td>
+                            <td>采购春季粮食援助项目大豆、玉米共2.5吨</td>
+                            <td><span class="type-tag out">支出</span></td>
+                            <td style="color: var(--danger-color); font-weight: 600;">-￥14,500.00</td>
+                            <td style="color: var(--success-color); font-weight: 500;">✔️ 拨付已核销</td>
+                        </tr>
+                        <tr>
+                            <td>2026-08-19</td>
+                            <td>结转本周爱心用户累计捐赠“咖啡”总额折现</td>
+                            <td><span class="type-tag in">收入</span></td>
+                            <td style="color: var(--success-color); font-weight: 600;">+￥6,842.00</td>
+                            <td style="color: #666;">入账完毕</td>
+                        </tr>
+                        <tr>
+                            <td>2026-08-15</td>
+                            <td>结算跨省区儿童营养物资发运第三方物流运费尾款</td>
+                            <td><span class="type-tag out">支出</span></td>
+                            <td style="color: var(--danger-color); font-weight: 600;">-￥3,210.00</td>
+                            <td style="color: var(--success-color); font-weight: 500;">✔️ 拨付已核销</td>
+                        </tr>
+                        <tr>
+                            <td>2026-08-10</td>
+                            <td>定向采购贫困家庭儿童铁质餐具、洗涤消毒设备</td>
+                            <td><span class="type-tag out">支出</span></td>
+                            <td style="color: var(--danger-color); font-weight: 600;">-￥5,680.00</td>
+                            <td style="color: var(--success-color); font-weight: 500;">✔️ 拨付已核销</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 审计说明板块 (纯文字展示，无下载无跳转) -->
+        <section class="transparency-card">
+            <h2 class="card-title">📖 独立第三方合规审计报告声明</h2>
+            <p style="font-size: 0.95rem; color: #555; margin-bottom: 15px; line-height: 1.7;">
+                我们坚信公开透明是公益的底线。本福利院每季度财务流水均由独立第三方会计师事务所进行独立审计，确保每一杯咖啡的善款都切实用到孩子身上。
+            </p>
+            
+            <!-- 【核心修改】：彻底取消了按钮和下载链接，变成一段带有精美底色和边框的官方纯文字状态展示 -->
+            <div style="display: inline-block; background-color: rgba(121, 85, 72, 0.05); color: #795548; padding: 10px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; border: 1px solid rgba(121, 85, 72, 0.15);">
+                📌 2026年第二季度官方财务独立审计报告.pdf
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部角页 -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <p>特别声明：以上信息均为架空虚构内容，无任何现实映射，不存在真实对应事件与人物，一切仅服务原创解谜故事创作
+</p>
+        </div>
+    </footer>
+
+</body>
+</html>
