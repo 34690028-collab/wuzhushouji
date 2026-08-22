@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>企业级智能考勤系统 | 员工打卡中心</title>
+    <title>智能考勤系统 | 员工打卡中心</title>
     <!-- 引入高级现代商务无衬线字体线 -->
     <link rel="stylesheet" href="#">
     
@@ -299,18 +299,24 @@
     </style>
 </head>
 <body>
-    <!-- 1. 顶部导航标头栏（带LOGO、名称、返回主页） -->
-    <header class="site-header">
-        <div class="container header-flex">
-            <div class="brand-logo-group">
-                <div class="logo-box">H</div>
-                <!-- 标志性名称 -->
-                <div class="site-title">蜂鸟新闻 <span>考勤中心</span></div>
-            </div>
+<!-- 1. 顶部导航标头栏（带LOGO、名称、返回主页） -->
+<header class="site-header">
+    <div class="container header-flex">
+        <div class="brand-logo-group">
+            <div class="logo-box">H</div>
+            <!-- 标志性名称 -->
+            <div class="site-title">蜂鸟新闻 <span>考勤中心</span></div>
+        </div>
+        <!-- 导航按钮组合：确保垂直居中与水平间距 -->
+        <div class="header-nav-buttons" style="display: flex; gap: 10px; align-items: center;">
+            <!-- 统一改为 button 标签，并套用相同的 class -->
+            <button class="btn-home" onclick="window.location.href='J新闻内网.html';">职员中心</button>
             <!-- 返回主页按键：绑定就地重置刷新页面，安全不报错 -->
             <button class="btn-home" onclick="window.location.href='mail.html';">返回主页</button>
         </div>
-    </header>
+    </div>
+</header>
+
 
     <div class="container">
         <!-- 2. 全响应式主双列网格布局底座 -->
