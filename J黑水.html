@@ -586,12 +586,7 @@
     <!-- 2. 顶部导航栏 (带全靠左搜索框自适应版) -->
     <header class="site-header">
         <div class="header-container" style="max-width: 1200px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: flex-start; justify-content: flex-start; gap: 12px;">
-            
-            <!-- 返回键 -->
-            <a href="浏览器.html" class="back-btn" aria-label="返回" style="color: var(--text-dark); display: flex; align-items: center; padding-top: 3px; flex-shrink: 0;">
-                <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
-            </a>
-            
+
             <!-- Logo贴图 -->
             <img src="福利院LOGO.png" alt="Logo" class="site-logo-img" style="width: 68px; height: 68px; object-fit: contain; flex-shrink: 0; padding-top: 2px;">
             
@@ -599,17 +594,17 @@
             <div class="branding-and-nav-box" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px; flex-grow: 1; min-width: 0;">
                 
                 <!-- 第一层：中文站名 -->
-                <span class="site-name" style="font-size: 1.15rem; font-weight: 700; color: #122152; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">黑水镇社会福利院</span>
+                <span class="site-name" style="font-size: 1.15rem; font-weight: 700; color: #005ca9; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">黑水镇社会福利院</span>
                 
                 <!-- 第二层：英文副站名 -->
-                <span class="site-name-en" style="font-size: 0.75rem; font-weight: 500; color: #122152; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; letter-spacing: 0.2px;">Blackwater Town Welfare Centre</span>
+                <span class="site-name-en" style="font-size: 0.75rem; font-weight: 500; color: #005ca9; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; letter-spacing: 0.2px;">Blackwater Town Welfare Centre</span>
                 
                 <!-- 第三层：四个跳转链接 -->
                 <nav class="top-nav" style="display: flex; gap: 15px; margin-top: 8px; flex-wrap: wrap; width: 100%;">
-                    <a href="J黑水-关于我们.html" class="nav-link" style="text-decoration: none; color: #122152; font-size: 0.85rem; font-weight: 600; white-space: nowrap; transition: color 0.2s;">关于我们</a>
-                    <a href="J画廊.html" class="nav-link" style="text-decoration: none; color: #122152; font-size: 0.85rem; font-weight: 600; white-space: nowrap; transition: color 0.2s;">艺术画廊</a>
-                    <a href="J黑水-账.html" class="nav-link" style="text-decoration: none; color: #122152; font-size: 0.85rem; font-weight: 600; white-space: nowrap; transition: color 0.2s;">财务透明</a>
-                    <a href="J黑水-留言版.html" class="nav-link" style="text-decoration: none; color: #122152; font-size: 0.85rem; font-weight: 600; white-space: nowrap; transition: color 0.2s;">爱心传递</a>
+                    <a href="浏览器.html" class="nav-link" style="text-decoration: none; color: #005ca9; font-size: 0.85rem; font-weight: 600; white-space: nowrap; transition: color 0.2s;">返回主页</a>
+                    <a href="J画廊.html" class="nav-link" style="text-decoration: none; color: #005ca9; font-size: 0.85rem; font-weight: 600; white-space: nowrap; transition: color 0.2s;">艺术画廊</a>
+                    <a href="J黑水-账.html" class="nav-link" style="text-decoration: none; color: #005ca9; font-size: 0.85rem; font-weight: 600; white-space: nowrap; transition: color 0.2s;">财务透明</a>
+                    <a href="J黑水-留言版.html" class="nav-link" style="text-decoration: none; color: #005ca9; font-size: 0.85rem; font-weight: 600; white-space: nowrap; transition: color 0.2s;">爱心传递</a>
 
                 </nav>
 
@@ -852,8 +847,12 @@
             }
 
             overlayLayer.classList.add('filled');
+           // ================= 新增：向右微调 5 像素 =================
+            // 如果原本 css 已经有 transform，可以用拼接的方式，或者直接用下面这行
+            overlayLayer.style.transform = 'translateX(0px)'; 
+            // =======================================================            
 
-            donateBtn.style.transform = 'scale(0.95)';
+            donateBtn.style.transform = 'scale(1)';
             setTimeout(() => { donateBtn.style.transform = ''; }, 100);
         });
 
