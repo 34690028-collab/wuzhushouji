@@ -1,0 +1,1006 @@
+<!-- ==================== 【全新重构：第1包 粘贴开始】 ==================== -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>空间站实验室控制台</title>
+    <style>
+        /* --------------------------------------------------
+         * 1. 基础布局与自适应宽高比锁定
+         * -------------------------------------------------- */
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body, html {
+            width: 100%; height: 100%; background-color: #040712;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
+        }
+        .console-viewport {
+            position: relative; width: 100vmin; height: 115vmin; max-width: 100%; max-height: 100%;
+            background: #070b16; border: 2px solid #162846; box-shadow: 0 0 40px rgba(0, 210, 255, 0.1);
+            display: flex; flex-direction: column; justify-content: space-between; padding: 2.5% 4%; overflow: hidden;
+        }
+
+        /* --------------------------------------------------
+         * 2. 100% 强制资源加载遮罩
+         * -------------------------------------------------- */
+        .preload-overlay {
+            position: absolute; inset: 0; background-color: #050814; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .preload-title { color: #00ffaa; font-size: 1.3rem; font-weight: bold; letter-spacing: 3px; margin-bottom: 20px; text-shadow: 0 0 10px rgba(0, 255, 170, 0.5); font-family: monospace; }
+        .preload-bar-container { width: 60%; height: 4px; background: rgba(26, 48, 84, 0.5); border-radius: 2px; overflow: hidden; position: relative; }
+        .preload-bar-inner { height: 100%; width: 0%; background: linear-gradient(90deg, #00d2ff, #00ffaa); box-shadow: 0 0 12px #00ffaa; transition: width 0.1s linear; }
+        .preload-percentage { color: #8fa3c7; font-size: 0.9rem; margin-top: 10px; font-family: monospace; }
+        .preload-overlay.loaded { opacity: 0; pointer-events: none; transform: scale(1.02); }
+
+        /* --------------------------------------------------
+         * 3. 动态地图与擦除扫描线核心样式（核心重写）
+         * -------------------------------------------------- */
+        .interactive-stage { position: relative; width: 100%; flex-grow: 1; margin: 15px 0; border: 1px solid rgba(26, 48, 84, 0.6); overflow: hidden; }
+        
+        /* 基础底层地图 */
+        .base-map-layer { position: absolute; inset: 0; z-index: 10; background-size: cover; background-position: center; background-repeat: no-repeat; }
+        
+        /* 覆盖物常驻图层基类：使用 clip-path 进行物理像素动态切片隐藏 */
+        .tech-overlay-layer {
+            position: absolute; inset: 0; z-index: 30; pointer-events: none; mix-blend-mode: screen;
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+            /* 默认状态下：完全切除，处于不显示状态 */
+            clip-path: inset(0 0 100% 0); 
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* 真正的独立霓虹扫描激光线条（独立悬浮于地图上方滑过） */
+        .laser-scan-line {
+            position: absolute; left: 0; width: 100%; height: 3px; z-index: 40; pointer-events: none;
+            opacity: 0; top: 0; /* 初始隐藏在最顶端 */
+        }
+        /* 绿光线样式（对应扫描） */
+        .laser-scan-line.scan-color {
+            background: #00ffaa; box-shadow: 0 0 15px #00ffaa, 0 0 30px #00ffaa;
+        }
+        /* 蓝光线样式（对应备份） */
+        .laser-scan-line.backup-color {
+            background: #00d2ff; box-shadow: 0 0 15px #00d2ff, 0 0 30px #00d2ff;
+        }
+        /* 红光线样式（对应提取） */
+        .laser-scan-line.extract-color {
+            background: #ff2a5f; box-shadow: 0 0 15px #ff2a5f, 0 0 30px #ff2a5f;
+        }
+
+        /* 比例锁定的 UI 容器外壳 */
+        .scale-lock-wrapper { position: absolute; inset: 0; z-index: 45; pointer-events: none; }
+        /* ==================== 【能量柱升级：样式粘贴开始】 ==================== */
+.energy-panel-wrapper {
+    position: absolute;
+    left: 4%;
+    top: 30%;
+    width: 22%;
+    height: 45%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    pointer-events: auto;
+    z-index: 46;
+}
+/* “原液提纯”标题文本样式 */
+.energy-main-title {
+    color: #00ffaa;
+    font-size: 1.15rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    text-shadow: 0 0 10px rgba(0, 255, 170, 0.6);
+    font-family: "Microsoft YaHei", sans-serif;
+}
+/* 双能量柱并列容器 */
+.energy-bars-container {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    height: calc(100% - 30px);
+}
+/* 单个能量柱外壳槽 */
+.energy-bar-slot {
+    position: relative;
+    width: 24px;
+    height: 100%;
+    border: 1px solid rgba(26, 48, 84, 0.8);
+    background: rgba(4, 8, 20, 0.7);
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* 让能量从底部向上涨 */
+}
+/* 内部真正流动的液体发光条 */
+.energy-liquid-fluid {
+    width: 100%;
+    height: 0%; /* 核心高度：由 JS 动态从 0% - 100% 控制 */
+    transition: height 0.1s linear; /* 平滑线性消长 */
+}
+/* 原液色调：青绿色科技流体 */
+.fluid-raw {
+    background: linear-gradient(to top, #005f43, #00ffaa);
+    box-shadow: 0 0 12px rgba(0, 255, 170, 0.5);
+}
+/* 提纯色调：高能亮橙色流体 */
+.fluid-pure {
+    background: linear-gradient(to top, #c74d16, #ff7b23);
+    box-shadow: 0 0 12px rgba(255, 123, 35, 0.5);
+}
+/* 能量条底部的数据标签 (如 [72]) */
+.energy-data-label {
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #8fa3c7;
+    font-size: 0.75rem;
+    font-family: monospace;
+    font-weight: bold;
+}
+/* ==================== 【能量柱升级：样式粘贴结束】 ==================== */
+
+
+        /* =========================================================
+         * 【新增】右侧竖版实时编程码终端
+         * ========================================================= */
+        .code-terminal {
+            position: absolute;
+            top: 4%;
+            right: 1.8%;
+            width: 22%;
+            height: 52%;
+            z-index: 55;
+            pointer-events: none;
+            overflow: hidden;
+            border: 1px solid rgba(0, 255, 170, 0.48);
+            background:
+                linear-gradient(180deg, rgba(2, 12, 20, 0.96), rgba(1, 6, 15, 0.94)),
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0,255,170,0.035) 0px,
+                    rgba(0,255,170,0.035) 1px,
+                    transparent 1px,
+                    transparent 4px
+                );
+            box-shadow:
+                0 0 8px rgba(0, 255, 170, 0.16),
+                inset 0 0 20px rgba(0, 210, 255, 0.08);
+            clip-path: polygon(
+                0 0, 92% 0, 100% 8%,
+                100% 92%, 92% 100%, 0 100%
+            );
+            font-family: "Consolas", "Courier New", monospace;
+        }
+
+        .code-terminal::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                180deg,
+                rgba(255,255,255,0.025) 0px,
+                rgba(255,255,255,0.025) 1px,
+                transparent 1px,
+                transparent 5px
+            );
+            mix-blend-mode: screen;
+        }
+
+        .code-terminal::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            height: 2px;
+            z-index: 7;
+            background: #00ffaa;
+            box-shadow: 0 0 8px #00ffaa, 0 0 18px rgba(0,255,170,0.7);
+            animation: code-terminal-scan 2.8s linear infinite;
+        }
+
+        @keyframes code-terminal-scan {
+            0%   { top: 0; opacity: 0; }
+            8%   { opacity: 1; }
+            92%  { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        .code-terminal-head {
+            height: 14%;
+            min-height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 5px;
+            padding: 0 8%;
+            border-bottom: 1px solid rgba(0,255,170,0.22);
+            color: #00ffaa;
+            font-size: clamp(8px, 0.8vw, 12px);
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 0 0 7px rgba(0,255,170,0.75);
+        }
+
+        .code-terminal-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .code-live-dot {
+            width: 6px;
+            height: 6px;
+            flex: 0 0 6px;
+            border-radius: 50%;
+            background: #00ffaa;
+            box-shadow: 0 0 5px #00ffaa, 0 0 12px #00ffaa;
+            animation: code-dot-blink 0.85s steps(2, end) infinite;
+        }
+
+        @keyframes code-dot-blink {
+            50% { opacity: 0.25; }
+        }
+
+        .code-terminal-body {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 14%;
+            bottom: 0;
+            overflow: hidden;
+            padding: 8px 7% 12px 5%;
+            color: #68f7d2;
+            font-size: clamp(7px, 0.72vw, 11px);
+            line-height: 1.55;
+            text-shadow: 0 0 5px rgba(0,255,170,0.32);
+        }
+
+        .code-lines {
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            gap: 2px;
+        }
+
+        .code-line {
+            display: grid;
+            grid-template-columns: 2.2em 1fr;
+            min-height: 1.55em;
+            white-space: nowrap;
+            overflow: hidden;
+            animation: code-line-in 0.22s ease-out both;
+        }
+
+        @keyframes code-line-in {
+            from { opacity: 0; transform: translateX(7px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        .code-no {
+            color: rgba(82, 157, 180, 0.65);
+            text-align: right;
+            padding-right: 0.5em;
+            user-select: none;
+        }
+
+        .code-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .code-keyword { color: #00d2ff; }
+        .code-function { color: #8bffea; }
+        .code-string { color: #ffd166; }
+        .code-number { color: #ff7b23; }
+        .code-comment { color: rgba(106, 143, 164, 0.85); }
+        .code-warning { color: #ff2a5f; }
+
+        .code-cursor {
+            display: inline-block;
+            width: 0.55em;
+            height: 1em;
+            margin-left: 2px;
+            vertical-align: -0.15em;
+            background: #00ffaa;
+            box-shadow: 0 0 7px #00ffaa;
+            animation: code-cursor-blink 0.65s steps(2, end) infinite;
+        }
+
+        @keyframes code-cursor-blink {
+            50% { opacity: 0; }
+        }
+
+        .code-terminal-status {
+            position: absolute;
+            bottom: 3px;
+            left: 5%;
+            right: 5%;
+            display: flex;
+            justify-content: space-between;
+            color: rgba(0,210,255,0.72);
+            font-size: clamp(6px, 0.58vw, 9px);
+            letter-spacing: 0.5px;
+            pointer-events: none;
+        }
+
+        @media (max-width: 700px) {
+            .code-terminal {
+                right: 1.5%;
+                width: 27%;
+                height: 46%;
+                top: 3%;
+            }
+
+            .code-terminal-head {
+                padding: 0 7%;
+                font-size: 7px;
+            }
+
+            .code-terminal-body {
+                padding-top: 5px;
+                font-size: 6.5px;
+                line-height: 1.45;
+            }
+
+            .code-terminal-status {
+                font-size: 5.5px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 顶层预加载遮罩面板 -->
+    <div class="preload-overlay" id="preload-layer">
+        <div class="preload-title">INITIALIZING SYSTEM DATA...</div>
+        <div class="preload-bar-container">
+            <div class="preload-bar-inner" id="preload-bar"></div>
+        </div>
+        <div class="preload-percentage" id="preload-txt">0%</div>
+    </div>
+<!-- ==================== 【全新重构：第1包 粘贴结束】 ==================== -->
+<!-- ==================== 【全新重构：第2包 粘贴开始】 ==================== -->
+    <div class="console-viewport">
+        <!-- --------------------------------------------------
+         * 1. 顶部操作菜单导航面板
+         * -------------------------------------------------- -->
+        <style>
+            .top-nav { display: flex; justify-content: space-between; align-items: center; width: 100%; z-index: 100; }
+            .nav-group { display: flex; gap: 15px; }
+            .nav-btn {
+                background: transparent; border: 1px solid transparent; color: #00ffaa;
+                font-size: 1.25rem; font-weight: bold; letter-spacing: 2px;
+                cursor: pointer; padding: 4px 12px; transition: all 0.3s ease; text-decoration: none;
+            }
+            .nav-btn:hover { text-shadow: 0 0 10px #00ffaa; background: rgba(0, 255, 170, 0.1); border-color: rgba(0, 255, 170, 0.3); }
+            .nav-btn.return-btn { color: #ff2a5f; }
+            .nav-btn.return-btn:hover { text-shadow: 0 0 10px #ff2a5f; background: rgba(255, 42, 95, 0.1); border-color: rgba(255, 42, 95, 0.3); }
+        </style>
+        
+        <header class="top-nav">
+            <!-- 绑定游戏内的返回跳转链接 -->
+            <a href="J空间站.html" class="nav-btn return-btn">返回</a>
+            <div class="nav-group">
+                <button class="nav-btn" id="btn-scan">扫描</button>
+                <button class="nav-btn" id="btn-backup">备份</button>
+                <button class="nav-btn" id="btn-extract">提取</button>
+            </div>
+        </header>
+
+        <!-- --------------------------------------------------
+         * 2. 中央动态擦除主舞台
+         * -------------------------------------------------- -->
+        <main class="interactive-stage" id="interactive-stage">
+            
+            <!-- 底层常驻：基础医院平面图 -->
+            <div class="base-map-layer" id="layer-base-map"></div>
+
+            <!-- 三大覆盖地图：通过 JavaScript 动态计算 clip-path，实现线过图现的常驻效果 -->
+            <div id="layer-scan" class="tech-overlay-layer"></div>
+            <div id="layer-backup" class="tech-overlay-layer"></div>
+            <div id="layer-extract" class="tech-overlay-layer"></div>
+
+            <!-- 真正的独立激光光束线条：在最上方滑过屏幕 -->
+            <div id="laser-line" class="laser-scan-line"></div>
+
+
+            <!-- =====================================================
+                 【新增】右侧竖版实时编程码终端
+                 ===================================================== -->
+            <div class="code-terminal" id="code-terminal">
+                <div class="code-terminal-head">
+                    <span class="code-terminal-title">NEURAL CORE // LIVE CODE</span>
+                    <span class="code-live-dot"></span>
+                </div>
+
+                <div class="code-terminal-body">
+                    <div class="code-lines" id="code-lines"></div>
+                    <div class="code-terminal-status">
+                        <span id="code-status">STREAM: ACTIVE</span>
+                        <span id="code-count">L:000</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右下方独立挂载的精密医疗心电图组件 -->
+            <div class="scale-lock-wrapper">
+                <div class="ecg-module-border" style="position: absolute; bottom: 23%; right: 4%; width: 44%; height: 16%; border: 1px solid #1f3d68; background: rgba(4,8,20,0.9); padding: 5px; display: flex; flex-direction: column; pointer-events: auto;">
+                    <div class="ecg-header" style="font-size: 0.6rem; color: #5374a8; font-weight: bold; letter-spacing: 1px; margin-bottom: 2px;">ELECTROCARDIOGRAM</div>
+                    <div class="ecg-graph-frame" style="position: relative; width: 100%; flex-grow: 1; border: 1px solid rgba(0, 255, 170, 0.25); background-color: #02050b; background-image: linear-gradient(rgba(0, 255, 170, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 170, 0.03) 1px, transparent 1px); background-size: 8px 8px; overflow: hidden;">
+                        <!-- 心电图 Canvas 内核 -->
+                        <canvas id="ecg-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+                    </div>
+                </div>
+            </div>
+<!-- ==================== 【能量柱升级：HTML挂载开始】 ==================== -->
+<div class="energy-panel-wrapper">
+    <!-- 顶端状态文本 -->
+    <div class="energy-main-title" id="txt-energy-status">原液提纯</div>
+    
+    <div class="energy-bars-container">
+        <!-- 左侧：原液能量柱（默认100%满状态） -->
+        <div class="energy-bar-slot">
+            <div class="energy-liquid-fluid fluid-raw" id="bar-fluid-raw" style="height: 100%;"></div>
+            <div class="energy-data-label" id="label-raw-val">[72]</div>
+        </div>
+        
+        <!-- 右侧：提纯能量柱（默认0%空状态） -->
+        <div class="energy-bar-slot">
+            <div class="energy-liquid-fluid fluid-pure" id="bar-fluid-pure" style="height: 0%;"></div>
+            <div class="energy-data-label" id="label-pure-val">[000]</div>
+        </div>
+    </div>
+</div>
+<!-- ==================== 【能量柱升级：HTML挂载结束】 ==================== -->
+
+        </main>
+
+        <!-- --------------------------------------------------
+         * 3. 底部操作控制面板
+         * -------------------------------------------------- -->
+        <style>
+            .bottom-nav { display: flex; justify-content: space-between; align-items: center; width: 100%; z-index: 100; }
+            .page-btn {
+                background: transparent; border: 1px solid rgba(0, 255, 170, 0.4); color: #00ffaa;
+                font-size: 1.15rem; font-weight: bold; padding: 6px 18px; cursor: pointer;
+                transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            }
+            .page-btn:hover { box-shadow: 0 0 12px rgba(0, 255, 170, 0.4); background: rgba(0, 255, 170, 0.1); }
+            .serial-display {
+                color: #00ffaa; font-size: 1.2rem; font-weight: bold; letter-spacing: 1px;
+                text-shadow: 0 0 8px rgba(0, 255, 170, 0.5); min-width: 180px; text-align: right;
+            }
+        </style>
+        
+        <footer class="bottom-nav">
+            <div class="nav-group">
+                <button class="page-btn" id="btn-prev">Next page</button>
+                <button class="page-btn" id="btn-next">Previous Page</button>
+            </div>
+            <div class="serial-display" id="txt-serial">Serial number：000 (Wait)</div>
+        </footer>
+    </div> <!-- 结束 console-viewport -->
+
+    <!-- ==================== 核心大脑系统逻辑分配层 ==================== -->
+    <script>
+// ==================== 【全新重构：第4包-A 完整替换开始】 ====================
+        // --------------------------------------------------
+        // * 1. 核心游戏资产池：请在此处精确配置文件名与路径
+        // --------------------------------------------------
+        const ASSETS_POOL = {
+            // 💡 避坑指南：你可以把后面的网址直接删掉，换成你本地的图片名字（如 'base.png'）
+            baseMap: 'T底图.png', 
+            scanMap: 'T扫描.png', 
+            backupMap: 'T备份.png', 
+            extractMap: 'T提取.png' 
+        };
+// ==================== 完整替换 CONFIG 这一段 ====================
+const CONFIG = {
+    currentIndex: 531, 
+    maxItems: 999,
+    isAnimating: false,
+    ecgStatus: 'normal',
+    currentSerialCode: '', 
+    currentPureRate: 0 // 💡 新增：用于存放当前失踪者档案专属的随机提纯率 (89%-99%)
+};
+
+        // --- DOM 节点缓存池 ---
+        const DOM = {
+            preloadLayer: document.getElementById('preload-layer'),
+            preloadBar: document.getElementById('preload-bar'),
+            preloadTxt: document.getElementById('preload-txt'),
+            layerBaseMap: document.getElementById('layer-base-map'),
+            layerScan: document.getElementById('layer-scan'),
+            layerBackup: document.getElementById('layer-backup'),
+            layerExtract: document.getElementById('layer-extract'),
+            laserLine: document.getElementById('laser-line'),
+            btnScan: document.getElementById('btn-scan'),
+            btnBackup: document.getElementById('btn-backup'),
+            btnExtract: document.getElementById('btn-extract'),
+            btnPrev: document.getElementById('btn-prev'),
+            btnNext: document.getElementById('btn-next'),
+            txtSerial: document.getElementById('txt-serial'),
+            ecgCanvas: document.getElementById('ecg-canvas'),
+            // 新增：能量柱节点缓存
+            fluidRaw: document.getElementById('bar-fluid-raw'),
+            fluidPure: document.getElementById('bar-fluid-pure'),
+            labelRaw: document.getElementById('label-raw-val'),
+            labelPure: document.getElementById('label-pure-val'),
+            txtEnergyStatus: document.getElementById('txt-energy-status'),
+            codeLines: document.getElementById('code-lines'),
+            codeStatus: document.getElementById('code-status'),
+            codeCount: document.getElementById('code-count')
+        };
+
+        // --------------------------------------------------
+        // * 2. 100% 强制预加载（内置3秒超时破网后门）
+        // --------------------------------------------------
+        const Asset_Preloader = {
+            init(callback) {
+                const urls = Object.values(ASSETS_POOL);
+                let loadedCount = 0;
+                const totalCount = urls.length;
+                let hasCalledComplete = false; // 防止重复触发
+
+                // 🛠️ 【硬核后门】：如果网络卡死，3秒后不管加没加载完，强行冲开遮罩进入游戏
+                const networkTimeout = setTimeout(() => {
+                    if (!hasCalledComplete) {
+                        console.warn("[系统提示] 网络加载超时，启动强制破网后门直接进场。");
+                        this.complete(callback);
+                        hasCalledComplete = true;
+                    }
+                }, 3000); // 3000 毫秒 = 3 秒
+
+                urls.forEach(url => {
+                    const img = new Image();
+                    img.src = url;
+                    
+                    img.onload = () => {
+                        if (hasCalledComplete) return;
+                        loadedCount++;
+                        this.updateProgress(loadedCount, totalCount, () => {
+                            clearTimeout(networkTimeout);
+                            this.complete(callback);
+                            hasCalledComplete = true;
+                        });
+                    };
+                    
+                    img.onerror = () => {
+                        if (hasCalledComplete) return;
+                        loadedCount++;
+                        this.updateProgress(loadedCount, totalCount, () => {
+                            clearTimeout(networkTimeout);
+                            this.complete(callback);
+                            hasCalledComplete = true;
+                        });
+                    };
+                });
+            },
+
+            updateProgress(loaded, total, onDone) {
+                const percentage = Math.round((loaded / total) * 100);
+                DOM.preloadBar.style.width = `${percentage}%`;
+                DOM.preloadTxt.innerText = `${percentage}%`;
+
+                if (loaded >= total && onDone) {
+                    setTimeout(onDone, 300);
+                }
+            },
+
+            complete(callback) {
+                // 将大图安全挂载给各滤镜图层
+                DOM.layerBaseMap.style.backgroundImage = `url('${ASSETS_POOL.baseMap}')`;
+                DOM.layerScan.style.backgroundImage = `url('${ASSETS_POOL.scanMap}')`;
+                DOM.layerBackup.style.backgroundImage = `url('${ASSETS_POOL.backupMap}')`;
+                DOM.layerExtract.style.backgroundImage = `url('${ASSETS_POOL.extractMap}')`;
+
+                // 强行充满 100% 进度条并平滑淡出加载层
+                DOM.preloadBar.style.width = `100%`;
+                DOM.preloadTxt.innerText = `100%`;
+                
+                setTimeout(() => {
+                    DOM.preloadLayer.classList.add('loaded');
+                    if (callback) callback();
+                }, 300);
+            }
+        };
+
+        // * 4. 真实物理医疗心电图渲染引擎 (ECG Canvas)
+        // --------------------------------------------------
+        const ECG_Engine = {
+            ctx: DOM.ecgCanvas.getContext('2d'),
+            init() { 
+                this.resize(); 
+                window.addEventListener('resize', () => this.resize()); 
+                this.startLoop(); 
+            },
+            resize() {
+                const rect = DOM.ecgCanvas.parentElement.getBoundingClientRect();
+                DOM.ecgCanvas.width = rect.width * 2; 
+                DOM.ecgCanvas.height = rect.height * 2;
+                this.ctx.scale(2, 2);
+            },
+            getECGValue(x) {
+                if (CONFIG.ecgStatus === 'flat') return 0;
+                const period = 140; 
+                const pos = (x + Date.now() * 0.11) % period; 
+                let y = 0;
+                
+                if (pos > 10 && pos < 25) y = Math.sin((pos - 10) * Math.PI / 15) * 4;
+                else if (pos >= 35 && pos < 40) y = -((pos - 35) / 5) * 6;
+                else if (pos >= 40 && pos < 46) y = ((pos - 40) / 6) * 48 - 6; // QRS 主突刺
+                else if (pos >= 46 && pos < 52) y = 42 - ((pos - 46) / 6) * 46;
+                else if (pos >= 52 && pos < 58) y = -((58 - pos) / 6) * 12;
+                else if (pos >= 75 && pos < 100) y = Math.sin((pos - 75) * Math.PI / 25) * 9;
+                
+                return -(y + (Math.random() - 0.5) * 1.5); 
+            },
+            startLoop() {
+                const render = () => {
+                    const w = DOM.ecgCanvas.width / 2; 
+                    const h = DOM.ecgCanvas.height / 2; 
+                    const centerY = h / 2;
+                    
+                    this.ctx.fillStyle = 'rgba(2, 5, 11, 0.12)'; 
+                    this.ctx.fillRect(0, 0, w, h);
+                    
+                    this.ctx.beginPath();
+                    this.ctx.strokeStyle = CONFIG.ecgStatus === 'flat' ? '#ff2a5f' : '#00ffaa';
+                    this.ctx.lineWidth = 1.8; 
+                    this.ctx.shadowBlur = 6;
+                    this.ctx.shadowColor = CONFIG.ecgStatus === 'flat' ? '#ff2a5f' : '#00ffaa';
+                    
+                    for (let x = 0; x < w; x++) {
+                        const y = centerY + this.getECGValue(x);
+                        if (x === 0) this.ctx.moveTo(x, y); 
+                        else this.ctx.lineTo(x, y);
+                    }
+                    this.ctx.stroke(); 
+                    this.ctx.shadowBlur = 0;
+                    
+                    requestAnimationFrame(render);
+                };
+                render();
+            }
+        };
+
+
+        // --------------------------------------------------
+        // * 【新增】实时编程码滚动引擎：一行一行生成代码
+        // --------------------------------------------------
+        const Code_Stream_Engine = {
+            timer: null,
+            lineNo: 0,
+            maxLines: 18,
+
+            source: [
+                '<span class="code-comment">// NEURAL EXTRACTION PROTOCOL</span>',
+                '<span class="code-keyword">const</span> node = <span class="code-function">connect</span>(<span class="code-string">"BIO_CORE"</span>);',
+                '<span class="code-keyword">let</span> signal = <span class="code-function">readSignal</span>(node);',
+                '<span class="code-keyword">if</span> (signal.level &gt; <span class="code-number">0</span>) {',
+                '  <span class="code-function">decode</span>(signal.payload);',
+                '  <span class="code-function">sync</span>(<span class="code-string">"NEURAL_MAP"</span>);',
+                '}',
+                '<span class="code-keyword">const</span> sample = <span class="code-function">extract</span>(<span class="code-string">"RAW_FLUID"</span>);',
+                '<span class="code-keyword">let</span> purity = <span class="code-function">calculate</span>(sample);',
+                '<span class="code-keyword">while</span> (purity &lt; <span class="code-number">0.99</span>) {',
+                '  <span class="code-function">filter</span>(sample);',
+                '  purity = <span class="code-function">recalculate</span>(sample);',
+                '}',
+                '<span class="code-function">encrypt</span>(sample.id, <span class="code-string">"EXT"</span>);',
+                '<span class="code-function">writeBuffer</span>(sample);',
+                '<span class="code-function">verifyHash</span>(sample.hash);',
+                '<span class="code-keyword">return</span> <span class="code-string">"EXTRACTION_READY"</span>;',
+                '<span class="code-comment">// uplink: secured / channel: 07</span>',
+                '<span class="code-function">await</span> <span class="code-function">nextSequence</span>();',
+                '<span class="code-warning">[SYSTEM] TRACE LOCKED</span>',
+                '<span class="code-comment">// monitoring bio-electric activity...</span>',
+                '<span class="code-keyword">const</span> ecg = <span class="code-function">captureECG</span>();',
+                '<span class="code-function">normalize</span>(ecg);',
+                '<span class="code-function">pushTelemetry</span>(ecg);'
+            ],
+
+            init() {
+                this.renderInitial();
+                this.start();
+            },
+
+            renderInitial() {
+                if (!DOM.codeLines) return;
+                DOM.codeLines.innerHTML = '';
+                this.lineNo = 0;
+
+                // 初始先快速出现几行，让界面不是空白
+                for (let i = 0; i < 7; i++) {
+                    this.addLine();
+                }
+            },
+
+            addLine() {
+                if (!DOM.codeLines) return;
+
+                this.lineNo++;
+                const line = document.createElement('div');
+                line.className = 'code-line';
+
+                const no = document.createElement('span');
+                no.className = 'code-no';
+                no.textContent = String(this.lineNo).padStart(3, '0');
+
+                const text = document.createElement('span');
+                text.className = 'code-text';
+
+                const sourceLine = this.source[(this.lineNo - 1) % this.source.length];
+                text.innerHTML = sourceLine;
+
+                if (this.lineNo % 5 === 0) {
+                    const cursor = document.createElement('span');
+                    cursor.className = 'code-cursor';
+                    text.appendChild(cursor);
+                }
+
+                line.appendChild(no);
+                line.appendChild(text);
+                DOM.codeLines.appendChild(line);
+
+                while (DOM.codeLines.children.length > this.maxLines) {
+                    DOM.codeLines.removeChild(DOM.codeLines.firstElementChild);
+                }
+
+                if (DOM.codeCount) {
+                    DOM.codeCount.textContent = `L:${String(this.lineNo).padStart(3, '0')}`;
+                }
+
+                // 自动保持最新代码贴近底部
+                DOM.codeLines.style.transform = 'translateY(0)';
+            },
+
+            start() {
+                clearInterval(this.timer);
+                this.timer = setInterval(() => {
+                    this.addLine();
+                }, 420);
+            },
+
+            pulseStatus(text, warning = false) {
+                if (!DOM.codeStatus) return;
+                DOM.codeStatus.textContent = text;
+                DOM.codeStatus.style.color = warning ? '#ff2a5f' : '#00d2ff';
+
+                clearTimeout(this.statusTimer);
+                this.statusTimer = setTimeout(() => {
+                    DOM.codeStatus.textContent = 'STREAM: ACTIVE';
+                    DOM.codeStatus.style.color = 'rgba(0,210,255,0.72)';
+                }, 1200);
+            }
+        };
+
+        // --------------------------------------------------
+        // * 5. 数据状态机、高科技密码生成与翻页模块
+        // --------------------------------------------------
+        const Page_Controller = {
+            generateRandomCode(index) {
+                const formattedNum = String(index).padStart(3, '0');
+                const randomHex = Math.floor(Math.random() * 65535).toString(16).toUpperCase().padStart(4, '0');
+                return `EXT-${randomHex}-${formattedNum}`;
+            },
+
+            updateDisplay() {
+                const formattedNum = String(CONFIG.currentIndex).padStart(3, '0');
+                
+                if (CONFIG.ecgStatus === 'flat') {
+                    if (!CONFIG.currentSerialCode) {
+                        CONFIG.currentSerialCode = this.generateRandomCode(CONFIG.currentIndex);
+                    }
+                    DOM.txtSerial.innerHTML = `ID：<span style="color:#ff2a5f;font-family:monospace;font-size:1.2rem;letter-spacing:1px;text-shadow:0 0 10px rgba(255,42,95,0.4);">${CONFIG.currentSerialCode}</span>`;
+                } else {
+                    DOM.txtSerial.innerHTML = `ID：<span style="color:#00ffaa;font-family:monospace;">${formattedNum}</span> (WAIT)`;
+                }
+                
+                if (DOM.labelRaw && DOM.labelPure && !CONFIG.currentSerialCode) {
+                    DOM.labelRaw.innerText = "";
+                    DOM.labelPure.innerText = "";
+                }
+            },
+            
+            prev() {
+                if (CONFIG.isAnimating) return;
+                Laser_Eraser_Engine.resetAllLayers(); 
+                CONFIG.ecgStatus = 'normal';
+                CONFIG.currentSerialCode = ''; 
+                CONFIG.currentIndex = CONFIG.currentIndex > 0 ? CONFIG.currentIndex - 1 : CONFIG.maxItems;
+                Code_Stream_Engine.pulseStatus('NEW RECORD: LOADED');
+                this.updateDisplay();
+            },
+            
+            next() {
+                if (CONFIG.isAnimating) return;
+                Laser_Eraser_Engine.resetAllLayers(); 
+                CONFIG.ecgStatus = 'normal';
+                CONFIG.currentSerialCode = ''; 
+                CONFIG.currentIndex = CONFIG.currentIndex < CONFIG.maxItems ? CONFIG.currentIndex + 1 : 0;
+                Code_Stream_Engine.pulseStatus('NEW RECORD: LOADED');
+                this.updateDisplay();
+            }
+        };
+// ==================== 【全新重构：第3包-B（第二段） 状态锁定版 完整替换开始】 ====================
+        // --------------------------------------------------
+        // * 6. 霓虹激光线一寸一寸擦除浮现与能量消长核心引擎
+        // --------------------------------------------------
+        const Laser_Eraser_Engine = {
+            execute(type, direction) {
+                // 如果当前正在播放线条动画，强行拦截阻断，防止连续疯狂点击扰乱系统
+                if (CONFIG.isAnimating) return;
+
+                // 💡【神级补丁：提取状态硬锁定】
+                // 如果系统当前已经是“心电图拉直/已提取完成”状态，且玩家再次点击“扫描”或“备份”
+                if (CONFIG.ecgStatus === 'flat') {
+                    // 我们仅允许切片图层本身重置叠加，但绝对不调用 resetAllLayers() 从而死死保住能量柱不被复原！
+                    this.softResetLayersOnly();
+                } else {
+                    // 如果是第一次普通状态下操作，走完整的全清重置流程
+                    this.resetAllLayers();
+                }
+
+                let targetLayer = null;
+                let colorClass = '';
+
+                if (type === 'scan') { targetLayer = DOM.layerScan; colorClass = 'scan-color'; }
+                else if (type === 'backup') { targetLayer = DOM.layerBackup; colorClass = 'backup-color'; }
+                else if (type === 'extract') { targetLayer = DOM.layerExtract; colorClass = 'extract-color'; }
+
+                if (!targetLayer) return;
+
+                CONFIG.isAnimating = true;
+                DOM.laserLine.className = `laser-scan-line ${colorClass}`;
+                DOM.laserLine.style.opacity = '1';
+                targetLayer.style.opacity = '1';
+
+                const duration = 1800; // 动画耗时 1.8 秒
+                const startTime = performance.now();
+                const containerHeight = document.getElementById('interactive-stage').clientHeight;
+
+// ==================== 【全新升级：动态提纯率版 完整覆盖开始】 ====================
+                // 如果点击的是提取，且目前还没提取过，同步点亮橙色提纯中状态
+                if (type === 'extract' && CONFIG.ecgStatus !== 'flat') {
+                    DOM.txtEnergyStatus.innerText = "提纯中...";
+                    DOM.txtEnergyStatus.style.color = "#ff7b23";
+                    DOM.txtEnergyStatus.style.textShadow = "0 0 10px rgba(255,123,35,0.6)";
+                }
+
+                const renderWipe = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    let currentY = 0;
+                    if (direction === 'top-to-bottom') {
+                        currentY = containerHeight * progress;
+                    } else if (direction === 'bottom-to-top') {
+                        currentY = containerHeight * (1 - progress);
+                    }
+
+                    DOM.laserLine.style.top = `${currentY}px`;
+
+                    if (direction === 'top-to-bottom') {
+                        const clipPercent = progress * 100;
+                        targetLayer.style.clipPath = `inset(0 0 ${100 - clipPercent}% 0)`;
+                    } else if (direction === 'bottom-to-top') {
+                        const clipPercent = progress * 100;
+                        targetLayer.style.clipPath = `inset(${100 - clipPercent}% 0 0 0)`;
+                    }
+
+                    // 💡【流体能量条变化判定】：只有当系统不是 flat（即第一次点提取）时，能量才消长流动
+                    if (type === 'extract' && CONFIG.ecgStatus !== 'flat') {
+                        const purePercent = Math.round(progress * 100);
+                        const rawPercent = 100 - purePercent;
+
+                        DOM.fluidRaw.style.height = `${rawPercent}%`;
+                        DOM.fluidPure.style.height = `${purePercent}%`;
+
+                        // 💡【核心算法补丁】：如果当前页还没生成过提纯率，就在 89 到 99 之间当场摇号抽取一个
+                        if (!CONFIG.currentPureRate) {
+                            CONFIG.currentPureRate = Math.floor(Math.random() * (99 - 89 + 1)) + 89;
+                        }
+
+                        // 原液数据标签：依然稳固地从 72 扣减到 00
+                        DOM.labelRaw.innerText = `[${String(Math.round(rawPercent * 0.72)).padStart(2, '0')}]`;
+                        
+                        // 提纯数据标签：根据上面摇出来的专属上限值，动态从 00 上涨到指定数字（89-99 之间）
+                        const currentLiveValue = Math.round((purePercent / 100) * CONFIG.currentPureRate);
+                        DOM.labelPure.innerText = `[${String(currentLiveValue).padStart(2, '0')}]`;
+                    }
+
+                    if (progress < 1) {
+                        requestAnimationFrame(renderWipe);
+                    } else {
+                        CONFIG.isAnimating = false;
+                        DOM.laserLine.style.opacity = '0'; 
+                        
+                        if (type === 'extract') {
+                            CONFIG.ecgStatus = 'flat'; // 强行斩杀拉直心电图
+                            Page_Controller.updateDisplay(); // 爆发生成加密编号
+                            
+                            // 💡 提纯完成后，将文字状态同步更改，展现玩家当场抽取到的独立提纯百分比
+                            DOM.txtEnergyStatus.innerText = `complete: ${CONFIG.currentPureRate}%`;
+                            DOM.txtEnergyStatus.style.color = "#ff2a5f";
+                            DOM.txtEnergyStatus.style.textShadow = "0 0 10px rgba(255,42,95,0.6)";
+                        }
+                    }
+                };
+                requestAnimationFrame(renderWipe);
+            },
+
+            // 💡【软重置模块】：提纯完后，再次点击扫描/备份，只隐蔽重置图层，死死保护能量柱和心电图不被还原
+            softResetLayersOnly() {
+                DOM.layerScan.style.opacity = '0';
+                DOM.layerScan.style.clipPath = 'inset(0 0 100% 0)';
+                DOM.layerBackup.style.opacity = '0';
+                DOM.layerBackup.style.clipPath = 'inset(0 0 100% 0)';
+                DOM.layerExtract.style.opacity = '0';
+                DOM.layerExtract.style.clipPath = 'inset(0 0 100% 0)';
+            },
+
+            // 💡【硬重置模块】：只有翻页切换档案时，才能由该函数真正重置还原一切！
+            resetAllLayers() {
+                DOM.laserLine.style.opacity = '0';
+                this.softResetLayersOnly();
+                
+                // 还原能量柱到初始状态（原液100%，提纯0%）
+                if (DOM.fluidRaw && DOM.fluidPure) {
+                    DOM.fluidRaw.style.height = "100%";
+                    DOM.fluidPure.style.height = "0%";
+                    DOM.labelRaw.innerText = "";
+                    DOM.labelPure.innerText = "";
+                    DOM.txtEnergyStatus.innerText = "原液提纯";
+                    DOM.txtEnergyStatus.style.color = "#00ffaa";
+                    DOM.txtEnergyStatus.style.textShadow = "0 0 10px rgba(0, 255, 170, 0.6)";
+                }
+            }
+        };
+// ==================== 【全新升级：动态提纯率版 完整覆盖结束】 ====================
+
+        // --------------------------------------------------
+        // * 7. 系统一键点火激活总线
+        // --------------------------------------------------
+        function Start_Console_System() {
+            ECG_Engine.init();
+            Code_Stream_Engine.init();
+            Page_Controller.updateDisplay();
+            
+            DOM.btnScan.addEventListener('click', () => {
+                Code_Stream_Engine.pulseStatus('SCAN: ANALYZING');
+                Laser_Eraser_Engine.execute('scan', 'top-to-bottom');
+            });
+            DOM.btnBackup.addEventListener('click', () => {
+                Code_Stream_Engine.pulseStatus('BACKUP: WRITING');
+                Laser_Eraser_Engine.execute('backup', 'bottom-to-top');
+            });
+            DOM.btnExtract.addEventListener('click', () => {
+                Code_Stream_Engine.pulseStatus('EXTRACT: EXECUTING');
+                Laser_Eraser_Engine.execute('extract', 'top-to-bottom');
+            });
+            
+            DOM.btnPrev.addEventListener('click', () => Page_Controller.prev());
+            DOM.btnNext.addEventListener('click', () => Page_Controller.next());
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            Asset_Preloader.init(Start_Console_System);
+        });
+    </script>
+</body>
+</html>
