@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蜂鸟新闻 - 工作台</title>
+    <style>
+        /* ==========================================
+           1. 基础重置与全局变量定义
+           ========================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f7fa;
+            color: #333333;
+            line-height: 1.5;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        /* ==========================================
+           2. 顶部导航标头栏样式
+           ========================================== */
+        .site-header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-flex {
+            height: 64px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-logo-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-box {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .site-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .site-title span {
+            font-size: 14px;
+            font-weight: 400;
+            color: #7f8c8d;
+            margin-left: 6px;
+            border-left: 1px solid #dcdde1;
+            padding-left: 8px;
+        }
+
+        /* ==========================================
+           3. 主体九宫格排版（核心：锁定 3 列与 1:1 比例）
+           ========================================== */
+        .main-content {
+            padding: 20px 0;
+        }
+
+        /* 严格锁定全端皆为 3 列，永不折行打散 */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .app-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            background-color: #ffffff;
+            padding: 15px 8px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* 核心：1:1 正方形包裹圈 */
+        .icon-wrapper {
+            width: 60%;
+            position: relative;
+            padding-bottom: 60%;
+            margin-bottom: 8px;
+        }
+
+        .app-icon {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .app-label {
+            font-size: 12px;
+            color: #4a5568;
+            font-weight: 500;
+            text-align: center;
+            white-space: nowrap;
+        }
+        /* ==========================================
+           4. 全端响应式间距与文字大小微调
+           ========================================== */
+
+        /* 📱 当屏幕大于 576px（小平板）：适度增大文字和间距 */
+        @media (min-width: 576px) {
+            .app-grid { gap: 16px; }
+            .app-label { font-size: 14px; }
+            .app-item { padding: 20px 10px; }
+        }
+
+        /* 💻 🖥️ 当屏幕大于 768px（笔记本/电脑桌面）：限制总宽度，避免拉伸变形 */
+        @media (min-width: 768px) {
+            .app-grid {
+                max-width: 600px; /* 控制大屏下九宫格的整体最大宽度，使其聚拢精致 */
+                margin: 0 auto;   /* 居中显示 */
+                gap: 20px;
+            }
+            .icon-wrapper { width: 50%; padding-bottom: 50%; }
+            
+            /* 电脑端的鼠标悬停互动特效 */
+            .app-item:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+                background-color: #fafbfc;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. 顶部导航标头栏（带LOGO、名称） -->
+    <header class="site-header">
+        <div class="container header-flex">
+            <div class="brand-logo-group">
+                <div class="logo-box">H</div>
+                <div class="site-title">蜂鸟新闻 <span>工作台</span></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. 主体九宫格导航区域 -->
+    <main class="main-content">
+        <div class="container">
+            <div class="app-grid">
+                
+                <!-- 视频会议 -->
+                <a href="#" class="app-item">
+                    <div class="icon-wrapper">
+                        <!-- 后期只需将 src 替换为您自己的图标图片路径 -->
+                        <img src="N1.png" alt="视频会议" class="app-icon">
+                    </div>
+                    <span class="app-label">视频会议</span>
+                </a>
+
+                <!-- 内部通知 -->
+                <a href="#" class="app-item">
+                    <div class="icon-wrapper">
+                        <img src="N2.png" alt="内部通知" class="app-icon">
+                    </div>
+                    <span class="app-label">内部通知</span>
+                </a>
+
+                <!-- 休闲游戏 -->
+                <a href="J植物.html" class="app-item">
+                    <div class="icon-wrapper">
+                        <img src="N3.png" alt="休闲游戏" class="app-icon">
+                    </div>
+                    <span class="app-label">休闲游戏</span>
+                </a>
+
+                <!-- 联系人 -->
+                <a href="#" class="app-item">
+                    <div class="icon-wrapper">
+                        <img src="N4.png" alt="联系人" class="app-icon">
+                    </div>
+                    <span class="app-label">联系人</span>
+                </a>
+
+                <!-- 智能人事 -->
+                <a href="#" class="app-item">
+                    <div class="icon-wrapper">
+                        <img src="N5.png" alt="智能人事" class="app-icon">
+                    </div>
+                    <span class="app-label">智能人事</span>
+                </a>
+
+                <!-- 代办事宜 -->
+                <a href="#" class="app-item">
+                    <div class="icon-wrapper">
+                        <img src="N6.png" alt="代办事宜" class="app-icon">
+                    </div>
+                    <span class="app-label">代办事宜</span>
+                </a>
+
+                <!-- 部门群聊 -->
+                <a href="#" class="app-item">
+                    <div class="icon-wrapper">
+                        <img src="N7.png" alt="部门群聊" class="app-icon">
+                    </div>
+                    <span class="app-label">部门群聊</span>
+                </a>
+
+                <!-- 企业邮箱 -->
+                <a href="mail.html" class="app-item">
+                    <div class="icon-wrapper">
+                        <img src="N8.png" alt="企业邮箱" class="app-icon">
+                    </div>
+                    <span class="app-label">企业邮箱</span>
+                </a>
+
+                <!-- 返回 -->
+                <a href="J上班打卡表.html" class="app-item">
+                    <div class="icon-wrapper">
+                        <img src="N9.png" alt="返回" class="app-icon">
+                    </div>
+                    <span class="app-label">返回</span>
+                </a>
+
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

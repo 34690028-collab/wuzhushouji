@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>蜂鸟农场 - 互助浇水</title>
+    <style>
+        /* ==========================================
+           1. 极致手机兼容重置与基础样式
+           ========================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f0f3f6;
+            color: #333333;
+            line-height: 1.4;
+            overflow-x: hidden; 
+            width: 100%;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 10px;
+        }
+        /* ==========================================
+           2. 顶部导航与主游戏区域布局
+           ========================================== */
+        .game-header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            margin-bottom: 12px;
+        }
+
+        .header-flex {
+            height: 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .game-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .game-title span {
+            font-size: 12px;
+            color: #27ae60;
+            margin-left: 5px;
+            font-weight: 400;
+        }
+
+        .game-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        /* ==========================================
+           3. 手机端“横向滑动”好友面板样式
+           ========================================== */
+        .friends-panel {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+
+        .friends-list {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .friends-list::-webkit-scrollbar {
+            height: 6px;
+            display: block;
+        }
+
+        .friends-list::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .friends-list::-webkit-scrollbar-track {
+            background-color: #f1f5f9;
+        }
+
+        .friend-item {
+            flex: 0 0 65px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 4px;
+            background-color: #f8fafc;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .friend-item.active {
+            background-color: #e8f5e9;
+            border-color: #27ae60;
+        }
+
+        .friend-avatar {
+            width: 32px;
+            height: 32px;
+            background-color: #cbd5e1;
+            color: #475569;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .friend-item.active .friend-avatar {
+            background-color: #27ae60;
+            color: #ffffff;
+        }
+
+        .friend-name {
+            font-size: 11px;
+            color: #334155;
+            text-align: center;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .status-dot {
+            font-size: 9px;
+            color: #e74c3c;
+            margin-top: 1px;
+            transform: scale(0.9);
+        }
+        
+        .status-dot.healthy {
+            color: #27ae60;
+        }
+        /* ==========================================
+           4. 中央植物大舞台（严格锁定 1:1）
+           ========================================== */
+        .stage-panel {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 280px;
+            width: 100%;
+        }
+
+        .stage-hint {
+            color: #94a3b8;
+            font-size: 13px;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .plant-display-box {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .current-owner-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .plant-image-wrapper {
+            width: 85%;
+            max-width: 280px;
+            position: relative;
+            padding-bottom: 85%;
+            background-color: #f8fafc;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .plant-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 0.2s ease;
+        }
+
+        .btn-water {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: #ffffff;
+            border: none;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-water:active {
+            transform: scale(0.95);
+        }
+
+        .btn-water:disabled {
+            background: #cbd5e1;
+            color: #64748b;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* ==========================================
+           5. 干净的中央剧情弹窗（无任何系统字）
+           ========================================== */
+        .custom-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            padding: 20px;
+        }
+
+        .custom-modal-overlay.modal-show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .custom-modal-box {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 360px;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            transform: scale(0.9);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .custom-modal-overlay.modal-show .custom-modal-box {
+            transform: scale(1);
+        }
+
+        .modal-content-text {
+            font-size: 14px;
+            color: #334155;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+        }
+
+        .modal-btn-close {
+            width: 100%;
+            background-color: #1e293b;
+            color: #ffffff;
+            border: none;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* ==========================================
+           6. 大端响应式改造（平板/电脑自动变双栏）
+           ========================================== */
+        @media (min-width: 768px) {
+            .game-header { margin-bottom: 20px; }
+            .header-flex { height: 60px; }
+            .game-title { font-size: 18px; }
+            .game-title span { font-size: 13px; }
+
+            .game-layout {
+                display: grid;
+                grid-template-columns: 240px 1fr;
+                gap: 20px;
+                align-items: start;
+            }
+
+            .friends-panel { padding: 15px; }
+            .panel-title { font-size: 13px; margin-bottom: 10px; }
+
+            .friends-list {
+                flex-direction: column;
+                overflow-x: visible;
+                max-height: 480px;
+                overflow-y: auto;
+                padding-right: 4px;
+                gap: 6px;
+            }
+
+            .friends-list::-webkit-scrollbar { width: 4px; }
+            .friends-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+
+            .friend-item {
+                flex: 1 1 auto;
+                width: 100%;
+                flex-direction: row;
+                justify-content: flex-start;
+                padding: 10px 12px;
+                gap: 10px;
+                border-radius: 10px;
+            }
+
+            .friend-avatar { margin-bottom: 0; width: 34px; height: 34px; font-size: 13px; }
+            .friend-name { text-align: left; font-size: 13px; }
+            .status-dot { margin-top: 0; margin-left: auto; transform: scale(1); }
+            
+            .stage-panel { min-height: 440px; padding: 25px; }
+            .plant-display-box { max-width: 360px; }
+            .current-owner-name { font-size: 16px; margin-bottom: 15px; }
+            .plant-image-wrapper { width: 100%; max-width: 300px; padding-bottom: 100%; margin-bottom: 20px; }
+            .btn-water { padding: 12px 30px; font-size: 15px; border-radius: 25px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. 顶部导航标头栏（带返回主页键） -->
+    <header class="game-header">
+        <div class="container header-flex">
+            <div class="game-title">蜂鸟农场 <span>互助浇水中心</span></div>
+            <button class="btn-back" onclick="window.location.href='J新闻内网.html';" style="
+                background-color: #ffffff;
+                color: #4a5568;
+                border: 1px solid #cbd5e1;
+                padding: 6px 14px;
+                font-size: 13px;
+                font-weight: 500;
+                border-radius: 6px;
+                cursor: pointer;
+            ">返回主页</button>
+        </div>
+    </header>
+
+    <!-- 2. 主体双栏区域 -->
+    <main class="container">
+        <div class="game-layout">
+            
+            <!-- 好友面板控制区 -->
+            <section class="friends-panel">
+                <div class="panel-title">好友 (10)</div>
+                <div class="friends-list">
+                    
+                    <div class="friend-item" onclick="selectFriend(1, this)">
+                        <div class="friend-avatar">承</div>
+                        <div class="friend-name">承峰</div>
+                        <div class="status-dot">● 缺水</div>
+                    </div>
+
+                    <div class="friend-item" onclick="selectFriend(2, this)">
+                        <div class="friend-avatar">克</div>
+                        <div class="friend-name">克莉丝</div>
+                        <div class="status-dot healthy">● 茂盛</div>
+                    </div>
+
+                    <div class="friend-item" onclick="selectFriend(3, this)">
+                        <div class="friend-avatar">潘</div>
+                        <div class="friend-name">潘妮</div>
+                        <div class="status-dot">● 缺水</div>
+                    </div>
+
+                    <div class="friend-item" onclick="selectFriend(4, this)">
+                        <div class="friend-avatar">戈</div>
+                        <div class="friend-name">戈登</div>
+                        <div class="status-dot healthy">● 茂盛</div>
+                    </div>
+
+                    <div class="friend-item" onclick="selectFriend(5, this)">
+                        <div class="friend-avatar">艾</div>
+                        <div class="friend-name">艾琳·索恩</div>
+                        <div class="status-dot">● 缺水</div>
+                    </div>
+
+                    <div class="friend-item" onclick="selectFriend(6, this)">
+                        <div class="friend-avatar">斯</div>
+                        <div class="friend-name">斯蒂芬妮</div>
+                        <div class="status-dot healthy">● 茂盛</div>
+                    </div>
+
+                    <div class="friend-item" onclick="selectFriend(7, this)">
+                        <div class="friend-avatar">杰</div>
+                        <div class="friend-name">杰奎琳</div>
+                        <div class="status-dot">● 缺水</div>
+                    </div>
+
+                    <div class="friend-item" onclick="selectFriend(8, this)">
+                        <div class="friend-avatar">美</div>
+                        <div class="friend-name">美工阿强</div>
+                        <div class="status-dot healthy">● 茂盛</div>
+                    </div>
+
+                    <div class="friend-item" onclick="selectFriend(9, this)">
+                        <div class="friend-avatar">迪</div>
+                        <div class="friend-name">迪莉娅</div>
+                        <div class="status-dot">● 缺水</div>
+                    </div>
+
+                    <div class="friend-item" onclick="selectFriend(10, this)">
+                        <div class="friend-avatar">校</div>
+                        <div class="friend-name">校对组长</div>
+                        <div class="status-dot healthy">● 茂盛</div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- 中央植物展示大舞台 -->
+            <section class="stage-panel">
+                <div class="stage-hint" id="stageHint">点击上方/左侧好友，查看他们养的植物</div>
+                
+                <div class="plant-display-box" id="plantDisplayBox" style="display: none;">
+                    <div class="current-owner-name" id="currentOwnerName"></div>
+                    <div class="plant-image-wrapper">
+                        <img src="花开.png" alt="植物" class="plant-img" id="plantImg">
+                    </div>
+                    <button class="btn-water" id="waterBtn" onclick="executeWater()">💧 帮她浇水</button>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- 3. 中央剧情半透明高斯模糊弹窗骨架 -->
+    <div class="custom-modal-overlay" id="customModal">
+        <div class="custom-modal-box">
+            <div class="modal-content-text" id="modalText"></div>
+            <button class="modal-btn-close" onclick="closeCustomModal()">我知道了</button>
+        </div>
+    </div>
+    <!-- ==========================================
+       4. 核心游戏交互与 10 个不同好友留言的 JS 逻辑
+       ========================================== -->
+    <script>
+        // 游戏当前选中的好友ID
+        let currentFriendId = null;
+
+        // 10个好友的动态植物数据库：1代表缺水(初始枯萎)，0代表健康(无需浇水)
+        const friendsData = {
+            1: { name: "新闻部", isWithered: 1, message: "感谢您的浇水" },
+            2: { name: "摄影师", isWithered: 0, message: "哎呀，谢了啊！我这花本来长得就挺好。" },
+            3: { name: "行政前台", isWithered: 1, message: "哇！谢谢你帮我浇水！" },
+            4: { name: "安保部", isWithered: 0, message: "谢了。别光顾着偷菜浇水。" },
+            5: { name: "新闻部", isWithered: 1, message: "小花，如果我明天没来上班，你高低得把我账号密码改成123321，免得我自己给忘了！" },
+            6: { name: "体育部", isWithered: 0, message: "感谢您的浇水" },
+            7: { name: "娱乐部", isWithered: 1, message: "感谢您的浇水" },
+            8: { name: "美工阿强", isWithered: 0, message: "谢了！不过我这盆是塑料假花啊！" },
+            9: { name: "网络维护", isWithered: 1, message: "多谢，服务器机房太干了。感谢你帮我浇花。" },
+            10: { name: "校对组长", isWithered: 0, message: "谢谢。" }
+        };
+
+        // 点击选择好友的执行函数
+        function selectFriend(id, element) {
+            currentFriendId = id;
+            
+            // 切换选中高亮
+            const items = document.querySelectorAll('.friend-item');
+            items.forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+
+            // 控制中央面板状态显隐
+            document.getElementById('stageHint').style.display = "none";
+            document.getElementById('plantDisplayBox').style.display = "flex";
+
+            // 动态注入姓名
+            const data = friendsData[id];
+            document.getElementById('currentOwnerName').innerText = data.name + " 的多肉植物";
+
+            const imgElement = document.getElementById('plantImg');
+            const waterBtn = document.getElementById('waterBtn');
+
+            // 状态渲染机制：根据0或1自动载入对应贴图并配置按钮
+            if (data.isWithered === 1) {
+                imgElement.src = "花落.png";
+                waterBtn.disabled = false;
+                waterBtn.innerHTML = "💧 帮她浇水";
+            } else {
+                imgElement.src = "花开.png";
+                waterBtn.disabled = true;
+                waterBtn.innerHTML = "✨ 植物很健康，无需浇水";
+            }
+        }
+
+        // 核心浇水触发函数
+        function executeWater() {
+            if (!currentFriendId) return;
+
+            const data = friendsData[currentFriendId];
+            const imgElement = document.getElementById('plantImg');
+            const waterBtn = document.getElementById('waterBtn');
+            const activeFriendDot = document.querySelector('.friend-item.active .status-dot');
+
+            // 渐变变色动画
+            imgElement.style.opacity = "0.2";
+            
+            setTimeout(() => {
+                // 贴图变为健康状态
+                imgElement.src = "花开.png";
+                imgElement.style.opacity = "1";
+                
+                // 按钮立刻变灰禁用
+                waterBtn.disabled = true;
+                waterBtn.innerHTML = "✨ 浇水成功";
+
+                // 同步改变列表侧对应的红色标签
+                if (activeFriendDot) {
+                    activeFriendDot.classList.add('healthy');
+                    activeFriendDot.innerText = "● 茂盛";
+                }
+
+                // 数据库状态同步持久化
+                data.isWithered = 0;
+
+                // 触发网页正中央高级弹窗展现大白话剧情
+                setTimeout(() => {
+                    document.getElementById('modalText').innerText = data.message;
+                    document.getElementById('customModal').classList.add('modal-show');
+                }, 200);
+
+            }, 250);
+        }
+
+        // 关闭自定义弹窗
+        function closeCustomModal() {
+            document.getElementById('customModal').classList.remove('modal-show');
+        }
+    </script>
+</body>
+</html>
