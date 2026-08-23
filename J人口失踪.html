@@ -205,7 +205,7 @@
 
     </style>
 </head>
-<body>
+<body> 
     <!-- 页面首次进入资源加载层 -->
     <div id="page-loading-screen">
         <div class="loading-title">BFPD SYSTEM INITIALIZING</div>
@@ -523,59 +523,103 @@
             if (e.key === 'Escape') closeLapdModal();
         });
 
-        renderMatrix('M'); renderMatrix('F'); renderPager();
-        setTimeout(()=>{
-    startPageLoading();
-},500);
+renderMatrix('M');
+renderMatrix('F');
+renderPager();
+
+startPageLoading();
     
         // ================= 图片全部加载完成后进入页面 =================
+// ================= 图片全部加载完成后进入页面 =================
 function startPageLoading() {
 
     const screen = document.getElementById('page-loading-screen');
     const bar = document.getElementById('loading-progress-bar');
     const percent = document.getElementById('loading-percent');
 
-    const images = Array.from(document.querySelectorAll(
-        '#lapd-bg-watermark img, .case-avatar-box img'
-    ));
+    if (!screen || !bar || !percent) return;
 
-    let total = images.length;
+    // 只统计当前页面真正存在、且有图片地址的图片
+    const images = Array.from(document.images).filter(img => {
+        return img.src && !img.src.endsWith('/') && img.getAttribute('src') !== '';
+    });
+
+    const total = images.length;
+
+    // 没有图片，直接完成
+    if (total === 0) {
+        bar.style.width = '100%';
+        percent.textContent = '100%';
+
+        setTimeout(() => {
+            screen.classList.add('loaded');
+        }, 300);
+
+        return;
+    }
+
     let loaded = 0;
+    const finished = new Set();
 
+    function imageFinished(img) {
 
-    function update(){
+        // 防止 onload / onerror 重复计算
+        if (finished.has(img)) return;
 
+        finished.add(img);
         loaded++;
 
-        let value = Math.min(
+        const value = Math.min(
             100,
             Math.round((loaded / total) * 100)
         );
 
-        bar.style.width = value + "%";
-        percent.innerText = value + "%";
+        bar.style.width = value + '%';
+        percent.textContent = value + '%';
 
+        console.log(`图片加载进度：${loaded}/${total} (${value}%)`);
 
-        if(value >= 100){
+        // 所有图片真正完成
+        if (loaded >= total) {
 
-            setTimeout(()=>{
+            bar.style.width = '100%';
+            percent.textContent = '100%';
 
+            setTimeout(() => {
                 screen.classList.add('loaded');
+            }, 400);
+        }
+    }
 
-            },500);
+    images.forEach(img => {
+
+        // 已经真正加载完成
+        if (img.complete && img.naturalWidth > 0) {
+
+            imageFinished(img);
+
+        } else {
+
+            img.addEventListener('load', () => {
+                imageFinished(img);
+            }, { once: true });
+
+            img.addEventListener('error', () => {
+
+                console.warn(
+                    '图片加载失败，跳过：',
+                    img.src
+                );
+
+                // 加载失败也不能让页面永久卡死
+                imageFinished(img);
+
+            }, { once: true });
 
         }
 
-    }
-
-
-    if(total === 0){
-
-        screen.classList.add('loaded');
-        return;
-
-    }
-
+    });
+}
 
     images.forEach(img=>{
 
@@ -590,21 +634,11 @@ function startPageLoading() {
             img.onerror = update;
 
 
-            // 防止图片错误卡死
-
-            setTimeout(()=>{
-
-                update();
-
-            },2000);
-
         }
 
 
     });
 
-
-}
 
     </script>
 </body>
