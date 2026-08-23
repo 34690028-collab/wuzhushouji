@@ -1118,18 +1118,47 @@ document.addEventListener("DOMContentLoaded", function () {
 let loadedCount = 0;
 const totalImages = images.length;
 let loaderHidden = false;
-function hideLoader() {
-    if (loaderHidden) return;
+let startTime = Date.now();
+
+
+function hideLoader(){
+
+    if(loaderHidden) return;
+
+
+    let useTime = Date.now() - startTime;
+
+
+    // 防止加载太快闪屏
+    if(useTime < 1200){
+
+        setTimeout(function(){
+
+            hideLoader();
+
+        },1200-useTime);
+
+        return;
+
+    }
+
 
     loaderHidden = true;
 
-    if (loaderScreen) {
-        loaderScreen.style.opacity = "0";
 
-        setTimeout(function () {
-            loaderScreen.style.display = "none";
-        }, 400);
+    if(loaderScreen){
+
+        loaderScreen.style.opacity="0";
+
+
+        setTimeout(function(){
+
+            loaderScreen.style.display="none";
+
+        },600);
+
     }
+
 }
 
 function updateProgress(){
@@ -1140,23 +1169,48 @@ function updateProgress(){
         loadedCount = totalImages;
     }
 
-    const percentage = totalImages > 0
-        ? Math.floor((loadedCount / totalImages) * 100)
-        : 100;
+
+    let target =
+    totalImages > 0
+    ? Math.floor((loadedCount / totalImages) * 100)
+    : 100;
 
 
-    if(loaderText){
-        loaderText.textContent = percentage + "%";
-    }
+    let current =
+    parseInt(loaderText.textContent) || 0;
+
+
+    let timer=setInterval(function(){
+
+        if(current < target){
+
+            current++;
+
+            loaderText.textContent =
+            current+"%";
+
+        }else{
+
+            clearInterval(timer);
+
+        }
+
+
+    },30);
+
 
 
     if(loadedCount >= totalImages){
-        hideLoader();
+
+        setTimeout(function(){
+
+            hideLoader();
+
+        },300);
+
     }
 
 }
-
-
 
 if(totalImages === 0){
 
@@ -1194,22 +1248,6 @@ images.forEach(function(img){
 
 });
 }
-    /* ==============================
-       4. 5秒安全保护
-       ============================== */
-
-    setTimeout(function () {
-
-        if (!loaderHidden) {
-
-            console.warn("加载超时，启动安全跳过机制。");
-
-            hideLoader();
-
-        }
-
-    }, 5000);
-
 
     /* ==============================
        5. 打开成员详情抽屉
