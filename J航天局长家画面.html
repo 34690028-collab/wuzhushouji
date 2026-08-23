@@ -208,16 +208,7 @@ body.night-mode .cctv-channel::before {
             height: 100%;            
         }
 
-        /* 手机端自适应对齐：强制在手机屏幕除去导航栏后的垂直几何中心绝对正居中，且锁定16:9比例 */
-        @media (max-width: 768px) {
-            .cctv-grid {
-                flex: none;          
-                width: 100%;
-                height: auto;
-                aspect-ratio: 16 / 9; 
-                margin: auto 0 !important; 
-            }
-        }
+
         /* 单个监控画面卡片 */
         .cctv-channel {
             background: #11141a;
@@ -234,18 +225,265 @@ body.night-mode .cctv-channel::before {
             width: 100%;
             height: 100%;            
         }
+/* ==========================================
+   全设备响应式修正版
+   电脑 / 笔记本 / 平板 / 手机
+========================================== */
 
-        @media (max-width: 768px) {
-            .cctv-channel {
-                aspect-ratio: 16 / 9; 
-            }
-        }
+/* 默认：电脑、笔记本 */
+.cctv-grid {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
+}
+
+.cctv-channel {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+
+    position: relative;
+    overflow: hidden;
+}
+
+
+/* ==========================================
+   平板横屏
+========================================== */
+
+@media (min-width: 769px) and (max-width: 1200px) {
+
+    body {
+        padding: 6px;
+    }
+
+    .header {
+        margin-bottom: 6px;
+    }
+
+    .cctv-grid {
+        gap: 6px;
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+    }
+
+    .cctv-channel {
+        width: 100%;
+        height: 100%;
+    }
+
+    .channel-name,
+    .live-timestamp {
+        font-size: 10px;
+    }
+}
+
+
+/* ==========================================
+   手机 / 平板竖屏
+========================================== */
+
+@media (max-width: 768px) {
+
+    body {
+        width: 100%;
+        height: 100dvh;
+        min-height: 100dvh;
+
+        padding: 6px;
+
+        overflow: hidden;
+    }
+
+
+    .header {
+        flex-shrink: 0;
+
+        height: auto;
+        min-height: 42px;
+
+        margin-bottom: 6px;
+
+        padding: 6px 8px;
+    }
+
+
+    .panel-title {
+        font-size: 11px;
+        letter-spacing: .5px;
+    }
+
+
+    .back-btn {
+        padding: 5px 8px;
+        font-size: 12px;
+    }
+
+
+    /* 关键：
+       不再给整个 grid 强制 16:9 */
+    .cctv-grid {
+
+        flex: 1;
+
+        width: 100%;
+        height: auto;
+
+        min-height: 0;
+
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        grid-template-rows:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 5px;
+
+        margin: 0;
+    }
+
+
+    .cctv-channel {
+
+        width: 100%;
+        height: 100%;
+
+        min-width: 0;
+        min-height: 0;
+
+        aspect-ratio: auto;
+    }
+
+.cctv-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #11141a;
+}
+    .feed-overlay {
+
+        padding: 5px;
+        bottom: 0;
+    }
+
+
+    .channel-name {
+
+        font-size: 8px;
+        line-height: 1.2;
+    }
+
+
+    .live-timestamp {
+
+        font-size: 8px;
+        line-height: 1.2;
+        letter-spacing: 0;
+    }
+
+
+    .live-dot {
+
+        width: 6px;
+        height: 6px;
+    }
+}
+
+
+/* ==========================================
+   超小手机
+========================================== */
+
+@media (max-width: 420px) {
+
+    body {
+        padding: 4px;
+    }
+
+    .header {
+        min-height: 38px;
+        padding: 5px 6px;
+    }
+
+    .panel-title {
+        font-size: 9px;
+    }
+
+    .back-btn {
+        font-size: 11px;
+        padding: 4px 7px;
+    }
+
+    .cctv-grid {
+        gap: 4px;
+    }
+
+    .feed-overlay {
+        padding: 4px;
+    }
+
+    .channel-name,
+    .live-timestamp {
+        font-size: 7px;
+    }
+}
+
+
+/* ==========================================
+   全屏放大
+========================================== */
+
+.cctv-channel.expanded {
+
+    width: 100vw;
+    height: 100dvh;
+
+    max-width: none;
+    max-height: none;
+
+    aspect-ratio: auto;
+
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    margin: 0;
+
+    z-index: 9999;
+}
+
+
+@media (max-width: 768px) {
+
+    .cctv-channel.expanded {
+
+        width: 100vw;
+        height: 100dvh;
+
+        aspect-ratio: auto;
+
+        top: 0;
+        left: 0;
+    }
+}
 
         /* 监控底图：无损等比裁切填充 */
         .cctv-feed {
             width: 100%;
             height: 100%;
-            object-fit: cover;       
+            object-fit:contain;    
             opacity: 0.9;
             pointer-events: none; 
         }
