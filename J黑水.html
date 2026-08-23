@@ -765,11 +765,20 @@
             let loadTimer = null;
             let imagesLoaded = false;
 
-            function checkImagesReady() {
-                const emptyReady = imgEmpty.complete && imgEmpty.naturalWidth !== 0;
-                const fullReady = imgFull.complete && imgFull.naturalWidth !== 0;
-                return emptyReady && fullReady;
-            }
+function checkImagesReady() {
+
+    const allImages = document.images;
+
+    for(let img of allImages){
+
+        if(!img.complete || img.naturalWidth === 0){
+            return false;
+        }
+
+    }
+
+    return true;
+}
 
             loadTimer = setInterval(() => {
                 if (!imagesLoaded) {
@@ -802,7 +811,6 @@
             }
             if (imgEmpty) { imgEmpty.addEventListener('load', onImageLoadSuccess); imgEmpty.addEventListener('error', onImageLoadSuccess); }
             if (imgFull) { imgFull.addEventListener('load', onImageLoadSuccess); imgFull.addEventListener('error', onImageLoadSuccess); }
-            setTimeout(() => { imagesLoaded = true; }, 4000); // 4秒强行放行兜底
         }
 
         // ==========================================
