@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蜂鸟论坛</title>
+    <style>
+        /* ==========================================================================
+           第 2 段 的 CSS 样式请粘贴在下方 
+           ========================================================================== */
+        :root {
+            --primary-color: #1a73e8;
+            --text-color: #333;
+            --bg-color: #f4f6f9;
+            --card-bg: #fff;
+            --border-color: #e0e0e0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; }
+        
+        /* 导航头部 */
+        .header { background: var(--card-bg); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 100; }
+        .nav-container { max-width: 900px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; }
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .btn-back { display: inline-flex; align-items: center; padding: 6px 12px; background: #eee; border-radius: 4px; text-decoration: none; color: #555; font-size: 14px; transition: 0.2s; }
+        .btn-back:hover { background: #ddd; }
+        .logo-area { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 20px; color: var(--primary-color); }
+        .logo-box { width: 35px; height: 35px; background: var(--primary-color); color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 14px; }
+        
+        /* 还原指令搜索框 */
+        .search-box { position: relative; }
+        .search-input { padding: 8px 16px; border: 1px solid var(--border-color); border-radius: 20px; width: 220px; outline: none; transition: 0.3s; }
+        .search-input:focus { border-color: var(--primary-color); width: 260px; }
+
+        /* 居中流式布局 */
+        .main-container { max-width: 900px; margin: 20px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
+        .section-title { font-size: 18px; font-weight: bold; padding-bottom: 8px; border-bottom: 2px solid var(--primary-color); color: #222; }
+
+        /* 帖子列表基础卡片 */
+        .post-card { background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .post-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; cursor: pointer; background: var(--card-bg); transition: background 0.2s; user-select: none; }
+        .post-header:hover { background: #fcfcfc; }
+        .post-title-wrapper { display: flex; align-items: center; gap: 10px; width: 75%; }
+        .post-title-text { font-size: 16px; font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .badge-essence { background: #ff4d4f; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; flex-shrink: 0; }
+        
+        .post-meta { display: flex; gap: 12px; font-size: 13px; color: #888; align-items: center; white-space: nowrap; }
+        .author-link { text-decoration: none; color: #666; font-weight: 500; }
+        .author-link:hover { color: var(--primary-color); text-decoration: underline; }
+        .arrow-icon { font-size: 12px; color: #aaa; transition: transform 0.3s ease; }
+        .post-card.open .arrow-icon { transform: rotate(180deg); }
+
+        /* 滑动抽屉核心机制 */
+        .drawer-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); background: #fafafa; border-top: 0 solid var(--border-color); }
+        .post-card.open .drawer-content { max-height: 1600px; border-top: 1px solid var(--border-color); }
+        .drawer-inner { padding: 20px; }
+
+        /* 仅在 5,6,7 条帖子中渲染的 16:9 贴图层 */
+        .post-image-wrapper { width: 100%; position: relative; padding-top: 56.25%; background: #e2e8f0; border-radius: 6px; overflow: hidden; margin-bottom: 15px; }
+        .post-image-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+
+        /* 专属子评论渲染流 */
+        .comments-list { display: flex; flex-direction: column; gap: 10px; border-top: 1px dashed #ddd; padding-top: 15px; margin-bottom: 20px; }
+        .comments-list h4 { font-size: 14px; color: #666; margin-bottom: 5px; }
+        .comment-item { background: #fff; padding: 12px 15px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 14px; }
+        .comment-meta { display: flex; justify-content: space-between; font-size: 12px; color: #999; margin-bottom: 6px; }
+
+        /* 独立内嵌式游客发帖模块 */
+        .inline-comment-section { background: #f1f3f5; border-radius: 6px; padding: 15px; border: 1px solid #e2e8f0; }
+        .inline-comment-section h5 { font-size: 13px; color: #555; margin-bottom: 8px; }
+        .inline-form { display: flex; flex-direction: column; gap: 10px; }
+        .inline-input-group { display: flex; gap: 10px; }
+        .inline-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 4px; outline: none; font-size: 13px; background: #fff; }
+        .btn-inline-submit { background: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; }
+        .btn-inline-submit:hover { opacity: 0.9; }
+
+        /* 移动端无缝缩容 */
+        @media (max-width: 768px) {
+            .post-header { flex-direction: column; align-items: flex-start; gap: 8px; padding: 15px; }
+            .post-title-wrapper { width: 100%; }
+            .post-meta { width: 100%; justify-content: space-between; }
+            .arrow-icon { display: none; }
+            .inline-input-group { flex-direction: column; }
+        }
+        @media (max-width: 480px) {
+            .nav-container { flex-direction: column; gap: 10px; }
+            .search-input { width: 100%; }
+        }
+                /* 蜂鸟论坛 - 响应式统一底部页脚 */
+        .footer {
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            padding: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: #888;
+            margin-top: 40px;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.02);
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 8px;
+        }
+        .footer-links a {
+            color: #666;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+        @media (max-width: 480px) {
+            .footer-links { flex-direction: column; gap: 5px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 顶层统一导航栏（带返回链接） -->
+    <header class="header">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="新闻.html" class="btn-back">⬅ 返回</a>
+                <div class="logo-area">
+                    <div class="logo-box">FN</div>
+                    <span>蜂鸟论坛</span>
+                </div>
+            </div>
+            <!-- 用于执行核心还原清缓存的搜索框 -->
+            <div class="search-box">
+                <input type="text" id="forumSearch" class="search-input" placeholder=" ">
+            </div>
+        </div>
+    </header>
+
+    <!-- 主展示数据视图 -->
+    <main class="main-container">
+        
+        <div class="section-title">
+            <span>📌 蜂鸟论坛</span>
+        </div>
+
+        <!-- 帖子及独立分布式留言板核心装载大容器 -->
+        <div id="postsWrapper">
+            <!-- 由后续 JavaScript 动态生成并挂载 -->
+        </div>
+
+    </main>
+    <script>
+        // 1. 初始化 10 条帖子。其中只有 id 为 5、6、7 的帖子配有图，其余图片字段为 null
+        const staticPosts = [
+            {
+                id: 1, title: "爆｜女星苏婉深夜私会神秘财阀男，豪车接送，同回酒店", author: "吃瓜小雷达", date: "59分钟前", isEssence: true, image: null,
+                replies: [
+                    { user: "吃瓜小雷达", text: "昨晚红叶酒店门口拍到，苏婉结束晚宴没有上自己保姆车，上了一台大奔，跟一个老灯一起进酒店，凌晨才分开。看不清正脸，但气场看着就是大佬，有没有人扒一扒是谁？附图（娱乐板块找）", time: "59分钟前" },
+                    { user: "奶茶三分糖", text: "我的天？苏婉不是一直立清纯小白花人设吗，这下塌房了？不会是被资本包养了吧。", time: "56分钟前" },
+                    { user: "理性吃瓜人", text: "先别急着下定论，也有可能是商务应酬谈合作，娱乐圈饭局很正常，一张图说明不了啥。", time: "52分钟前" },
+                    { user: "豌豆粉忠实粉", text: "造谣能不能讲证据！凭一张图就乱扣帽子，姐姐是去谈影视投资项目，恶意造谣小心被起诉。", time: "42分钟前" },
+                    { user: "潜水老油条", text: "呵呵，圈内老规矩，有些资源怎么来的大家心里都有数，商务谈工作需要半夜回酒店单独聊？", time: "36分钟前" },
+                    { user: "路人一只", text: "蹲后续，有没有大神扒这个男人身份，看着感觉不像普通生意人。", time: "29分钟前" },
+                    { user: "八卦搬运工", text: "蹲了，这种帖子大概率过两小时就删，资本力量懂的都懂。", time: "23分钟前" },
+                    { user: "我是砖家", text: "图片我看了，那个男的和最近上泰姆周刊封面的好像啊，好像是什么科研大佬。", time: "刚19分钟前" },
+                    { user: "米粒", text: "好像姓李，之前他前女友坠楼了，后来改名了，好像还有个私生子。", time: "5分钟前" },
+                    { user: "法律顾问", text: "这隐私权边界到底怎么界定，期待法理普及。", time: "刚刚" }
+
+                ]
+            },
+            {
+                id: 2, title: "大新闻！诺凡泰克核心实验室深夜大火，核心实验资料损毁，股价直接腰斩", author: "财经吃瓜人", date: "46分钟前", isEssence: true, image: null,
+                replies: [
+                    { user: "财经吃瓜人", text: "刚刚盘后消息，诺凡泰克位于城郊的核心研发实验室发生火灾，部分实验样本、多年研究数据损毁。消息一出盘后直接暴跌，股价近乎腰斩。之前李博士还登上《泰姆周刊》封面，现在直接出事。", time: "46分钟前" },
+                    { user: "韭菜已躺平", text: "我的天，之前吹成下一代医药巨头，我高位冲进去，现在直接亏一半，欲哭无泪。", time: "38分钟前" },
+                    { user: "技术旁观者", text: "火灾烧的不只是设备，很多独家实验原始记录没备份，多年研发投入等于打水漂。", time: "33分钟前" },
+                    { user: "小道消息搬运工", text: "早网上就有人扒这家实验室有违规操作传闻，一直被公关压下去，这次火灾怕不是偶然？", time: "29分钟前" },
+                    { user: "价值投资老王", text: "先别阴谋论，等官方事故调查报告。现在恐慌盘出逃，不代表企业直接完蛋，看后续重建进度。", time: "26分钟前" },
+                    { user: "理性路人甲", text: "还记得《泰姆周刊》那篇封面专访吗？通篇全是溢美之词，对实验室隐患只字不提。", time: "23分钟前" },
+                    { user: "行业圈内人", text: "他们最关键的候选药物数据大部分就在这个实验室，这把对新药进度是毁灭性打击。", time: "12分钟前" },
+                    { user: "短线猎手阿凯", text: "明天开盘估计还要继续杀，抄底千万别急，雷还没完全爆干净。", time: "8分钟前" },
+                    { user: "阴谋论爱好者", text: "会不会是有人故意纵火，销毁一些见不得光的实验记录？细思极恐。", time: "5分钟前" },
+                    { user: "小小散户一枚", text: "之前看封面报道被洗脑，觉得这家公司前途无量，现在算是交学费了。", time: "2分钟前" }
+                ]
+            },
+            {
+                id: 3, title: "闲聊｜FASA轨道空间站，大家怎么看这个太空项目？", author: "深空观测者", date: "45分钟前", isEssence: false, image: null,
+                replies: [
+                    { user: "深空观测者", text: "FASA空间站已经完成多批宇航员轮换，诺凡泰克还在上面开展生物医药实验。有人看好，也有不少质疑，来聊聊。", time: "45分钟前" },
+                    { user: "航天爱好者老周", text: "这项目看着光鲜，投入烧钱简直无底洞，每年巨额预算，钱花得值不值真不好说。", time: "41分钟前" },
+                    { user: "行业扒瓜君", text: "别忘了，诺凡泰克的核心药物实验就在空间站微重力环境做的。之前实验室大火，现在全指望太空实验补数据。", time: "36分钟前" },
+                    { user: "理性科普党", text: "微重力环境做生物医药确实有独特价值，很多地面复现不了，科研意义不能全盘否定。", time: "33分钟前" },
+                    { user: "阴谋猜想派", text: "总觉得有点不对劲，公开报道只讲成功，空间站内部的实验细节几乎从来不对外披露。", time: "29分钟前" },
+                    { user: "太空迷小艾", text: "看《泰姆周刊》那期封面，老李吹得天花乱坠，空间站就是他最重要的政绩，资本宣传成分很重。", time: "28分钟前" },
+                    { user: "散户投资者", text: "空间站项目如果出重大事故，诺凡泰克股价估计又要迎来一波暴跌，风险太高。", time: "25分钟前" },
+                    { user: "吃瓜路人甲", text: "宇航员轮番上去执行任务，对外全是正面报道，有没有内部人员出来透露一点真实情况？", time: "22分钟前" },
+                    { user: "怀疑论者", text: "实验室大火毁掉地面样本，把关键实验挪到太空，会不会是为了掩盖地面失败的数据？", time: "14分钟前" },
+                    { user: "科技乐观派", text: "人类向外太空探索总要付出代价，不能一出问题就全盘否定整个航天计划。", time: "12分钟前" },
+                    { user: "潜水多年的老网友", text: "等着看后续，万一空间站传出异常消息，那背后的故事恐怕比想象的还要复杂。", time: "4分钟前" }
+                ]
+            },
+            // 🚨 
+            {
+                id: 35, title: "有没有姐妹一起合资拼单打诺凡泰克的抗衰美容针？内部渠道价", author: "爱美小团子", date: "38分钟前", isEssence: false, image: null,
+                replies: [
+                    { user: "爱美小团子", text: "诺凡那款院线抗衰针，单支太贵，想找2–3个姐妹拼单分摊费用，走正规医美机构，可核验药品溯源，有没有一起的？", time: "38分钟前" },
+                    { user: "护肤达人阿柚", text: "我蹲！之前做过功课，这款是诺凡医美线，抗衰口碑挺顶的，拼单能省不少。", time: "36分钟前" },
+                    { user: "谨慎派小夏", text: "先问清楚，药品能不能查批号？机构是不是正规执业？拼单最怕拿到水货、假货。", time: "32分钟前" },
+                    { user: "吃瓜八卦酱", text: "诺凡泰克实验室刚出过大火事故，你们还敢用他家医美产品？不怕原料有隐患吗？", time: "25分钟前" },
+                    { user: "精致打工人", text: "我之前观望好久了，就是原价太高下不去手，拼单靠谱的话我可以加入，咱们提前说好权责。", time: "18分钟前" },
+                    { user: "避雷过来人", text: "提醒一句，医美拼单水很深，别私下转账，一定要走机构正规合同，避免后续扯皮。", time: "22分钟前" },
+                    { user: "圈内知情者", text: "听说这款美容针的核心原料，就是空间站实验下放的技术，效果溢价很高，谨慎冲别被营销洗脑。", time: "15分钟前" },
+                    { user: "佛系爱美党", text: "有没有人先打过反馈下真实效果？怕花了钱没作用，还烂脸就得不偿失了。", time: "8分钟前" }
+                ]
+            },
+            
+
+            { id: 4, title: "【有图推荐】炭火慢烤 · 匠心传承 精选羔羊肉，每一串都是深夜的慰藉。", author: "探店小达人", date: "2小时前", isEssence: false, image: "3论坛烧烤.jpg",
+             replies: [
+                    {user:"探店小达人",text:"巴布曼特街区联邦警察局东侧100米，他家的招牌西旗羔羊肉串精选苏尼特羔羊肉，肥瘦相间，外酥里嫩，滋滋冒油。",time:"1.5小时前"},
+                    {user:"白领丽人",text:"黄金锡纸烤脑花绵密如云朵般口感，浸入红油重辣汤汁中，深夜解馋必备。",time:"1小时前"},
+                    {user:"酒神",text:"手作小麦原浆精酿果香浓郁，泡沫绵密，烤羊肉金牌搭档。",time:"45分钟前"},
+                    {user:"出差狗",text:"这种脏脏摊的食物还能吃，看着都不卫生。",time:"30分钟前"},
+                    {user:"hadowver",text:"少吃，听说食物被烤焦了有一种多巴胺物质会刺激你长胖。",time:"10分钟前"}] },
+
+             { id: 5, title: "【有图推荐】出苏婉巡回演唱会内场前排票，位置绝佳，可面交", author: "票务小贩子", date: "2小时前", isEssence: false, image: "3论坛演唱会票.jpg",
+             replies: [
+                    {user:"票务小贩子",text:"出苏晚本次巡演前排坐席，原价出，支持线下见面交易，诚心要的私，鸽子勿扰。",time:"1.5小时前"},
+                    {user:"追星小楠",text:"哇前排票！能不能走平台交易啊，怕被骗，黄牛太多了。",time:"1小时前"},
+                    {user:"吃瓜路人",text:"提醒大家，后援会统一售票渠道才靠谱，私售票务小心假票、溢价坑人。",time:"45分钟前"},
+                    {user:"犹豫粉",text:"有点心动，但是之前买到过假演唱会门票，不敢随便私转，有没有担保交易方式？",time:"30分钟前"},
+                    {user:"圈内吃瓜人",text:"结合之前私会财阀的瓜，会不会这些内部票都是大佬送的人情票，拿来转手倒卖？",time:"10分钟前"},
+                    {user:"理性避雷党",text:"高价私售一律谨慎，官方票务没放出来的票，大概率有猫腻，别上当受骗。",time:"10分钟前"},
+                    {user:"佛系观众",text:"羡慕有前排票的人，我只抢到了山顶票，只能远远看看舞台了。",time:"10分钟前"}
+                ] },
+
+                
+                
+        ];
+        // 2. 动态渲染全站列表，并在每条帖子抽屉内部嵌入属于该帖的专属留言系统
+        function renderPosts() {
+            const wrapper = document.getElementById('postsWrapper');
+            wrapper.innerHTML = '';
+
+            staticPosts.forEach(post => {
+                const card = document.createElement('div');
+                card.className = 'post-card';
+                card.id = `post-${post.id}`;
+
+                // 检测该帖子是否有图片，只有5,6,7有贴图位
+                const imgHtml = post.image ? `
+                    <div class="post-image-wrapper">
+                        <img src="${post.image}" alt="帖子配图">
+                    </div>
+                ` : '';
+
+                // 加载属于当前帖子 id 的本地动态缓存评论
+                const dynamicCacheData = localStorage.getItem(`FN_POST_REPLIES_${post.id}`);
+                const dynamicReplies = dynamicCacheData ? JSON.parse(dynamicCacheData) : [];
+
+                let repliesHtml = '';
+                // 拼接原始静态5条留言
+                post.replies.forEach(r => {
+                    repliesHtml += `
+                        <div class="comment-item">
+                            <div class="comment-meta">
+                                <strong><a href="#" class="author-link" onclick="event.stopPropagation();">@${r.user}</a></strong>
+                                <span>${r.time}</span>
+                            </div>
+                            <div>${r.text}</div>
+                        </div>
+                    `;
+                });
+                // 叠加本地新增的游客自定义留言
+                dynamicReplies.forEach(dr => {
+                    repliesHtml += `
+                        <div class="comment-item" style="border-left: 3px solid var(--primary-color);">
+                            <div class="comment-meta">
+                                <strong><a href="#" class="author-link" onclick="event.stopPropagation();">@${dr.user}</a> (游客)</strong>
+                                <span>${dr.time}</span>
+                            </div>
+                            <div>${dr.text}</div>
+                        </div>
+                    `;
+                });
+
+                // 装填内容结构
+                card.innerHTML = `
+                    <div class="post-header" onclick="toggleDrawer(${post.id})">
+                        <div class="post-title-wrapper">
+                            ${post.isEssence ? '<span class="badge-essence">精华</span>' : ''}
+                            <span class="post-title-text">${post.title}</span>
+                        </div>
+                        <div class="post-meta">
+                            <span>由 <a href="#" class="author-link" onclick="event.stopPropagation();">@${post.author}</a></span>
+                            <span>${post.date}</span>
+                            <span class="arrow-icon">▼</span>
+                        </div>
+                    </div>
+                    <div class="drawer-content">
+                        <div class="drawer-inner">
+                            ${imgHtml}
+                            <div class="comments-list" id="replies-list-${post.id}">
+                                <h4>💬 专属互动区 (${post.replies.length + dynamicReplies.length} 条评论)</h4>
+                                ${repliesHtml}
+                            </div>
+                            <!-- 🚨 针对每条帖子的专属游客评论表单 -->
+                            <div class="inline-comment-section">
+                                <h5>✍️ 发表你在本帖的看法：</h5>
+                                <div class="inline-form">
+                                    <div class="inline-input-group">
+                                        <input type="text" id="nickname-${post.id}" class="inline-input" placeholder="输入游客昵称" required>
+                                        <input type="text" id="body-${post.id}" class="inline-input" style="flex: 2;" placeholder="写下对该帖子的评论内容..." required>
+                                    </div>
+                                    <button class="btn-inline-submit" onclick="submitInlineComment(${post.id})">确认评论</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                wrapper.appendChild(card);
+            });
+        }
+
+        // 3. 控制抽屉开合机制
+        function toggleDrawer(id) {
+            const targetCard = document.getElementById(`post-${id}`);
+            const isOpen = targetCard.classList.contains('open');
+            if (isOpen) {
+                targetCard.classList.remove('open');
+            } else {
+                targetCard.classList.add('open');
+            }
+        }
+
+        // 4. 每条帖子独立的游客提交事件响应与局部缓存保存
+        window.submitInlineComment = function(postId) {
+            const nickInput = document.getElementById(`nickname-${postId}`);
+            const bodyInput = document.getElementById(`body-${postId}`);
+            const nickname = nickInput.value.trim();
+            const body = bodyInput.value.trim();
+
+            if (!nickname || !body) {
+                alert('请完整填写游客昵称及评论内容后再提交！');
+                return;
+            }
+
+            const cacheKey = `FN_POST_REPLIES_${postId}`;
+            const existingCache = localStorage.getItem(cacheKey);
+            const repliesList = existingCache ? JSON.parse(existingCache) : [];
+
+            // 存储新评论
+            repliesList.push({
+                user: nickname,
+                text: body,
+                time: new Date().toLocaleTimeString()
+            });
+
+            localStorage.setItem(cacheKey, JSON.stringify(repliesList));
+            
+            // 清除当前栏目的输入数据
+            nickInput.value = '';
+            bodyInput.value = '';
+            
+            // 局部刷新，保留当前打开的抽屉状态
+            renderPosts();
+            document.getElementById(`post-${postId}`).classList.add('open');
+        }
+
+        // 5. 🔍 控制台核心高级解绑命令：输入“开发者还原”清除全部独立的缓存评论
+        const forumSearch = document.getElementById('forumSearch');
+        forumSearch.addEventListener('input', function() {
+            if (this.value.trim() === '开发者还原') {
+                alert('⚙️ 蜂鸟社区节点控制：正在彻底清空各帖子的独立游客缓存，系统即将重置...');
+                // 遍历清除所有可能的帖子独立缓存
+                for (let i = 1; i <= 10; i++) {
+                    localStorage.removeItem(`FN_POST_REPLIES_${i}`);
+                }
+                this.value = '';
+                renderPosts();
+                window.location.reload();
+            }
+        });
+
+        // 页面数据自启动挂载
+        window.onload = function() {
+            renderPosts();
+        }
+    </script>
+        <!-- 蜂鸟论坛统一全响应式页脚（角页） -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="#">蜂鸟社区规范</a>
+            <a href="#">关于我们</a>
+            <a href="#">联系管理员</a>
+            <a href="#">侵权投诉申诉</a>
+        </div>
+        <div>&copy; 特别声明：以上信息均为架空虚构内容，无任何现实映射，不存在真实对应事件与人物，一切仅服务原创解谜故事创作
+</div>
+    </footer>
+
+</body>
+</html>
