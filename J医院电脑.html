@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>工业控制站-旧式终端</title>
+    <style>
+        :root {
+            --win-bg: #1c1d22;          /* 工业深灰背景 */
+            --win-border: #4a4d5a;      /* 复古双边框颜色 */
+            --win-title: #2a2d37;       /* 标题栏背景 */
+            --glow-green: #00ff66;      /* 经典终端绿 */
+            --glow-cyan: #00e5ff;       /* 复古青色 */
+            --text-main: #d1d5db;       /* 主体文字灰白 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: #0b0c10;
+            font-family: "Courier New", Courier, monospace, "Microsoft YaHei";
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 模拟老式CRT显示器边缘与干扰纹 */
+        body::after {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 9999;
+            background-size: 100% 4px, 4px 100%;
+            pointer-events: none;
+        }
+
+        /* 桌面工作区：已改为严格的一列紧凑排列 */
+        .desktop {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            padding: 20px 15px;
+            
+            display: flex;
+            flex-direction: column;   /* 👈 核心修改1：强制图标严格排成单列，不乱换行 */
+            align-items: flex-start;  /* 图标左对齐 */
+            justify-content: flex-start;
+            
+            gap: 10px;                /* 👈 核心修改2：大幅缩短图标之间的上下距离 */
+        }
+
+        /* 桌面图标通用样式 */
+        .desktop-icon {
+            width: 85px;              /* 稍微加宽，防止文字在窄屏下被挤断行 */
+            height: 75px;             /* 👈 核心修改3：把单个图标的格子高度变矮，挤掉内部多余空白 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            padding: 2px;
+            transition: background 0.1s, border 0.1s;
+        }
+
+        .desktop-icon:hover {
+            background: rgba(0, 255, 102, 0.05);
+            border: 1px dashed var(--glow-green);
+        }
+
+
+        /* 像素风或SVG矢量图标容器 */
+        .icon-graphic {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-label {
+            font-size: 12px;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+            word-break: break-all;
+            line-height: 1.2;
+        }
+        /* 老式操作系统通用窗口样式 */
+        .win-window {
+            position: fixed;
+            background: var(--win-bg);
+            border: 2px solid var(--win-border);
+            box-shadow: 4px 4px 0px #000, inset 1px 1px 0px #7a7e8c;
+            display: none; /* 默认隐藏，由JS控制打开 */
+            flex-direction: column;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        /* 标题栏结构 */
+        .win-titlebar {
+            height: 32px;
+            background: var(--win-title);
+            border-bottom: 2px solid var(--win-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            cursor: move;
+        }
+
+        .win-title-text {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--glow-cyan);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 窗口右上角关闭按钮 */
+        .win-close-btn {
+            width: 20px;
+            height: 20px;
+            background: #25262c;
+            border: 1px solid var(--win-border);
+            color: #fff;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .win-close-btn:hover {
+            background: #ff3333;
+            color: #fff;
+            border-color: #ff3333;
+        }
+
+        /* 窗口内容区 */
+        .win-content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #141518;
+        }
+
+        /* 我的电脑：空状态样式 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #525666;
+            font-size: 13px;
+            text-align: center;
+            gap: 10px;
+            padding: 40px 0;
+        }
+
+        /* 文档列表样式 */
+        .doc-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .doc-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: #1c1d22;
+            border: 1px solid #2a2d37;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.1s;
+        }
+
+        .doc-item:hover {
+            background: rgba(0, 229, 255, 0.05);
+            border-color: var(--glow-cyan);
+            color: #fff;
+        }
+
+        .doc-item::before {
+            content: "📄";
+            margin-right: 10px;
+            font-size: 14px;
+        }
+                /* 出入库台账特殊样式 */
+        .ledger-section {
+            width: 100%;
+            background: #18191f;
+            border: 1px solid #2d313d;
+            padding: 10px;
+            border-radius: 2px;
+        }
+
+        .ledger-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--glow-cyan);
+            margin-bottom: 8px;
+            border-left: 3px solid var(--glow-cyan);
+            padding-left: 6px;
+        }
+
+        .ledger-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        .ledger-table th, .ledger-table td {
+            padding: 6px 8px;
+            border: 1px solid #2a2d37;
+        }
+
+        .ledger-table th {
+            background: #22242c;
+            color: #888e9e;
+            font-weight: normal;
+        }
+
+        .ledger-table td {
+            color: #fff;
+        }
+
+        /* 增减数量的高亮颜色强化 */
+        .ledger-table tr td:nth-child(3) {
+            font-family: monospace;
+        }
+
+        /* 响应式多端适配布局公式 */
+        /* 电脑与笔记本大屏设备 */
+        @media (min-width: 1024px) {
+            .win-window {
+                width: 650px;
+                height: 420px;
+                top: 15%;
+                left: calc(50% - 325px);
+            }
+        }
+        /* 平板电脑与中小屏幕 */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .win-window {
+                width: 550px;
+                height: 380px;
+                top: 20%;
+                left: calc(50% - 275px);
+            }
+        }
+        /* 智能手机竖屏 */
+        @media (max-width: 767px) {
+            .win-window {
+                width: calc(100% - 20px) !important;
+                height: 70% !important;
+                top: 10px !important;
+                left: 10px !important;
+            }
+            .desktop {
+                padding: 15px;
+                gap: 15px;
+            }
+        }
+
+        /* 模拟系统底部任务状态栏 */
+        .task-bar {
+            width: 100%;
+            height: 40px;
+            background: var(--win-title);
+            border-top: 2px solid var(--win-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            z-index: 1000;
+        }
+        .start-btn {
+            background: #1f222b;
+            color: var(--glow-green);
+            border: 1px solid var(--win-border);
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 1px 1px 0px #000;
+        }
+        .sys-clock {
+            font-size: 12px;
+            color: #888e9e;
+            font-family: monospace;
+        }
+                /* 1. 强制外层容器在整个屏幕绝对居中 */
+        .screen-watermark-img {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            
+            display: flex;         /* 使用弹性盒模型 */
+            align-items: center;   /* 垂直方向完美居中 */
+            justify-content: center; /* 水平方向完美居中 */
+            
+            z-index: 0;           /* 锁死在最底层，不遮挡图标和窗口 */
+            pointer-events: none; /* 允许鼠标点击穿透，不卡死系统 */
+            
+            /* 👇 核心：控制水印的半透明度 (0.04 代表 4% 的可见度，非常隐蔽隐约) */
+            opacity: 0.04; 
+        }
+
+        /* 2. 控制内部 JPG 图片的缩放比例，防止变形 */
+        .screen-watermark-img img {
+            max-width: 100%;       /* 电脑端最大占据屏幕宽度的 60% */
+            max-height: 100%;      /* 电脑端最大占据屏幕高度的 60% */
+            object-fit: contain;  /* 保持原图比例，绝对不拉伸变形 */
+        }
+
+        /* 3. 针对手机端屏幕进行特调适配 */
+        @media (max-width: 767px) {
+            .screen-watermark-img img {
+                max-width: 80%;   /* 手机端屏幕小，让图片占宽度的 80%，更容易看清 */
+                max-height: 80%;
+            }
+        }
+
+    </style>
+    
+</head>
+<body>
+<!-- 找到您代码里的 <body> 标签 -->
+<body>
+
+    <!-- 👇 1. 图片水印代码就加在这里（<body>的下一行） -->
+    <div class="screen-watermark-img">
+        <img src="医院LOGO.png" alt="背景水印">
+    </div>
+    <!-- ================= 1. 桌面图标区域（所有图标必须全装在里面） ================= -->
+    <div class="desktop">
+        <!-- 我的电脑 -->
+        <div class="desktop-icon" onclick="openWindow('winMyComp')">
+            <div class="icon-graphic">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#00e5ff" stroke-width="1.5">
+                    <rect x="2" y="4" width="20" height="13" rx="1" />
+                    <path d="M6 20h12M12 17v3M2 14h20" />
+                </svg>
+            </div>
+            <div class="icon-label">我的电脑</div>
+        </div>
+
+        <!-- 我的文档 -->
+        <div class="desktop-icon" onclick="openWindow('winMyDocs')">
+            <div class="icon-graphic">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#00ff66" stroke-width="1.5">
+                    <path d="M4 4h10l6 6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+                    <path d="M14 4v6h6M6 14h12M6 18h8" />
+                </svg>
+            </div>
+            <div class="icon-label">文档</div>
+        </div>
+
+        <!-- 出入库台账（👇 已经帮您纠正到这里！和前两个并列） -->
+        <div class="desktop-icon" onclick="openWindow('winLedger')">
+            <div class="icon-graphic">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#ffaa00" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M3 9h18M9 3v18M3 15h18" />
+                </svg>
+            </div>
+            <div class="icon-label">出入库台账</div>
+        </div>
+    </div> <!-- 👈 桌面工作区在这里统一结束闭合 -->
+
+
+    <!-- ================= 2. 窗口图层（全部丢在桌面后面，隐藏待命） ================= -->
+    
+    <!-- “我的电脑”窗口 -->
+    <div class="win-window" id="winMyComp">
+        <div class="win-titlebar">
+            <div class="win-title-text">
+                <span>🖥️</span> [局部网络群组] - 我的电脑
+            </div>
+            <button class="win-close-btn" onclick="closeWindow('winMyComp')">✕</button>
+        </div>
+        <div class="win-content">
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#2a2d37" stroke-width="1">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 15s1.5-2 4-2 4 2 4 2M9 9h.01M15 9h.01"/>
+                </svg>
+                <div>[系统核心文件已脱机隔离保护]</div>
+                <div style="font-size:11px; color:#414552;">当前驱动器盘符为空，请挂载外部介质设备后再试。</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- “文档”窗口 -->
+    <div class="win-window" id="winMyDocs">
+        <div class="win-titlebar">
+            <div class="win-title-text">
+                <span>📁</span> 索引数据库 - 文档
+            </div>
+            <button class="win-close-btn" onclick="closeWindow('winMyDocs')">✕</button>
+        </div>
+        <div class="win-content">
+            <ul class="doc-list">
+                <li class="doc-item" onclick="alert('禁止访问\n[权限校验未通过]')">空间站实验室地面连接🔗密钥7222.txt</li>
+
+        </div>
+    </div>
+
+    <!-- “出入库台账”窗口 -->
+    <div class="win-window" id="winLedger">
+        <div class="win-titlebar">
+            <div class="win-title-text">
+                <span>📊</span> 仓储物流中心 - 出入库台账
+            </div>
+            <button class="win-close-btn" onclick="closeWindow('winLedger')">✕</button>
+        </div>
+        <div class="win-content" style="padding: 10px;">
+            <!-- 入库数据表格 -->
+            <div class="ledger-section">
+                <div class="ledger-title">📥 物资入库清单</div>
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>序号</th>
+                            <th>姓名</th>
+                            <th>备注</th>
+                            <th>经办</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Aidan (艾丹) </td>
+                            <td>刑案</td>
+                            <td>X</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Barek (巴雷克)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>3</td>
+                            <td>Astrid (阿斯特丽德)  </td>
+                            <td>刑案</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>4</td>
+                            <td>Freya (弗蕾亚)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>5</td>
+                            <td>Maeve (梅芙)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>6</td>
+                            <td>Elias (埃利亚斯)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>7</td>
+                            <td>Dorian (多里安)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>8</td>
+                            <td>Caelum (凯隆)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>9</td>
+                            <td>Iris (艾丽丝)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                                        <tr>
+                            <td>10</td>
+                            <td>Eileen Thorne (艾琳·索恩 )  </td>
+                            <td>事故</td>
+                            <td>X</td>
+                        </tr>
+                                                                        <tr>
+                            <td>11</td>
+                            <td>Evan (埃文)  </td>
+                            <td>事故</td>
+                            <td>X</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 出库数据表格 -->
+            <div class="ledger-section" style="margin-top: 15px;">
+                <div class="ledger-title">📤 物资出库清单</div>
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>序号</th>
+                            <th>姓名</th>
+                            <th>备注</th>
+                            <th>调拨向</th>
+                        <tr>
+                            <td>1</td>
+                            <td>Aidan (艾丹) </td>
+                            <td>刑案</td>
+                            <td>X</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Barek (巴雷克)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>3</td>
+                            <td>Astrid (阿斯特丽德)  </td>
+                            <td>刑案</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>4</td>
+                            <td>Freya (弗蕾亚)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>5</td>
+                            <td>Maeve (梅芙)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>6</td>
+                            <td>Elias (埃利亚斯)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>7</td>
+                            <td>Dorian (多里安)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>8</td>
+                            <td>Caelum (凯隆)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                <tr>
+                            <td>9</td>
+                            <td>Iris (艾丽丝)  </td>
+                            <td>正常死亡</td>
+                            <td>X</td>
+                        </tr>
+                                                                        <tr>
+                            <td>10</td>
+                            <td>Eileen Thorne (艾琳·索恩 )  </td>
+                            <td>事故</td>
+                            <td>X</td>
+                        </tr>
+                                                                        <tr>
+                            <td>11</td>
+                            <td>Evan (埃文)  </td>
+                            <td>事故</td>
+                            <td>X</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ================= 3. 底部系统状态栏 ================= -->
+    <div class="task-bar">
+        <button class="start-btn" onclick="alert('核心终端：控制台安全连接正常。')">START</button>
+        <div class="sys-clock" id="sysClock">00:00:00</div>
+    </div>
+
+    <script>
+
+        
+        // 1. 窗口开启控制函数（带层级置顶刷新）
+        let topZIndex = 100;
+        
+        function openWindow(windowId) {
+            const win = document.getElementById(windowId);
+            if (win) {
+                win.style.display = 'flex';
+                topZIndex++;
+                win.style.zIndex = topZIndex; // 每次打开把当前窗口提到最前
+            }
+        }
+
+        // 2. 窗口关闭控制函数
+        function closeWindow(windowId) {
+            const win = document.getElementById(windowId);
+            if (win) {
+                win.style.display = 'none';
+            }
+        }
+
+        // 3. 底部状态栏时间高频刷新系统
+        function startSystemClock() {
+            const clockEl = document.getElementById('sysClock');
+            if (!clockEl) return;
+
+            function updateTime() {
+                const now = new Date();
+                const hh = String(now.getHours()).padStart(2, '0');
+                const mm = String(now.getMinutes()).padStart(2, '0');
+                const ss = String(now.getSeconds()).padStart(2, '0');
+                
+                clockEl.textContent = `${hh}:${mm}:${ss}`;
+                requestAnimationFrame(updateTime);
+            }
+            requestAnimationFrame(updateTime);
+        }
+        
+        // 启动系统时间控制
+        startSystemClock();
+
+        // 4. 便捷窗口层级切换逻辑（点击哪个窗口，哪个窗口就提到最前方）
+        document.querySelectorAll('.win-window').forEach(win => {
+            win.addEventListener('mousedown', function() {
+                topZIndex++;
+                this.style.zIndex = topZIndex;
+            });
+        });
+        
+    </script>
+</body>
+</html>

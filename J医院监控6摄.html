@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>监控云台系统</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0c;
+            --border-color: #2c2c35;
+            --text-color: #00ff66; /* 经典监控绿 */
+            --alert-color: #ff3333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            font-family: "Courier New", Courier, monospace, "Helvetica Neue", Arial;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部导航栏：返回键与LOGO */
+        .top-bar {
+            width: 100%;
+            height: 50px;
+            background: #121216;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+        }
+
+        .btn-back {
+            background: #1f1f26;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            background: #ff3333;
+            border-color: #ff3333;
+        }
+
+        .logo-placeholder {
+            width: 120px;
+            height: 32px;
+            background: #252530;
+            border: 1px dashed #666;
+            color: #888;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px;
+        }
+/* 优化后的6宫格容器样式 */
+.monitor-container {
+    width: 100%;
+    height: calc(100vh - 85px); /* 强制卡在顶部栏和尾页之间 */
+    padding: 10px;
+    display: grid;
+    gap: 10px;
+    position: relative;
+    background: #000;
+    
+    /* 默认：电脑、平板端排成 3列 × 2行 */
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
+
+/* 当屏幕宽度小于 768px 时（手机端），自动切换为 2列 × 3行 排列 */
+@media (max-width: 768px) {
+    .monitor-container {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+    }
+}
+
+
+/* 修改 CSS 中的 .cam-box 样式 */
+.cam-box {
+    position: relative;
+    background: #141519;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.25s ease, z-index 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* 👇 核心修改：强制大框锁定比例（以 16:9 为例） */
+    aspect-ratio: 16 / 9; 
+}
+
+        /* 画面内伪图像背景 (防止拉伸和裁剪，保持全屏适配) */
+        .cam-video-mock {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1c23 25%, #15161c 25%, #15161c 50%, #1a1c23 50%, #1a1c23 75%, #15161c 75%, #15161c 100%);
+            background-size: 40px 40px;
+            opacity: 0.4;
+        }
+
+        /* 屏幕干扰纹：横向扫描线与微弱噪点 */
+        .cam-box::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        /* 动态扫描线模拟 */
+        .scanline {
+            width: 100%;
+            height: 4px;
+            background: rgba(0, 255, 102, 0.08);
+            position: absolute;
+            animation: scan 6s linear infinite;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+        /* OSD 文本图层 */
+        .osd-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 5;
+            color: var(--text-color);
+            font-size: 14px;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .osd-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .osd-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        /* 红色录像点闪烁 */
+        .rec-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: bold;
+        }
+
+        .rec-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--alert-color);
+            border-radius: 50%;
+            animation: blink 1s steps(2, start) infinite;
+            box-shadow: 0 0 8px var(--alert-color);
+        }
+
+        @keyframes blink {
+            to { visibility: hidden; }
+        }
+/* 确保放大时完美覆盖 6 宫格的所有行列 */
+.cam-box.maximized {
+    position: absolute !important;
+    top: 10px !important;
+    left: 10px !important;
+    width: calc(100% - 20px) !important;
+    height: calc(100% - 20px) !important;
+    z-index: 99 !important;
+    grid-column: span 3;
+    grid-row: span 3;
+}
+
+        /* 第4个画面的特殊交互遮罩 (左侧50%) */
+        .special-click-zone {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 100%;
+            z-index: 10;
+            background: rgba(255, 0, 0, 0.02); /* 微弱红光 */
+            cursor: pointer;
+        }
+
+        .cam-box.maximized .special-click-zone {
+            display: block; /* 仅在放大后启用 */
+        }
+
+        /* 遮罩/弹窗样式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-box {
+            background: #1c1d24;
+            border: 2px solid var(--text-color);
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.3);
+            width: 90%;
+            max-width: 400px;
+            padding: 25px;
+            border-radius: 6px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .modal-title {
+            color: var(--text-color);
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .modal-msg {
+            font-size: 14px;
+            margin-bottom: 25px;
+            line-height: 1.5;
+            color: #ccc;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .btn-opt1 {
+            background: #444;
+            color: #fff;
+        }
+
+        .btn-opt2 {
+            background: var(--text-color);
+            color: #000;
+        }
+
+        /* 响应式微调 */
+        @media (max-width: 768px) {
+            .osd-layer { font-size: 11px; padding: 8px; }
+            .logo-placeholder { width: 90px; font-size: 10px; }
+            .rec-dot { width: 8px; height: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 顶部导航栏 -->
+<div class="top-bar">
+    <!-- 返回首页按钮链接 -->
+    <button class="btn-back" onclick="window.location.href='404.html'">◀ 返回首页</button>
+    
+    <!-- LOGO与文字组合区域 -->
+    <!-- 调整 LOGO 整体大小：修改下面的 width(宽) 和 height(高) 即可控制 -->
+    <div class="logo-wrapper" style="
+        display: flex; 
+        align-items: center; 
+        gap: 15px; 
+        height: 35px; 
+        width: auto;
+    ">
+        <!-- LOGO 图片层 -->
+        <img src="医院LOGO.png" alt="LOGO" style="height: 100%; width: auto; object-fit: contain;">
+        
+        <!-- 后面的文字层 -->
+        <span style="
+            color: #ffffff; 
+            font-size: 16px; 
+            font-weight: bold; 
+            font-family: 'Microsoft YaHei', sans-serif;
+            letter-spacing: 1px;
+        ">巴布曼特联邦综合医院</span>
+    </div>
+</div>
+
+
+    <!-- 监控大厅 4宫格容器 -->
+    <div class="monitor-container" id="monitorGrid">
+        
+        <!-- CAM 01 -->
+<div class="cam-box" onclick="toggleMaximize(this)">
+    <!-- 1. 这里放入您的图片地址，object-fit: contain 确保图片不裁剪、不拉伸 -->
+    <img src="CCTV91.jpg" alt="监控画面" style="width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0;">
+    
+    <!-- 2. 下面这些干扰纹和文字会完美浮在图片上方 -->
+    <div class="scanline"></div>
+    <div class="ptz-cross"></div>
+    <div class="osd-layer">
+        <div class="osd-top">
+            <div class="rec-indicator"><div class="rec-dot"></div><span>REC</span></div>
+            <div>储存室</div>
+        </div>
+        <div class="osd-bottom">
+            <div>PTZ: AUTO</div>
+            <div class="system-time">0000-00-00 00:00:00.000</div>
+        </div>
+    </div>
+</div>
+
+        <!-- CAM 02 -->
+<div class="cam-box" onclick="toggleMaximize(this)">
+    <!-- 1. 这里放入您的图片地址，object-fit: contain 确保图片不裁剪、不拉伸 -->
+    <img src="CCTV92.jpg" alt="监控画面" style="width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0;">
+    
+    <!-- 2. 下面这些干扰纹和文字会完美浮在图片上方 -->
+    <div class="scanline"></div>
+    <div class="ptz-cross"></div>
+    <div class="osd-layer">
+        <div class="osd-top">
+            <div class="rec-indicator"><div class="rec-dot"></div><span>REC</span></div>
+            <div>手术室</div>
+        </div>
+        <div class="osd-bottom">
+            <div>PTZ: AUTO</div>
+            <div class="system-time">0000-00-00 00:00:00.000</div>
+        </div>
+    </div>
+</div>
+
+        <!-- CAM 03 -->
+<div class="cam-box" onclick="toggleMaximize(this)">
+    <!-- 1. 这里放入您的图片地址，object-fit: contain 确保图片不裁剪、不拉伸 -->
+    <img src="CCTV93.jpg" alt="监控画面" style="width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0;">
+    
+    <!-- 2. 下面这些干扰纹和文字会完美浮在图片上方 -->
+    <div class="scanline"></div>
+    <div class="ptz-cross"></div>
+    <div class="osd-layer">
+        <div class="osd-top">
+            <div class="rec-indicator"><div class="rec-dot"></div><span>REC</span></div>
+            <div>走廊</div>
+        </div>
+        <div class="osd-bottom">
+            <div>PTZ: AUTO</div>
+            <div class="system-time">0000-00-00 00:00:00.000</div>
+        </div>
+    </div>
+</div>
+
+<!-- CAM 04 (包含特殊点击区域) -->
+<div class="cam-box" id="camFour" onclick="toggleMaximize(this)" style="position: relative;">
+    
+    <!-- 👇 彻底恢复正常尺寸：去除多余的div，图片宽高调回 100%，顶对齐、左对齐 -->
+    <img src="CCTV94.jpg" alt="监控画面" style="
+        width: 100%; 
+        height: 100%; 
+        object-fit: contain; /* 👈 保持contain可以确保您的原图在任何屏幕上都完整显示、不变形 */
+        position: absolute; 
+        top: 0; 
+        left: 0;
+        pointer-events: none;
+        z-index: 1;
+    ">
+
+    <!-- 特殊左侧50%点击域 -->
+    <div class="special-click-zone" id="specialZone" style="z-index: 10;"></div>
+    
+    <div class="cam-video-mock" style="display: none;"></div>
+    <div class="scanline" style="z-index: 2; pointer-events: none;"></div>
+    
+    <!-- OSD 字符层 -->
+    <div class="osd-layer" style="z-index: 5; pointer-events: none;">
+        <div class="osd-top">
+            <div class="rec-indicator"><div class="rec-dot"></div><span>REC</span></div>
+            <div>资料室</div>
+        </div>
+        <div class="osd-bottom">
+            <div>PTZ: AUTO</div>
+            <div class="system-time">0000-00-00 00:00:00.000</div>
+        </div>
+    </div>
+</div>
+        <!-- CAM 05 (新增加密位) -->
+        <div class="cam-box" onclick="toggleMaximize(this)" style="position: relative;">
+            <!-- 替换成您的第 5 张监控图片地址 -->
+            <img src="CCTV95.jpg" alt="监控画面" style="width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1;">
+            
+            <div class="cam-video-mock" style="display: none;"></div>
+            <div class="scanline" style="z-index: 2; pointer-events: none;"></div>
+            <div class="osd-layer" style="z-index: 5; pointer-events: none;">
+                <div class="osd-top">
+                    <div class="rec-indicator"><div class="rec-dot"></div><span>REC</span></div>
+                    <div>停车场A</div>
+                </div>
+                <div class="osd-bottom">
+                    <div>PTZ: AUTO</div>
+                    <div class="system-time">0000-00-00 00:00:00.000</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CAM 06 (新增加密位) -->
+        <div class="cam-box" onclick="toggleMaximize(this)" style="position: relative;">
+            <!-- 替换成您的第 6 张监控图片地址 -->
+            <img src="CCTV96.jpg" alt="监控画面" style="width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1;">
+            
+            <div class="cam-video-mock" style="display: none;"></div>
+            <div class="scanline" style="z-index: 2; pointer-events: none;"></div>
+            <div class="osd-layer" style="z-index: 5; pointer-events: none;">
+                <div class="osd-top">
+                    <div class="rec-indicator"><div class="rec-dot"></div><span>REC</span></div>
+                    <div>停车场B</div>
+                </div>
+                <div class="osd-bottom">
+                    <div>PTZ: AUTO</div>
+                    <div class="system-time">0000-00-00 00:00:00.000</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 交互提示弹窗 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <div class="modal-title">⚠️ 安全系统异常触发</div>
+            <div class="modal-msg">是否调取档案资料：</div>
+            <div class="modal-buttons">
+                <button class="modal-btn btn-opt1" onclick="handleModalOption(1)">返回</button>
+                <button class="modal-btn btn-opt2" onclick="handleModalOption(2)">调取</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 1. 高精度系统时间流：同步毫秒级更新
+        function updateSystemTime() {
+            const timeElements = document.querySelectorAll('.system-time');
+            const now = new Date();
+            
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const ms = String(now.getMilliseconds()).padStart(3, '0');
+
+            const timeString = `${year}-${month}-${date} ${hours}:${minutes}:${seconds}.${ms}`;
+            
+            timeElements.forEach(el => {
+                el.textContent = timeString;
+            });
+
+            // 保持毫秒级高频刷新
+            requestAnimationFrame(updateSystemTime);
+        }
+        // 启动时间系统
+        requestAnimationFrame(updateSystemTime);
+
+
+        // 2. 画面点击放大/还原逻辑
+        function toggleMaximize(element) {
+            const isMaximized = element.classList.contains('maximized');
+            
+            // 先清除所有其他画面的放大状态
+            document.querySelectorAll('.cam-box').forEach(box => {
+                if(box !== element) box.classList.remove('maximized');
+            });
+
+            if (isMaximized) {
+                element.classList.remove('maximized');
+            } else {
+                element.classList.add('maximized');
+            }
+        }
+
+        // 3. 第4个画面：左侧50%点击事件拦截与弹窗
+        const camFour = document.getElementById('camFour');
+        const specialZone = document.getElementById('specialZone');
+        const modalOverlay = document.getElementById('modalOverlay');
+
+        specialZone.addEventListener('click', function(e) {
+            // 阻止事件冒泡，防止触发外层 camFour 的还原缩小点击
+            e.stopPropagation(); 
+            
+            // 显示弹窗
+            modalOverlay.style.display = 'flex';
+        });
+
+        // 4. 弹窗按钮行为
+        function handleModalOption(option) {
+            modalOverlay.style.display = 'none';
+            if (option === 1) {
+                console.log("用户选择 1：返回监控");
+                // 仅关闭弹窗，保持放大状态
+} else if (option === 2) {
+        // ======= 2. 这里加【调取】按钮的链接 =======
+        // 点击后跳转到您刚刚做好的“仿老式电脑档案界面”
+        window.location.href = 'J医院电脑.html'; 
+    }
+}
+    </script>
+</body>
+</html>
