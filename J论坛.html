@@ -236,7 +236,25 @@
                     {user:"理性避雷党",text:"高价私售一律谨慎，官方票务没放出来的票，大概率有猫腻，别上当受骗。",time:"10分钟前"},
                     {user:"佛系观众",text:"羡慕有前排票的人，我只抢到了山顶票，只能远远看看舞台了。",time:"10分钟前"}
                 ] },
-
+{
+    id: 36, 
+    title: "都市传闻｜圣心医院官网有个灵异事件，你们遇到了吗？", 
+    author: "夜巡急诊科", 
+    date: "38分钟前", 
+    isEssence: false, 
+    image: null,
+    replies: [
+        { user: "夜巡急诊科", text: "我上周夜班手贱点了官网logo五下，直接弹出一张模糊的太平间冷藏柜画面，闪了一秒就没了，现在我下班都不敢走医院西侧走廊。", time: "38分钟前" },
+        { user: "不信邪的阿凯", text: "纯纯网友恶搞的网页彩蛋罢了，我连续点了二十下，网页就卡了两下，啥灵异画面都没有，就是拿医院的传闻搞噱头。。", time: "36分钟前" },
+        { user: "老保安王叔", text: "我在这医院干了十几年安保，官网这个彩蛋早就传开了，不光网页有怪事，后半夜住院部负一楼，经常能听见没人的脚步声。", time: "32分钟前" },
+        { user: "电脑小白一枚", text: "昨天好奇点了五下，电脑突然发出滋滋的电流声，浏览器直接卡死，重启之后浏览记录莫名消失，真的越想越后怕。", time: "25分钟前" },
+        { user: "病理科小周", text: "内部人说这个彩蛋是早年离职的程序员做的恶作剧，不过医院早年太平间确实出过不少旧事，传闻才越传越玄乎。", time: "18分钟前" },
+        { user: "理性吃瓜群众", text: "别搞封建迷信了，就是前端写的JS触发特效，结合医院的灵异谣言炒热度，真没必要自己吓自己。", time: "22分钟前" },
+        { user: "胆子超大的淼淼", text: "我反复测试了好几次，只有凌晨0点到6点之间点击，才会触发诡异画面，白天点顶多就是网页卡顿，太邪门了。", time: "15分钟前" },
+        /* 核心修改点：外部用双引号，内部 href='路径' 必须用单引号，并将文字包裹在 <a> 标签内 */
+        { user: "圣心医院", text: "<a href='J论坛医院.html' style='color: #ff0000; font-weight: bold; text-decoration: underline;'>欢迎您来啊</a>", time: "8分钟前" }
+    ]
+},
                 
                 
         ];
@@ -267,7 +285,7 @@
                     repliesHtml += `
                         <div class="comment-item">
                             <div class="comment-meta">
-                                <strong><a href="#" class="author-link" onclick="event.stopPropagation();">@${r.user}</a></strong>
+                                <strong><a href="javascript:void(0);" class="author-link" onclick="event.stopPropagation();">@${r.user}</a></strong>
                                 <span>${r.time}</span>
                             </div>
                             <div>${r.text}</div>
@@ -279,7 +297,7 @@
                     repliesHtml += `
                         <div class="comment-item" style="border-left: 3px solid var(--primary-color);">
                             <div class="comment-meta">
-                                <strong><a href="#" class="author-link" onclick="event.stopPropagation();">@${dr.user}</a> (游客)</strong>
+                                <strong><a href="javascript:void(0);" class="author-link" onclick="event.stopPropagation();">@${dr.user}</a> (游客)</strong>
                                 <span>${dr.time}</span>
                             </div>
                             <div>${dr.text}</div>
@@ -295,7 +313,7 @@
                             <span class="post-title-text">${post.title}</span>
                         </div>
                         <div class="post-meta">
-                            <span>由 <a href="#" class="author-link" onclick="event.stopPropagation();">@${post.author}</a></span>
+                            <span>由 <a href="javascript:void(0);" class="author-link" onclick="event.stopPropagation();">@${post.author}</a></span>
                             <span>${post.date}</span>
                             <span class="arrow-icon">▼</span>
                         </div>
