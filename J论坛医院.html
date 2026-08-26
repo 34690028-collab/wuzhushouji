@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圣心医院 - 官方网站</title>
+    
+    <style>
+        /* ==========================================================================
+           1. 全局初始化与基础样式
+           ========================================================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.5s ease, color 0.5s ease, border 0.5s ease;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f7f9fc;
+            color: #333333;
+            overflow-x: hidden;
+        }
+
+        /* ==========================================================================
+           2. 正常模式下的导航栏 (Navbar)
+           ========================================================================== */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ffffff;
+            padding: 15px 50px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-bottom: 3px solid #0056b3;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none; /* 狂点时防止文字变蓝 */
+        }
+
+        .logo-container img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50px;
+            margin-right: 12px;
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: bold;
+            color: #0056b3;
+        }
+
+        .nav-links a {
+            color: #555555;
+            text-decoration: none;
+            margin-left: 25px;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            color: #0056b3;
+        }
+        /* ==========================================================================
+           3. 网页主体与【强制锁定16:9等比例】样式
+           ========================================================================== */
+        .main-content {
+            max-width: 800px; /* 缩小容器宽度，让16:9图片在电脑上看起来大小最舒适 */
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .content-box {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        /* 核心修改：无论浏览器窗口怎么变，都死死锁住 16:9 比例，绝对不会拉伸和变形 */
+        .hospital-banner {
+            width: 100%;
+            aspect-ratio: 16 / 9;   /* 彻底固定宽高比为标准的16比9 */
+            overflow: hidden;       /* 超出部分自动裁剪 */
+            border-radius: 6px;
+            margin-bottom: 30px;
+            background-color: #000000;
+        }
+
+        .hospital-banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;      /* 填充整屏，只在窗口改变时智能裁剪两边，决不压扁或拉长图片 */
+        }
+
+        h2 {
+            color: #0056b3;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666666;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        .news-section {
+            text-align: left;
+            background-color: #f0f4f8;
+            padding: 25px;
+            border-radius: 6px;
+            border-left: 5px solid #0056b3;
+        }
+
+        .news-section h3 {
+            color: #333333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .news-section ul {
+            list-style-type: none;
+        }
+
+        .news-section li {
+            margin-bottom: 12px;
+            color: #555555;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .news-section li::before {
+            content: "•";
+            color: #0056b3;
+            font-weight: bold;
+            font-size: 18px;
+            position: absolute;
+            left: 0;
+            top: -2px;
+        }
+        /* ==========================================================================
+           4. 鬼网站惊悚异变样式 (当 body 带有 .ghost-mode 类时生效)
+           ========================================================================== */
+        body.ghost-mode {
+            background-color: #050000 !important;
+            color: #8b0000 !important;
+            animation: screen-flicker 0.15s infinite; /* 屏幕老旧电视闪烁感 */
+        }
+
+        body.ghost-mode .navbar {
+            background-color: #1a0000 !important;
+            border-bottom: 3px solid #ff0000 !important;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4) !important;
+        }
+
+        body.ghost-mode .logo-text {
+            color: #ff0000 !important;
+            text-shadow: 0 0 10px #ff0000;
+        }
+
+        body.ghost-mode .nav-links a {
+            color: #8b0000 !important;
+        }
+
+        body.ghost-mode .nav-links a:hover {
+            color: #ff0000 !important;
+        }
+
+        body.ghost-mode .content-box {
+            background-color: #110000 !important;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.2) !important;
+            border: 1px solid #4a0000;
+        }
+
+        .ghost-title {
+            color: #ff0000 !important;
+            font-size: 38px;
+            font-weight: bold;
+            letter-spacing: 10px;
+            text-shadow: 0 0 15px #ff0000;
+            animation: text-glitch 0.3s infinite; /* 字体扭曲抽搐 */
+        }
+
+        .ghost-subtitle {
+            color: #b3b3b3 !important;
+            font-style: italic;
+        }
+
+        .ghost-news {
+            background-color: #1f0000 !important;
+            border-left: 5px solid #ff0000 !important;
+        }
+
+        .ghost-news h3 {
+            color: #ff0000 !important;
+        }
+
+        .ghost-news li {
+            color: #ffb3b3 !important;
+        }
+
+        .ghost-news li::before {
+            content: "☠" !important; /* 列表圆点变骷髅 */
+            color: #ff0000 !important;
+        }
+
+        /* 诡异红化滤镜：切换里世界后强制给图片染色 */
+        body.ghost-mode img {
+            filter: grayscale(30%) sepia(100%) hue-rotate(-50deg) saturate(350%);
+        }
+
+        /* 工具类：隐藏不可见区域 */
+        .hidden {
+            display: none !important;
+        }
+
+        /* ==========================================================================
+           5. 恐怖特效核心 CSS 动画
+           ========================================================================== */
+        @keyframes screen-flicker {
+            0% { opacity: 0.98; }
+            50% { opacity: 1; }
+            100% { opacity: 0.99; }
+        }
+
+        @keyframes text-glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); color: #ff0000; }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); color: #550000; }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        /* 第5次点击时的网页剧烈地震摇晃特效 */
+        @keyframes earthquake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-5px, 5px) rotate(-1deg); }
+            20% { transform: translate(5px, -5px) rotate(1deg); }
+            30% { transform: translate(-5px, -5px) rotate(0deg); }
+            40% { transform: translate(5px, 5px) rotate(1deg); }
+            50% { transform: translate(-5px, 5px) rotate(-1deg); }
+            60% { transform: translate(5px, -5px) rotate(0deg); }
+            70% { transform: translate(-5px, -5px) rotate(1deg); }
+            80% { transform: translate(5px, 5px) rotate(-1deg); }
+            90% { transform: translate(-5px, -5px) rotate(0deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+    </style>
+</head>
+<body class="normal-mode">
+    <!-- 1. 顶部导航栏 -->
+    <header class="navbar">
+        <div class="logo-container" id="logoBtn">
+            <!-- 医院LOGO，点击5次触发转变 -->
+            <img src="医院1LOGO.png" alt="医院LOGO" id="hospitalLogo">
+            <span class="logo-text">圣心医院</span>
+        </div>
+        <nav class="nav-links">
+            <a href="J论坛.html">返回</a>
+            <a href="#">就医</a>
+            <a href="#">专家</a>
+        </nav>
+    </header>
+
+    <!-- 2. 网页核心内容区 -->
+    <main class="main-content">
+        <!-- 正常模式下的内容 -->
+        <section class="content-box" id="normalContent">
+            <h2>欢迎来到圣心综合医院</h2>
+            <p class="subtitle">全心全意为您的健康保驾护航</p>
+            <!-- 16:9 强制锁定比例容器 -->
+            <div class="hospital-banner">
+                <img src="医白.jpg" alt="医院大楼" id="mainBanner">
+            </div>
+            <div class="news-section">
+                <h3>最新公告</h3>
+                <ul>
+                    <li>最新引进国际顶尖呼吸科专家团队</li>
+                    <li>门诊全面实行预约挂号制度通知</li>
+                    <li>夜间急诊绿色通道24小时畅通</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 隐藏的鬼网站内容（初始隐藏） -->
+        <section class="content-box hidden" id="ghostContent">
+            <h2 class="ghost-title">救 救 我 们</h2>
+            <p class="ghost-subtitle">这里没有活人，别相信他们...</p>
+            <!-- 16:9 强制锁定比例容器（与上面尺寸绝对对齐） -->
+            <div class="hospital-banner">
+                <img src="医黑.jpg" alt="废弃医院" id="ghostBanner">
+            </div>
+            <div class="news-section ghost-news">
+                <h3>死亡记录</h3>
+                <ul>
+                    <li>1998年：无人幸存的地下手术</li>
+                    <li>404号病房的墙壁里有抓挠声</li>
+                    <li>快 离开 这里 ！！！</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <!-- 3. 背景惊悚音效（尖叫声） -->
+    <audio id="screamSound" src="#" preload="auto"></audio>
+    <!-- 4. 核心交互 JavaScript 脚本 -->
+    <script>
+        // 初始化全局变量
+        let clickCount = 0; 
+
+        const logoBtn = document.getElementById('logoBtn');
+        const normalContent = document.getElementById('normalContent');
+        const ghostContent = document.getElementById('ghostContent');
+        const screamSound = document.getElementById('screamSound');
+
+        // 监听LOGO点击事件
+        logoBtn.addEventListener('click', () => {
+            clickCount++;
+            console.log(`LOGO 被点击了 ${clickCount} 次`);
+
+            if (clickCount === 5) {
+                triggerGhostMode();
+            } else if (clickCount > 5) {
+                // 如果已经变成鬼网站，再次点击LOGO可以切回正常医院模式
+                triggerNormalMode();
+                clickCount = 0;
+            }
+        });
+
+        // 核心转变逻辑：正常医院 -> 惊悚鬼网站
+        function triggerGhostMode() {
+            // 播放惊悚尖叫声（注意：由于浏览器安全限制，用户必须先在页面任意地方点一下，才能播放声音）
+            screamSound.play().catch(err => {
+                console.log("音频播放受限，点击页面任意处后再试:", err);
+            });
+
+            // 触发全屏剧烈摇晃地震特效
+            document.body.style.animation = 'earthquake 0.6s ease-in-out';
+
+            // 在摇晃进行到一半时（300毫秒），瞬间切换世界线
+            setTimeout(() => {
+                document.body.style.animation = ''; // 及时清除临时摇晃动画
+                
+                document.body.classList.remove('normal-mode');
+                document.body.classList.add('ghost-mode');
+
+                normalContent.classList.add('hidden');
+                ghostContent.classList.remove('hidden');
+            }, 300);
+        }
+
+        // 回归逻辑：恢复正常医院
+        function triggerNormalMode() {
+            document.body.classList.remove('ghost-mode');
+            document.body.classList.add('normal-mode');
+            ghostContent.classList.add('hidden');
+            normalContent.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
