@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>响应式云盘档案系统</title>
+    <title>蜂鸟云盘系统</title>
     <style>
         /* 全局基础重置与防错 */
 /* 全局基础重置 */
@@ -88,11 +88,11 @@
                 <p>内部机密档案安全验证中心</p>
                 <div class="input-group">
                     <label for="username">管理账号</label>
-                    <input type="text" id="username" placeholder="请输入管理账号" autocomplete="off">
+                    <input type="text" id="username" placeholder="持有人姓名（支持中文）" autocomplete="off">
                 </div>
                 <div class="input-group">
                     <label for="password">安全密码</label>
-                    <input type="password" id="password" placeholder="请输入安全密码">
+                    <input type="password" id="password" placeholder="小花工号AAA-00000">
                 </div>
                 <button class="login-btn" onclick="handleLogin()">安全验证登录</button>
                 <div id="errorMsg" class="error-msg"></div>
@@ -146,8 +146,8 @@
     <script>
         // ================= [最顶部配置] 在这里修改你的账号和密码 =================
         const CONFIG = {
-            ACCOUNT: "1",    // 想要固定的账号写在这里
-            PASSWORD: "1"  // 想要固定的密码写在这里
+            ACCOUNT: "艾琳",    // 想要固定的账号写在这里
+            PASSWORD: "HNN-29899"  // 想要固定的密码写在这里
         };
 
         let currentFlippedCount = 0; // 当前已翻开的页数
