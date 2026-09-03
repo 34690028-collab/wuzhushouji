@@ -161,7 +161,7 @@ body,html{
             <!-- ⬇️ 在下方将 '你的主菜单或上一页文件名.html' 替换为你实际的网页文件名或网址 ⬇️ -->
             <a href="巴布曼特联邦警察局.html" id="back-btn" style="background: rgba(0,0,0,0.6); color: #fff; border: 1px solid #555; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-size: 1.4vw; cursor: pointer; transition: background 0.2s;">❮ 返回</a>
 
-            <span id="back-path" style="color: #aaa; font-size: 1.2vw; text-shadow: 1px 1px 2px #000;">当前路径: 案件情报室 / 线索分析</span>
+            <span id="back-path" style="color: #aaa; font-size: 1.2vw; text-shadow: 1px 1px 2px #000;">当前路径: 案件侦破厅 / 线索分析仪</span>
         </div>
 
 
@@ -199,7 +199,7 @@ body,html{
                 <!-- 交互按钮组 -->
                 <div style="display: flex; justify-content: center; gap: 20px;">
                     <!-- 返回上一步按钮：隐藏弹窗 -->
-                    <button onclick="document.getElementById('case-modal').style.display = 'none';" style="background: #444; color: #fff; border: 1px solid #666; padding: 10px 24px; font-size: 1.2vw; border-radius: 4px; cursor: pointer; transition: background 0.2s;">返回</button>
+                    <button onclick="document.getElementById('case-modal').style.display = 'none';" style="background: #444; color: #fff; border: 1px solid #666; padding: 10px 24px; font-size: 1.2vw; border-radius: 4px; cursor: pointer; transition: background 0.2s;">上一步</button>
                     <!-- 前往破案按钮 -->
                     <button onclick="location.href='404.html';" style="background: #a91e23; color: #fff; border: none; padding: 10px 24px; font-size: 1.2vw; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s;">结局</button>
                 </div>
@@ -211,10 +211,10 @@ body,html{
         // 线索核心底层字典定义（您可以根据需要任意增删和修改特定编号）
         const CLUE_DB = {
             "EPT999": { id: 1, info: "【线索1】恭喜你收集到了空间实验室骇人实验的物证。" },
-            "EPT789": { id: 2, info: "【线索2】黑水镇这家的福利院问题太多，虚假的捐赠账目和大量人口失踪幕后都指向它。这些证据很关键；谢谢你的提供。" },
+            "EPT789": { id: 2, info: "【线索2】巴布曼特联邦综合医院果然有不可告人的秘密。这些证据很关键；谢谢你提供的线索。" },
             "EPT233": { id: 3, info: "【线索3】这是诺凡泰克的实验室伊特尼塔计划核心秘密，虽然不全，但这些也足以撕开它的面具，为我们后续调查起到关键作用。" },
-            "EPT760": { id: 4, info: "【线索4】监控证据显示，艾琳·索恩的死亡不是普通的交通事故，而是有人蓄意谋杀，我们已经锁定证据，即刻对他进行逮捕。" },
-            "EPT563": { id: 5, info: "【线索5】赖小花记者被抓关押的地方已经确定，已经派遣特种战术部队前往救援，感谢你的帮助。" }
+            "EPT760": { id: 4, info: "【线索4】监控证据显示，艾琳·索恩的死亡不是普通的交通事故，而是有人蓄意谋杀，我们已经锁定证据，即刻对他进行逮捕。<a href='线索4.html' style='color: #00ff00; font-weight: bold; text-decoration: underline;'>点击查看结果</a>" },
+            "EPT563": { id: 5, info: "【线索5】赖小花记者被抓关押的地方已经确定，已经派遣特种战术部队前往救援，感谢你的帮助。<a href='404.html' style='color: #00ff00; font-weight: bold; text-decoration: underline;'>点击查看结果</a>" }
         };
 
         // 初始化玩家状态变量
@@ -293,7 +293,7 @@ body,html{
                 gameState.currentNpcText = `【线索价值分析】匹配成功！<br>${item.info}`;
             } else {
                 // 输错编号时的反向回馈提示
-                gameState.currentNpcText = `警员：【线索错误】，你提交的线索编号 "${rawVal}" 查无此项，虚假报案我们可能会起诉你哦。`;
+                gameState.currentNpcText = `【线索错误】警员，你提交的线索编号 "${rawVal}" 查无此项，虚假报案我们可能会起诉你哦。`;
             }
 
             saveToCache();
